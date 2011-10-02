@@ -17,6 +17,10 @@ snow=~/snow-c CD=. filter="*.c *.h *.s .gitignore" {
  thread.h
  vec3.h
  vec4.h
+ list.h
+ list.c
+ tree.c
+ tree.h
  .gitignore
 }
 
