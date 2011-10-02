@@ -136,7 +136,6 @@ static void mapnode_remove(map_t *map, mapnode_t *node)
 	if (IS_BLACK(destroyed)) {
 		while (y != map->root && IS_BLACK(y)) {
 			mapnode_t *sibling;
-#if 1
 			int dir = !(y == z->left);
 			sibling = OPP_NODE(z, dir);
 
@@ -165,63 +164,6 @@ static void mapnode_remove(map_t *map, mapnode_t *node)
 				g_rotations[dir](map, z);
 				y = map->root;
 			}
-#else
-			if (y == z->left) {
-				sibling = z->right;
-				if (IS_RED(sibling)) {
-					sibling->color = BLACK;
-					z->color = RED;
-					node_rotate_left(map, z);
-					sibling = z->right;
-				}
-
-				if (IS_BLACK(sibling->left) && IS_BLACK(sibling->right)) {
-					sibling->color = RED;
-					y = z;
-					z = z->parent;
-				} else {
-					if (IS_BLACK(sibling->right)) {
-						sibling->left->color = BLACK;
-						sibling->color = RED;
-						node_rotate_right(map, sibling);
-						sibling = z->right;
-					}
-
-					sibling->color = z->color;
-					z->color = BLACK;
-					sibling->right->color = BLACK;
-					node_rotate_left(map, z);
-					y = map->root;
-				}
-			} else {
-				sibling = z->left;
-				if (IS_RED(sibling)) {
-					sibling->color = BLACK;
-					z->color = RED;
-					node_rotate_right(map, z);
-					sibling = z->left;
-				}
-
-				if (IS_BLACK(sibling->left) && IS_BLACK(sibling->right)) {
-					sibling->color = RED;
-					y = z;
-					z = z->parent;
-				} else {
-					if (IS_BLACK(sibling->left)) {
-						sibling->right->color = BLACK;
-						sibling->color = RED;
-						node_rotate_left(map, sibling);
-						sibling = z->left;
-					}
-
-					sibling->color = z->color;
-					z->color = BLACK;
-					sibling->left->color = BLACK;
-					node_rotate_right(map, z);
-					y = map->root;
-				}
-			}
-#endif
 		}
 
 		y->color = BLACK;
