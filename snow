@@ -1,21 +1,19 @@
 snow=~/snow-c CD=. filter="*.c *.h *.s .gitignore" {
- lock.c
  logging.c
  matrix.c
  memory.c
+ mutex.c
  quat.c
- recursive_lock.c
  thread.c
  vec3.c
  vec4.c
  config.h
- lock.h
  logging.h
  math3d.h
  matrix.h
  memory.h
+ mutex.h
  quat.h
- recursive_lock.h
  thread.h
  vec3.h
  vec4.h
