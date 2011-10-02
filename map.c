@@ -363,9 +363,9 @@ int map_remove(map_t *map, key_t key)
 	return 0;
 }
 
-int map_get(map_t *map, key_t key, void **result)
+int map_get(const map_t *map, key_t key, void **result)
 {
-	mapnode_t *node = mapnode_find(map->root, key);
+	const mapnode_t *node = mapnode_find(map->root, key);
 
 	if (node != NIL && result)
 		*result = node->p;
@@ -373,8 +373,29 @@ int map_get(map_t *map, key_t key, void **result)
 	return (node != NIL);
 }
 
-void map_getValues(map_t *map, void **values, size_t capacity)
+static void map_getValues_r(const mapnode_t *node, key_t *keys, void **values, int *count, size_t capacity)
 {
+	if (capacity <= *count)
+		return;
+	
+	if (node == NIL)
+		return;
+	
+	if (node->left != NIL) map_getValues_r(node->left, keys, values, count, capacity);
+
+	if (keys)	keys[*count] = node->key;
+	if (values)	values[*count] = node->p;
+
+	*count += 1;
+
+	if (node->right != NIL) map_getValues_r(node->right, keys, values, count, capacity);
+}
+
+int map_getValues(const map_t *map, key_t *keys, void **values, size_t capacity)
+{
+	int count = 0;
+	map_getValues_r(map->root, keys, values, &count, capacity);
+	return count;
 }
 
 

@@ -42,8 +42,10 @@ void map_destroy(map_t *map);
 void map_insert(map_t *map, key_t key, void *p);
 int map_remove(map_t *map, key_t key);
 
-int map_get(map_t *map, key_t key, void **result);
-void map_getValues(map_t *map, void **values, size_t capacity);
+inline int map_size(const map_t *map) { return map->size; }
+
+int map_get(const map_t *map, key_t key, void **result);
+int map_getValues(const map_t *map, key_t *keys, void **values, size_t capacity);
 
 #if defined(__cplusplus)
 }
