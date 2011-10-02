@@ -161,6 +161,8 @@ static void mem_destroy_pool(memory_pool_t *pool)
 
 memory_pool_t *mem_retain_pool(memory_pool_t *pool)
 {
+	if (!pool) return pool;
+
 #if THREADED && defined(__cplusplus)
 	pool->lock.lock();
 #endif
