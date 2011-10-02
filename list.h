@@ -57,10 +57,13 @@ inline listnode_t *list_prepend(list_t *list, void *p)
 	return list_insertBefore(list->head.next, p);
 }
 
-void *list_at(list_t *list, int index);
-listnode_t *list_nodeAt(list_t *list, int index);
-listnode_t *list_nodeWithValue(list_t *list, void *p);
+void *list_at(const list_t *list, int index);
+listnode_t *list_nodeAt(const list_t *list, int index);
+listnode_t *list_nodeWithValue(const list_t *list, void *p);
 
+int list_isEmpty(const list_t *list);
+
+void list_clear(list_t *list);
 void list_remove(listnode_t *node);
 void list_removeValue(list_t *list, void *p);
 int list_removeAllOfValue(list_t *list, void *p);
