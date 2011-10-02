@@ -1,5 +1,9 @@
 #include "vec4.h"
-#include "math.h"
+
+#if defined(__cplusplus)
+extern "C"
+{
+#endif /* __cplusplus */
 
 const vec4_t g_vec4_zero = {0.0, 0.0, 0.0, 0.0};
 const vec4_t g_vec4_one = {1.0, 1.0, 1.0, 1.0};
@@ -97,4 +101,8 @@ int vec4_divide(float divisor, vec4_t v)
 	}
 	return 0;
 }
+
+#if defined(__cplusplus)
+}
+#endif /* __cplusplus */
 

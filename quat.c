@@ -1,6 +1,10 @@
 #include "quat.h"
 #include "vec4.h"
-#include <math.h>
+
+#if defined(__cplusplus)
+extern "C"
+{
+#endif /* __cplusplus */
 
 const quat_t g_quat_identity = {0.0, 0.0, 0.0, 1.0};
 
@@ -168,4 +172,7 @@ int quat_equals(const quat_t left, const quat_t right)
 		);
 }
 
+#if defined(__cplusplus)
+}
+#endif /* __cplusplus */
 
