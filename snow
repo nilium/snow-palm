@@ -1,0 +1,63 @@
+snow=~/snow-c CD=. filter="*.c *.h *.s .gitignore" {
+ lock.c
+ logging.c
+ matrix.c
+ memory.c
+ quat.c
+ recursive_lock.c
+ thread.c
+ vec3.c
+ vec4.c
+ config.h
+ lock.h
+ logging.h
+ math3d.h
+ matrix.h
+ memory.h
+ quat.h
+ recursive_lock.h
+ thread.h
+ vec3.h
+ vec4.h
+ .gitignore
+}
+
+snowpalm=~/Projects/palm-snow/src filter="*.c *.h *.hpp *.cpp" flags=T {
+ Atomic.c
+ Log.c
+ Atomic.h
+ AutoreleasePool.h
+ Component.h
+ Entity.h
+ Log.h
+ Math3D.h
+ Memory.h
+ Message.h
+ Mutex.h
+ Object.h
+ PoolAllocator.h
+ RWLock.h
+ Thread.h
+ ThreadStorage.h
+ WeakPointer.h
+ Window.h
+ snow-config.h
+ AutoreleasePool.cpp
+ Component.cpp
+ Entity.cpp
+ Mat4.cpp
+ Memory.cpp
+ Mutex.cpp
+ Object.cpp
+ PoolAllocator.cpp
+ Quat.cpp
+ RWLock.cpp
+ Thread.cpp
+ ThreadStorage.cpp
+ Vec2.cpp
+ Vec3.cpp
+ Vec4.cpp
+ WeakPointer.cpp
+ Window.cpp
+ main.cpp
+}
