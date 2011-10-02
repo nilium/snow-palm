@@ -232,6 +232,10 @@ static void mapnode_destroy_r(mapnode_t *node)
 void map_destroy(map_t *map)
 {
 	mapnode_destroy_r(map->root);
+	map->root = NULL;
+	map->size = 0;
+	mem_release_pool(map->pool);
+	map->pool = NULL;
 }
 
 #if !defined(NDEBUG)
