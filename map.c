@@ -35,7 +35,7 @@ static inline void node_rotate_left(map_t *map, mapnode_t *node)
 		} else {
 			if (IS_LEFT(node)) {
 				node->parent->left = right;
-			} else { // right
+			} else {
 				node->parent->right = right;
 			}
 		}
@@ -58,7 +58,7 @@ static inline void node_rotate_right(map_t *map, mapnode_t *node)
 		} else {
 			if (IS_LEFT(node)) {
 				node->parent->left = left;
-			} else { // right
+			} else {
 				node->parent->right = left;
 			}
 		}
@@ -234,8 +234,12 @@ void map_destroy(map_t *map)
 	mapnode_destroy_r(map->root);
 }
 
+#if !defined(NDEBUG)
 static int map_test(mapnode_t *node)
 {
+	/* got this routine by Julienne Walker from
+	 * http://eternallyconfuzzled.com/tuts/datastructures/jsw_tut_rbtree.aspx
+	 */
 	mapnode_t *left, *right;
 
 	if (node == NIL) return 1;
@@ -266,6 +270,7 @@ static int map_test(mapnode_t *node)
 	else
 		return 0;
 }
+#endif
 
 void map_insert(map_t *map, key_t key, void *p)
 {
