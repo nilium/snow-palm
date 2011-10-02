@@ -64,7 +64,7 @@ listnode_t *list_insertAfter(listnode_t *node, void *p)
 	return newnode;
 }
 
-void *list_at(list_t *list, int index)
+void *list_at(const list_t *list, int index)
 {
 	if (list->size <= (index < 0 ? (list->size + index) : index)) {
 		log_error("Attempt to access contents of node at index %d beyond list bounds\n", index);
@@ -75,7 +75,7 @@ void *list_at(list_t *list, int index)
 	return node->p;
 }
 
-listnode_t *list_nodeAt(list_t *list, int index)
+listnode_t *list_nodeAt(const list_t *list, int index)
 {
 	int absIndex = index;
 	if (index < 0) absIndex = list->size + index;
@@ -98,7 +98,7 @@ listnode_t *list_nodeAt(list_t *list, int index)
 	return node;
 }
 
-listnode_t *list_nodeWithValue(list_t *list, void *p)
+listnode_t *list_nodeWithValue(const list_t *list, void *p)
 {
 	listnode_t *node = list->head.next;
 
@@ -109,6 +109,29 @@ listnode_t *list_nodeWithValue(list_t *list, void *p)
 	}
 
 	return NULL;
+}
+
+int list_isEmpty(const list_t *list)
+{
+	return (list->size == 0);
+}
+
+void list_clear(list_t *list)
+{
+	listnode_t *node = list->head.next;
+
+	if (node == &list->head) return;
+
+	list->head.next->prev = NULL;
+	list->head.prev->next = NULL;
+	list->head.next = list->head.prev = &list->head;
+	list->size = 0;
+
+	while (node) {
+		listnode_t *next = node->next;
+		mem_free(node);
+		node = next;
+	}
 }
 
 void list_remove(listnode_t *node)
