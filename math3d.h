@@ -81,6 +81,8 @@ typedef float quat_t[4];
 }
 #endif /* __cplusplus */
 
+#include "config.h"
+#include <math.h>
 #include "vec3.h"
 #include "vec4.h"
 #include "matrix.h"

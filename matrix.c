@@ -1,8 +1,6 @@
 #include "matrix.h"
 #include "vec3.h"
 #include "vec4.h"
-#include <math.h>
-#include <string.h>
 
 #if defined(__cplusplus)
 extern "C"
