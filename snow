@@ -1,27 +1,34 @@
-snow=~/snow-c CD=. filter="*.c *.h *.s .gitignore" {
+snow=~/snow-c/src CD=. filter="*.c *.h *.s *.md .gitignore" flags=T{
+ tests=../tests CD=../tests filter="*.c *.h *.s" {
+  treetest.c
+ }
+ entity.c
+ list.c
  logging.c
+ main.c
+ map.c
  matrix.c
  memory.c
  mutex.c
+ object.c
  quat.c
  thread.c
  vec3.c
  vec4.c
  config.h
+ entity.h
+ list.h
  logging.h
+ map.h
  math3d.h
  matrix.h
  memory.h
  mutex.h
+ object.h
  quat.h
  thread.h
  vec3.h
  vec4.h
- list.h
- list.c
- tree.c
- tree.h
- .gitignore
 }
 
 snowpalm=~/Projects/palm-snow/src filter="*.c *.h *.hpp *.cpp" flags=T {
