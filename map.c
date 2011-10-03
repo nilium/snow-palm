@@ -252,7 +252,7 @@ static int map_test(mapnode_t *node)
 	right = node->right;
 
 	if (IS_RED(node) && (IS_RED(right) || IS_RED(right))) {
-		log_note("Red violation on node with key %X\n", node->key);
+		log_note("Red violation on node with key %p\n", node->key);
 		return 0;
 	}
 
@@ -260,12 +260,12 @@ static int map_test(mapnode_t *node)
 	int rh = map_test(right);
 
 	if (left != NIL && left->key > node->key) {
-		log_note("Left node (key: %X) of parent node (key: %X) is incorrectly ordered\n", left->key, node->key);
+		log_note("Left node (key: %p) of parent node (key: %p) is incorrectly ordered\n", left->key, node->key);
 		return 0;
 	}
 
 	if (right != NIL && right->key < node->key) {
-		log_note("Right node (key: %X) of parent node (key: %X) is incorrectly ordered\n", right->key, node->key);
+		log_note("Right node (key: %p) of parent node (key: %p) is incorrectly ordered\n", right->key, node->key);
 		return 0;
 	}
 
