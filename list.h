@@ -35,13 +35,19 @@ struct s_list
  * 2. Negative indices, from -1 to -N, go from the list tail to the start of
  *    the list.  They relative to the end of the list, and equate to the same
  *    as writing `list_count(list) + [negative index]`.
+ *
+ *  \p On Memory Management
+ * List init/destroy routines do not allocate an entirely new list or free an
+ * existing list from memory, they only prepare a list for use and destroy its
+ * nodes, respectively.  If you allocate a list, you must also free it.
  */
 
-/*! \brief Allocates a linked list.
+/*! \brief Initializes a linked list.
  *  \param[in] list The list to initialize.
  *  \param[in] pool The pool to allocate list nodes from.
  */
 void list_init(list_t *list, memory_pool_t *pool);
+/*! \brief Destroys a linked list. */
 void list_destroy(list_t *list);
 
 listnode_t *list_insertBefore(listnode_t *node, void *p);
