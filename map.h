@@ -13,7 +13,7 @@ extern "C"
 typedef struct s_mapnode mapnode_t;
 typedef struct s_map map_t;
 /* typedef int (*comparator_fn)(void *left, void *right); */
-typedef int key_t;
+typedef void *key_t;
 
 typedef enum
 {
