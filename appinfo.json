@@ -1,0 +1,9 @@
+{
+	"id": "net.spifftastic.snow",
+	"version": "1.0.0",
+	"vendor": "Noel Cower",
+	"type": "pdk",
+	"main": "snow-palm",
+	"title": "Snow-Palm",
+	"icon": "icon.png"
+}
