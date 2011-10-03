@@ -15,7 +15,8 @@ typedef struct s_map map_t;
 /* typedef int (*comparator_fn)(void *left, void *right); */
 typedef int key_t;
 
-typedef enum {
+typedef enum
+{
 	BLACK	= 0,
 	RED		= 1
 } mapnode_color_t;
