@@ -27,6 +27,10 @@ typedef float quat_t[4];
 #define vec3_expand(V) ((V)[0]), ((V)[1]), ((V)[2])
 #define vec4_expand(V) ((V)[0]), ((V)[1]), ((V)[2]), ((V)[3])
 
+#define vec2_expandAddr(V) (V), (V+1)
+#define vec3_expandAddr(V) (V), (V+1), ((V)+2)
+#define vec4_expandAddr(V) (V), (V+1), ((V)+2), ((V)+3)
+
 /* matrix expansion */
 #define mat4_expand(M) \
 	((M)[0 ]), ((M)[1 ]), ((M)[2 ]), ((M)[3 ]), \
@@ -63,6 +67,7 @@ typedef float quat_t[4];
 
 /* quaternion expansion */
 #define quat_expand(Q) ((Q)[0]), ((Q)[1]), ((Q)[2]), ((Q)[3])
+#define quat_expandAddr(Q) (Q), (Q+1), ((Q)+2), ((Q)+3)
 
 
 /*!
