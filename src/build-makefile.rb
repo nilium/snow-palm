@@ -3,16 +3,17 @@
 MAKEFILE_TEMPLATE = <<-EOS
 OBJECT_PREFIX=../obj/$(TARGET)/
 OBJECTS=$(addsuffix .o,$(basename $(SOURCES)))
+OUTPUT_PREFIX=../bin/
 
 all: prepare_build $(OUTPUT)
 
 prepare_build:
 	mkdir -p $(OBJECT_PREFIX)
+	mkdir -p $(OUTPUT_PREFIX)
 .PHONY: all prepare_build
 
 $(OUTPUT): $(OBJECTS)
-	echo $(CC)
-	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) $(LDFLAGS) $(CFLAGS) $^ -o $@
+	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) $(LDFLAGS) $(CFLAGS) $(addprefix $(OBJECT_PREFIX),$^) -o $(addprefix $(OUTPUT_PREFIX),$@)
 EOS
 
 COMPILE_STMT = "\t$(TARGET_CC) $(TARGET_CFLAGS) $(CFLAGS) -c -o $(OBJECT_PREFIX)$@ $<"
