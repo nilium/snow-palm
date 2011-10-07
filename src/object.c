@@ -7,19 +7,19 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+/* The basic object constructor. */
+static object_t *object_ctor(object_t *self);
+/* The basic object destructor. */
+static void object_dtor(object_t *self);
+
 const class_t object_class = {
 	NULL,
-	sizeof(struct s_object),
+	sizeof(object_t),
 
 	object_ctor,
 	object_dtor,
 
 	object_compare,
-
-	object_retain,
-	object_release,
-	object_autorelease,
-	object_retainCount
 };
 
 static map_t g_retain_map; /* kv-pair: (object address, (void *)-sized integer) */
@@ -38,18 +38,18 @@ void sys_object_shutdown(void)
 	mutex_destroy(&g_retain_lock);
 }
 
-object_t object_ctor(object_t self)
+static object_t *object_ctor(object_t *self)
 {
 	/* retain count 1, NOP */
 	return self;
 }
 
-void object_dtor(object_t self)
+static void object_dtor(object_t *self)
 {
 	/* TODO: weak reference table, signal object deletion */
 }
 
-int object_compare(object_t self, object_t other)
+int object_compare(object_t *self, object_t *other)
 {
 	ptrdiff_t diff = self - other;
 	if (diff < 0)
@@ -60,14 +60,14 @@ int object_compare(object_t self, object_t other)
 		return 0;
 }
 
-object_t object_retain(object_t self)
+object_t *object_retain(object_t *self)
 {
 	uint32_t *retainCount;
 	int found;
 
 	mutex_lock(&g_retain_lock);
 
-	map_getAddr(&g_retain_map, self, &retainCount);
+	map_getAddr(&g_retain_map, self, (void ***)&retainCount);
 	if (found) {
 		*retainCount += 1;
 	} else {
@@ -78,19 +78,19 @@ object_t object_retain(object_t self)
 	return self;
 }
 
-object_t object_autorelease(object_t self)
+object_t *object_autorelease(object_t *self)
 {
 	return self;
 }
 
-void object_release(object_t self)
+void object_release(object_t *self)
 {
 	uint32_t *retainCount;
 	int found;
 
 	mutex_lock(&g_retain_lock);
 
-	map_getAddr(&g_retain_map, self, &retainCount);
+	map_getAddr(&g_retain_map, self, (void ***)&retainCount);
 	if (found) {
 		int count = (*retainCount) - 1;
 		
@@ -108,7 +108,7 @@ void object_release(object_t self)
 	if (!found) object_delete(self);
 }
 
-int32_t object_retainCount(object_t self)
+int32_t object_retainCount(object_t *self)
 {
 	uint32_t retainCount;
 	int found;
@@ -123,10 +123,10 @@ int32_t object_retainCount(object_t self)
 	return retainCount;
 }
 
-object_t object_new(class_t *cls, memory_pool_t *pool)
+object_t *object_new(const class_t *cls, memory_pool_t *pool)
 {
 	/* allocate the object from the given memory pool */
-	object_t self = (object_t)mem_alloc(pool, cls->size, (int32_t)(cls));
+	object_t *self = (object_t *)mem_alloc(pool, cls->size, (int32_t)(cls));
 	
 	/* make sure we've actually allocated the memory - if we haven't, return NULL */
 	if (!self)
@@ -138,18 +138,18 @@ object_t object_new(class_t *cls, memory_pool_t *pool)
 	/* assign the given class (cls) to the object's `isa` pointer */
 	self->isa = cls;
 	/* construct/initialize the object (see note on constructors in object.h) */
-	self = cls->construct(self);
+	self = cls->ctor(self);
 	
 	/* return the constructed object */
 	return self;
 }
 
-void object_delete(object_t object)
+void object_delete(object_t *object)
 {
 	/* call the class destructor (which will, in turn, call superclass destructors
 	   if written correctly
 	*/
-	object->isa->destruct(object);
+	object->isa->dtor(object);
 	memset(object, 0, object->isa->size);
 	mem_free(object);
 }
