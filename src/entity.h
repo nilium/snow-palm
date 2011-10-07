@@ -28,15 +28,15 @@ typedef enum
 	ENTITY_HIDDEN		=0x1<<7,	/*! Entity is currently hidden. */
 } entity_flags_t;
 
-typedef struct s_entity *entity_t;
+typedef struct s_entity entity_t;
 
 struct s_entity
 {
-	struct s_object object_head;
+	class_t *isa;
 
 	list_t children;
 	list_t components;
-	entity_t parent;
+	entity_t *parent;
 	char *name;
 	/*! internal flags */
 	entity_flags_t _iflags;
@@ -46,25 +46,25 @@ struct s_entity
 	vec3_t position, scale;
 };
 
-
+extern const class_t entity_class;
 
 void sys_entity_init(void);
 void sys_entity_shutdown(void);
 
-void entity_new(const char *name, entity_t *entity);
-void entity_destroy(entity_t entity);
+entity_t *entity_new(const char *name);
 
-void entity_addChild(entity_t parent, entity_t child);
-void entity_removeFromParent(entity_t child);
+void entity_addChild(entity_t *self, entity_t *child);
+void entity_removeFromParent(entity_t *self);
 
-const char *entity_name(const entity_t entity);
+void entity_setName(entity_t *self, const char *name);
+const char *entity_getName(const entity_t *self);
 
-void entity_move(entity_t entity, float x, float y, float z);
-void entity_translate(entity_t entity, float x, float y, float z);
-void entity_rotate(entity_t entity, float x, float y, float z);
-void entity_turn(entity_t entity, float x, float y, float z);
-void entity_scale(entity_t entity, float x, float y, float z);
-void entity_getScale(entity_t entity, float *x, float *y, float *z);
+void entity_move(entity_t *self, float x, float y, float z);
+void entity_translate(entity_t *self, float x, float y, float z);
+void entity_rotate(entity_t *self, float x, float y, float z);
+void entity_turn(entity_t *self, float x, float y, float z);
+void entity_scale(entity_t *self, float x, float y, float z);
+void entity_getScale(entity_t *self, float *x, float *y, float *z);
 
 #if defined(__cplusplus)
 }
