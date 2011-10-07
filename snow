@@ -1,34 +1,48 @@
-snow=~/snow-c/src CD=. filter="*.c *.h *.s *.md .gitignore" flags=T{
- tests=../tests CD=../tests filter="*.c *.h *.s" {
+snow=~/snow-c CD=. flags=srT{
+ source=src CD=. filter="Makefile *.host *.device *.c *.s" {
+  Makefile
+  Makefile.host
+  Makefile.device
+  entity.c
+  list.c
+  logging.c
+  main.c
+  map.c
+  matrix.c
+  memory.c
+  mutex.c
+  object.c
+  quat.c
+  thread.c
+  vec3.c
+  vec4.c
+ }
+ include=src CD=. filter="*.h" {
+  config.h
+  entity.h
+  list.h
+  logging.h
+  map.h
+  math3d.h
+  matrix.h
+  memory.h
+  mutex.h
+  object.h
+  quat.h
+  thread.h
+  vec3.h
+  vec4.h
+ }
+ tests=../tests CD=. filter="*.c *.h *.s" {
   treetest.c
  }
- entity.c
- list.c
- logging.c
- main.c
- map.c
- matrix.c
- memory.c
- mutex.c
- object.c
- quat.c
- thread.c
- vec3.c
- vec4.c
- config.h
- entity.h
- list.h
- logging.h
- map.h
- math3d.h
- matrix.h
- memory.h
- mutex.h
- object.h
- quat.h
- thread.h
- vec3.h
- vec4.h
+ util=src/ CD=. filter="*.rb" {
+  build-makefile.rb
+ }
+ SConstruct
+ Makefile
+ NOTES.md
+ .gitignore
 }
 
 snowpalm=~/Projects/palm-snow/src filter="*.c *.h *.hpp *.cpp" flags=T {
