@@ -132,7 +132,7 @@ int list_count(const list_t *list)
 	return (list ? list->size : -1);
 }
 
-int list_isEmpty(const list_t *list)
+bool list_isEmpty(const list_t *list)
 {
 	return (list ? (list->size == 0) : -1);
 }
@@ -164,10 +164,11 @@ void list_remove(listnode_t *node)
 	mem_free(node);
 }
 
-void list_removeValue(list_t *list, object_t *obj)
+bool list_removeValue(list_t *list, object_t *obj)
 {
 	listnode_t *node = list_nodeWithValue(list, obj);
 	if (node) list_remove(node);
+	return !!node;
 }
 
 int list_removeAllOfValue(list_t *list, object_t *obj)

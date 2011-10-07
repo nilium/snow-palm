@@ -351,16 +351,16 @@ void map_insert(map_t *map, mapkey_t key, void *p)
 #endif
 }
 
-int map_remove(map_t *map, mapkey_t key)
+bool map_remove(map_t *map, mapkey_t key)
 {
 	mapnode_t *node = mapnode_find(map->root, key);
 	
 	if (node != NIL) {
 		mapnode_remove(map, node);
-		return 1;
+		return true;
 	}
 
-	return 0;
+	return false;
 }
 
 int map_size(const map_t *map)
@@ -368,7 +368,7 @@ int map_size(const map_t *map)
 	return map->size;
 }
 
-int map_get(const map_t *map, mapkey_t key, void **result)
+bool map_get(const map_t *map, mapkey_t key, void **result)
 {
 	const mapnode_t *node = mapnode_find(map->root, key);
 
@@ -378,7 +378,7 @@ int map_get(const map_t *map, mapkey_t key, void **result)
 	return (node != NIL);
 }
 
-int map_getAddr(map_t *map, mapkey_t key, void ***result)
+bool map_getAddr(map_t *map, mapkey_t key, void ***result)
 {
 	mapnode_t *node = mapnode_find(map->root, key);
 

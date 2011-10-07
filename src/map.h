@@ -41,13 +41,13 @@ void map_init(map_t *map, memory_pool_t *pool);
 void map_destroy(map_t *map);
 
 void map_insert(map_t *map, mapkey_t key, void *p);
-int map_remove(map_t *map, mapkey_t key);
+bool map_remove(map_t *map, mapkey_t key);
 
 int map_size(const map_t *map);
 
-int map_get(const map_t *map, mapkey_t key, void **result);
+bool map_get(const map_t *map, mapkey_t key, void **result);
 /* ho-ho, now we're cooking with evil */
-int map_getAddr(map_t *map, mapkey_t key, void ***result);
+bool map_getAddr(map_t *map, mapkey_t key, void ***result);
 int map_getValues(const map_t *map, mapkey_t *keys, void **values, size_t capacity);
 
 #if defined(__cplusplus)
