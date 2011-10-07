@@ -34,7 +34,7 @@ device: export TARGET := device
 device:
 	cd src && $(MAKE)
 
-makefile: src/Makefile
+makefile:
 	cd src && ./build-makefile.rb > Makefile
 
 clean: clean_host clean_device
