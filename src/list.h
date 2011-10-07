@@ -4,6 +4,7 @@
 
 #include "config.h"
 #include "memory.h"
+#include "object.h"
 
 #if defined(__cplusplus)
 extern "C"
@@ -18,7 +19,7 @@ struct s_listnode
 	list_t *list;
 	listnode_t *next;
 	listnode_t *prev;
-	void *p;
+	object_t *obj;
 };
 
 struct s_list
@@ -50,15 +51,15 @@ void list_init(list_t *list, memory_pool_t *pool);
 /*! \brief Destroys a linked list. */
 void list_destroy(list_t *list);
 
-listnode_t *list_insertBefore(listnode_t *node, void *p);
-listnode_t *list_insertAfter(listnode_t *node, void *p);
+listnode_t *list_insertBefore(listnode_t *node, object_t *obj);
+listnode_t *list_insertAfter(listnode_t *node, object_t *obj);
 
-listnode_t *list_append(list_t *list, void *p);
-listnode_t *list_prepend(list_t *list, void *p);
+listnode_t *list_append(list_t *list, object_t *obj);
+listnode_t *list_prepend(list_t *list, object_t *obj);
 
 void *list_at(const list_t *list, int index);
 listnode_t *list_nodeAt(const list_t *list, int index);
-listnode_t *list_nodeWithValue(const list_t *list, void *p);
+listnode_t *list_nodeWithValue(const list_t *list, object_t *obj);
 
 /*! Gets the length of the list.
 	\returns The length of the list, [0,N).  Returns -1 if the list is NULL.
@@ -71,11 +72,13 @@ int list_isEmpty(const list_t *list);
 
 void list_clear(list_t *list);
 void list_remove(listnode_t *node);
-void list_removeValue(list_t *list, void *p);
-int list_removeAllOfValue(list_t *list, void *p);
+void list_removeValue(list_t *list, object_t *obj);
+int list_removeAllOfValue(list_t *list, object_t *obj);
 
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus */
+listnode_t *list_firstNode(list_t *list);
+listnode_t *list_lastNode(list_t *list);
+
+listnode_t *listnode_next(listnode_t *node);
+listnode_t *listnode_previous(listnode_t *node);
 
 #endif /* end of include guard: LIST_H */

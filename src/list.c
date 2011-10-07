@@ -9,7 +9,8 @@ const int32_t LIST_ALLOC_TAG = 0x00115700;
 
 void list_init(list_t *list, memory_pool_t *pool)
 {
-	list->head.next = list->head.prev = list->head.p = &list->head;
+	list->head.next = list->head.prev = &list->head;
+	list->head.obj = NULL;
 	list->head.list = list;
 	list->pool = mem_retain_pool(pool);
 }
@@ -20,6 +21,7 @@ void list_destroy(list_t *list)
 	listnode_t *next = list->head.next;
 	while (next) {
 		listnode_t *temp = next->next;
+		if (next->obj) object_release(next->obj);
 		mem_free(next);
 		next = temp;
 	}
@@ -30,13 +32,15 @@ void list_destroy(list_t *list)
 	list->pool = NULL;
 }
 
-listnode_t *list_insertBefore(listnode_t *node, void *p)
+listnode_t *list_insertBefore(listnode_t *node, object_t *obj)
 {
 	listnode_t *newnode = mem_alloc(node->list->pool, sizeof(listnode_t), LIST_ALLOC_TAG);
 	node->list->size += 1;
+
+	if (obj) object_retain(obj);
 	
 	newnode->list = node->list;
-	newnode->p = p;
+	newnode->obj = obj;
 	
 	newnode->next = node;
 	newnode->prev = node->prev;
@@ -47,13 +51,15 @@ listnode_t *list_insertBefore(listnode_t *node, void *p)
 	return newnode;
 }
 
-listnode_t *list_insertAfter(listnode_t *node, void *p)
+listnode_t *list_insertAfter(listnode_t *node, object_t *obj)
 {
 	listnode_t *newnode = mem_alloc(node->list->pool, sizeof(listnode_t), LIST_ALLOC_TAG);
 	node->list->size += 1;
 	
+	if (obj) object_retain(obj);
+
 	newnode->list = node->list;
-	newnode->p = p;
+	newnode->obj = obj;
 	
 	newnode->prev = node;
 	newnode->next = node->next;
@@ -64,14 +70,14 @@ listnode_t *list_insertAfter(listnode_t *node, void *p)
 	return newnode;
 }
 
-listnode_t *list_append(list_t *list, void *p)
+listnode_t *list_append(list_t *list, object_t *obj)
 {
-	return list_insertAfter(list->head.prev, p);
+	return list_insertAfter(list->head.prev, obj);
 }
 
-listnode_t *list_prepend(list_t *list, void *p)
+listnode_t *list_prepend(list_t *list, object_t *obj)
 {
-	return list_insertBefore(list->head.next, p);
+	return list_insertBefore(list->head.next, obj);
 }
 
 void *list_at(const list_t *list, int index)
@@ -82,7 +88,7 @@ void *list_at(const list_t *list, int index)
 	}
 
 	listnode_t *node = list_nodeAt(list, index);
-	return node->p;
+	return node->obj;
 }
 
 listnode_t *list_nodeAt(const list_t *list, int index)
@@ -108,12 +114,12 @@ listnode_t *list_nodeAt(const list_t *list, int index)
 	return node;
 }
 
-listnode_t *list_nodeWithValue(const list_t *list, void *p)
+listnode_t *list_nodeWithValue(const list_t *list, object_t *obj)
 {
 	listnode_t *node = list->head.next;
 
 	while (node != &list->head) {
-		if (node->p == p)
+		if (node->obj == obj)
 			return node;
 		node = node->next;
 	}
@@ -144,6 +150,7 @@ void list_clear(list_t *list)
 
 	while (node) {
 		listnode_t *next = node->next;
+		if (node->obj) object_release(node->obj);
 		mem_free(node);
 		node = next;
 	}
@@ -153,26 +160,27 @@ void list_remove(listnode_t *node)
 {
 	node->next->prev = node->prev;
 	node->prev->next = node->next;
+	if (node->obj) object_release(node->obj);
 	mem_free(node);
 }
 
-void list_removeValue(list_t *list, void *p)
+void list_removeValue(list_t *list, object_t *obj)
 {
-	listnode_t *node = list_nodeWithValue(list, p);
+	listnode_t *node = list_nodeWithValue(list, obj);
 	if (node) list_remove(node);
 }
 
-int list_removeAllOfValue(list_t *list, void *p)
+int list_removeAllOfValue(list_t *list, object_t *obj)
 {
 	int nRemoved = 0;
-	listnode_t *node = list_nodeWithValue(list, p);
+	listnode_t *node = list_nodeWithValue(list, obj);
 
 	while (node) {
 		listnode_t *next = node->next;
 		list_remove(node);
 		node = next;
 
-		while (node->p != p && node != &list->head)
+		while (node->obj != obj && node != &list->head)
 			node = node->next;
 
 		if (node == &list->head)
@@ -180,6 +188,28 @@ int list_removeAllOfValue(list_t *list, void *p)
 	}
 
 	return nRemoved;
+}
+
+listnode_t *list_firstNode(list_t *list)
+{
+	listnode_t *node = list->head.next;
+	return node != &list->head ? node : NULL;
+}
+
+listnode_t *list_lastNode(list_t *list)
+{
+	listnode_t *node = list->head.prev;
+	return node != &list->head ? node : NULL;
+}
+
+listnode_t *listnode_next(listnode_t *node)
+{
+	return node->next != &node->list->head ? node->next : NULL;
+}
+
+listnode_t *listnode_previous(listnode_t *node)
+{
+	return node->prev != &node->list->head ? node->prev : NULL;
 }
 
 #if defined(__cplusplus)
