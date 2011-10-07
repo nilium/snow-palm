@@ -15,7 +15,7 @@ typedef void *(*thread_fn_t)(void *context);
 typedef pthread_t thread_t;
 
 /*! Initializes a thread. */
-inline void thread_create(thread_t *restrict thread, thread_fn_t fn, void *restrict context)
+inline void thread_create(thread_t *thread, thread_fn_t fn, void *context)
 {
 	pthread_create(thread, NULL, fn, context);
 }
