@@ -27,8 +27,10 @@ extern "C"
 #define BLOCK_ALIGNMENT (15)
 /*! Macro for quickly getting the actual size of a block given a requested size. */
 #define BLOCK_SIZE(SZ) ((buffersize_t)((SZ) + sizeof(block_head_t) + (BLOCK_ALIGNMENT) & ~(BLOCK_ALIGNMENT) + sizeof(uint32_t)))
-/*! Minimum block size of one byte. */
-#define MIN_BLOCK_SIZE BLOCK_SIZE(32)
+/*! Minimum allocation size - defaults to larger of a pointer or size_t. */
+#define MIN_ALLOC_SIZE (sizeof(void *) >= sizeof(size_t) ? sizeof(void *) : sizeof(size_t))
+/*! Size of a block for a minimum-size allocation. */
+#define MIN_BLOCK_SIZE BLOCK_SIZE(MIN_ALLOC_SIZE)
 /*! Memory guard value - used to determine if something has written outside the
 	bounds of a block. */
 #define MEMORY_GUARD (0xBEEFC0DE)
@@ -66,15 +68,16 @@ static void mem_check_block(const block_head_t *block, int debug_block);
 
 
 
-void mem_init(void)
+void sys_mem_init(void)
 {
 	if (g_main_pool.head.used) return;
 	
 	mem_init_pool(&g_main_pool, MAIN_POOL_SIZE, MAIN_POOL_TAG);
+	g_main_pool.refs = 0;
 }
 
 
-void mem_shutdown(void)
+void sys_mem_shutdown(void)
 {
 	if (!g_main_pool.head.used) return;
 	
@@ -84,15 +87,14 @@ void mem_shutdown(void)
 
 void mem_init_pool(memory_pool_t *pool, buffersize_t size, int32_t tag)
 {
-#if THREADED && defined(__cplusplus)
-	pool->lock.lock();
-#endif
-	
 	if (!pool->buffer) {
 		if (size < MIN_POOL_SIZE) {
 			size = MIN_POOL_SIZE;
 		}
 		log_note("[%X] Initializing memory pool (%p) with size %zu\n", tag, (const void *)pool, size);
+
+		mutex_init(&pool->lock, YES);
+		mutex_lock(&pool->lock);
 
 		pool->buffer = (char *)malloc(MAIN_POOL_SIZE + (BLOCK_ALIGNMENT));
 		pool->size = MAIN_POOL_SIZE + (BLOCK_ALIGNMENT);
@@ -114,23 +116,18 @@ void mem_init_pool(memory_pool_t *pool, buffersize_t size, int32_t tag)
 		pool->nextUnused = block;
 		pool->sequence = 1;
 		pool->refs = 1;
+		mutex_unlock(&pool->lock);
 	} else {
 		log_error("[%X] Attempt to initialize already-initialized memory pool (%p) with new tag %X\n", pool->tag, (const void *)pool, tag);
 	}
-	
-#if THREADED && defined(__cplusplus)
-	pool->lock.unlock();
-#endif
 }
 
 
 void mem_destroy_pool(memory_pool_t *pool)
 {
-#if THREADED && defined(__cplusplus)
-	pool->lock.lock();
-#endif
-
 	if (pool->head.used) {
+		mutex_lock(&pool->lock);
+
 		if (pool->refs != 0) {
 			log_warning("[%X] Destroying memory pool with non-zero reference count (%d)\n", pool->tag, pool->refs);
 		}
@@ -147,14 +144,13 @@ void mem_destroy_pool(memory_pool_t *pool)
 		pool->sequence = 0;
 		pool->refs = 0;
 	
+		mutex_unlock(&pool->lock);
+		mutex_destroy(&pool->lock);
+
 		log_note("[%X] Destroyed pool (%p)\n", tag, (const void *)pool);
 	} else {
 		log_error("Attempt to destroy already-destroyed memory pool (%p)\n", (const void *)pool);
 	}
-
-#if THREADED && defined(__cplusplus)
-	pool->lock.unlock();
-#endif
 }
 
 
@@ -162,13 +158,9 @@ memory_pool_t *mem_retain_pool(memory_pool_t *pool)
 {
 	if (!pool) return pool;
 
-#if THREADED && defined(__cplusplus)
-	pool->lock.lock();
-#endif
+	mutex_lock(&pool->lock);
 	++pool->refs;
-#if THREADED && defined(__cplusplus)
-	pool->lock.unlock();
-#endif
+	mutex_unlock(&pool->lock);
 	return pool;
 }
 
@@ -176,13 +168,9 @@ memory_pool_t *mem_retain_pool(memory_pool_t *pool)
 void mem_release_pool(memory_pool_t *pool)
 {
 	if (!pool) return;
-#if THREADED && defined(__cplusplus)
-	pool->lock.lock();
-#endif
+	mutex_lock(&pool->lock);
 	int32_t refs = --pool->refs;
-#if THREADED && defined(__cplusplus)
-	pool->lock.unlock();
-#endif
+	mutex_unlock(&pool->lock);
 	if (refs == 0) {
 		mem_destroy_pool(pool);
 	}
@@ -197,28 +185,29 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
 	if (pool == NULL)
 		pool = &g_main_pool;
 	
+	mutex_lock(&pool->lock);
+	
 	if (tag == 0) {
 		log_error("Allocation failed - invalid tag %X\n", tag);
+		goto alloc_unlock_and_exit;
 	}
 	
 	if (!pool->head.used) {
 		log_error("Allocation failed - [%X] pool is not initialized or corrupt\n", pool->tag);
-		return NULL;
+		goto alloc_unlock_and_exit;
 	}
 	
 	buffersize_t blockSize = BLOCK_SIZE(size);
 	if (blockSize < MIN_BLOCK_SIZE) {
 		blockSize = MIN_BLOCK_SIZE;
+		log_warning("Allocation of %zu is too small, allocating minimum size of %zu instead\n", size, MIN_ALLOC_SIZE);
 	}
 	
 	if (blockSize > pool->size) {
 		log_error("Allocation failed - [%X] requested size %zu exceeds pool capacity (%zu)\n", pool->tag, size, pool->size);
-		return NULL;
+		goto alloc_unlock_and_exit;
 	}
 	
-#if THREADED && defined(__cplusplus)
-	pool->lock.lock();
-#endif
 	
 	block_head_t *block = pool->nextUnused;
 	block_head_t *const terminator = pool->nextUnused->prev;
@@ -256,6 +245,8 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
 		pool->nextUnused = block->next;
 		
 #if !NDEBUG
+		/* store source file, function, line, and requested size in debugging struct */
+
 		size_t fileLength = strlen(file) + 1;
 		size_t fnLength = strlen(function) + 1; /* account for \0 in both cases */
 		/* to avoid pointless fragmentation, we'll allocate this using malloc normally */
@@ -272,21 +263,16 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
 		block->debug_info.requested_size = size;
 #endif /* !NDEBUG */
 		
-		/*log_note("returning block for sz %zu:\n", size);*/
-		/*dbg_print_block(block);*/
-		
-#if THREADED && defined(__cplusplus)
-		pool->lock.unlock();
-#endif
+		mutex_unlock(&pool->lock);
 		
 		return block + 1;
 	}
 	
-#if THREADED && defined(__cplusplus)
-	pool->lock.unlock();
-#endif
-	
+	/* out of memory */
 	log_error("Failed to allocate %zu bytes - [%X] pool is out of memory\n", size, pool->tag);
+	
+alloc_unlock_and_exit:
+	mutex_unlock(&pool->lock);
 	
 	return NULL;
 }
@@ -307,21 +293,19 @@ void mem_free(void *buffer)
 	
 	if (!pool) {
 		log_error("Attempt to free block without an associated pool\n");
-		return;
+		goto free_unlock_and_exit;
 	}
 	
-#if THREADED && defined(__cplusplus)
-	pool->lock.lock();
-#endif
+	mutex_lock(&pool->lock);
 	
 	if (block == &block->pool->head) {
 		log_error("[%X] Free on header block of pool\n", block->pool->tag);
-		return;
+		goto free_unlock_and_exit;
 	}
 	
 	if (block->size < MIN_BLOCK_SIZE) {
 		log_error("[%X] Invalid block, too small (%zu) - may be corrupted\n", block->pool->tag, block->size);
-		return;
+		goto free_unlock_and_exit;
 	}
 	
 	uint32_t guard = ((uint32_t *)((char *)block + block->size))[-1];
@@ -331,7 +315,7 @@ void mem_free(void *buffer)
 	
 	if (!block->used) {
 		log_error("[%X] Double-free on block\n", block->pool->tag);
-		return;
+		goto free_unlock_and_exit;
 	}
 	
 	/*block->tag = DEFAULT_BLOCK_TAG_UNUSED;*/
@@ -363,9 +347,8 @@ void mem_free(void *buffer)
 	
 	pool->nextUnused = block;
 	
-#if THREADED && defined(__cplusplus)
-	pool->lock.unlock();
-#endif
+free_unlock_and_exit:
+	mutex_lock(&pool->lock);
 }
 
 
@@ -380,7 +363,7 @@ static inline void dbg_print_block(const block_head_t *block)
 	fprintf(stderr, "  used: %d\n", block->used);
 	fprintf(stderr, "  tag: %X\n", block->tag);
 #if !NDEBUG
-	fprintf(stderr, "  source file: %s [%zu]\n", block->debug_info.source_file, block->debug_info.line);
+	fprintf(stderr, "  source file: %s [%d]\n", block->debug_info.source_file, block->debug_info.line);
 	fprintf(stderr, "  source function: %s\n", block->debug_info.function);
 	fprintf(stderr, "  buffer size: %zu bytes\n", block->debug_info.requested_size);
 #endif /* !NDEBUG */

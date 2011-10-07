@@ -62,16 +62,17 @@ struct s_block_head
 	
 #if !NDEBUG
 
+	/* debugging info for tracking allocations */
 	struct
 	{
-		char *source_file;
-		char *function;
-		int32_t line;
-		buffersize_t requested_size;
+		char *source_file;		/* the source file this block was allocated from */
+		char *function;			/* the function this block was allocated from */
+		int32_t line;			/* the line in the source file that this block was allocated from */
+		buffersize_t requested_size;	/* the size requested (this always differs from the above size) */
 	} debug_info;
 
 #endif
-} ATTRIB_ALIGNED;
+};
 
 /*!
  * Memory pool structure.  Do not touch its members unless you want to break stuff.
@@ -101,12 +102,12 @@ extern const int32_t MAIN_POOL_TAG;
 /*!
  * Initializes the global memory pool.
  */
-void mem_init(void);
+void sys_mem_init(void);
 
 /*!
  * Destroys the global memory pool.  This will not destroy any other pools.
  */
-void mem_shutdown(void);
+void sys_mem_shutdown(void);
 
 /*!
  * Initializes a new memory pool.  Newly-initialized pools have a retain-count of 1.
