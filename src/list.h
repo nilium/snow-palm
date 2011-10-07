@@ -68,11 +68,11 @@ int list_count(const list_t *list);
 /*! Determines whether or not the list is empty.
 	\returns 1 if the list is empty, 0 if not.  Returns -1 if the list is NULL.
 */
-int list_isEmpty(const list_t *list);
+bool list_isEmpty(const list_t *list);
 
 void list_clear(list_t *list);
 void list_remove(listnode_t *node);
-void list_removeValue(list_t *list, object_t *obj);
+bool list_removeValue(list_t *list, object_t *obj);
 int list_removeAllOfValue(list_t *list, object_t *obj);
 
 listnode_t *list_firstNode(list_t *list);
