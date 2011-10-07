@@ -53,20 +53,20 @@ void list_destroy(list_t *list);
 listnode_t *list_insertBefore(listnode_t *node, void *p);
 listnode_t *list_insertAfter(listnode_t *node, void *p);
 
-inline listnode_t *list_append(list_t *list, void *p)
-{
-	return list_insertAfter(list->head.prev, p);
-}
-
-inline listnode_t *list_prepend(list_t *list, void *p)
-{
-	return list_insertBefore(list->head.next, p);
-}
+listnode_t *list_append(list_t *list, void *p);
+listnode_t *list_prepend(list_t *list, void *p);
 
 void *list_at(const list_t *list, int index);
 listnode_t *list_nodeAt(const list_t *list, int index);
 listnode_t *list_nodeWithValue(const list_t *list, void *p);
 
+/*! Gets the length of the list.
+	\returns The length of the list, [0,N).  Returns -1 if the list is NULL.
+*/
+int list_count(const list_t *list);
+/*! Determines whether or not the list is empty.
+	\returns 1 if the list is empty, 0 if not.  Returns -1 if the list is NULL.
+*/
 int list_isEmpty(const list_t *list);
 
 void list_clear(list_t *list);

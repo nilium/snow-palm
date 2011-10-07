@@ -64,6 +64,16 @@ listnode_t *list_insertAfter(listnode_t *node, void *p)
 	return newnode;
 }
 
+listnode_t *list_append(list_t *list, void *p)
+{
+	return list_insertAfter(list->head.prev, p);
+}
+
+listnode_t *list_prepend(list_t *list, void *p)
+{
+	return list_insertBefore(list->head.next, p);
+}
+
 void *list_at(const list_t *list, int index)
 {
 	if (list->size <= (index < 0 ? (list->size + index) : index)) {
@@ -111,9 +121,14 @@ listnode_t *list_nodeWithValue(const list_t *list, void *p)
 	return NULL;
 }
 
+int list_count(const list_t *list)
+{
+	return (list ? list->size : -1);
+}
+
 int list_isEmpty(const list_t *list)
 {
-	return (list->size == 0);
+	return (list ? (list->size == 0) : -1);
 }
 
 void list_clear(list_t *list)
