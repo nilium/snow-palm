@@ -13,6 +13,8 @@ extern "C"
 typedef struct s_class class_t;
 typedef struct s_object *object_t;
 
+typedef void *(*opaque_fn_t)();
+
 struct s_class
 {
 	/* A class's superclass.  The superclass is the class that the
@@ -85,6 +87,11 @@ struct s_class
 
 	/* Returns the current retain count of the object `self`. */
 	int32_t (*retainCount)(object_t self);
+
+	/* Opaque group of function pointers.  Requires C99 support,
+	   as this is a flexible array member.
+	*/
+	opaque_fn_t opaque[];
 };
 
 struct s_object
