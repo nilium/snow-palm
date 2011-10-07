@@ -24,7 +24,7 @@ static const char *mutex_err_deadlock			= "a deadlock will occur if locked";
 
 static pthread_mutexattr_t g_normal_attr;
 static pthread_mutexattr_t g_recursive_attr;
-static pthread_once_t g_mutex_attr_once;
+static pthread_once_t g_mutex_attr_once = PTHREAD_ONCE_INIT;
 
 static void destroy_mutex_attr(void)
 {
