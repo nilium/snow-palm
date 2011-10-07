@@ -11,6 +11,26 @@ extern "C"
 static entity_t *entity_ctor(entity_t *self);
 static void entity_dtor(entity_t *self);
 
+static inline void entity_unsetFlag(entity_t *self, entity_flag_t flag)
+{
+	self->_iflags &= ~flag;
+}
+
+static inline void entity_setFlag(entity_t *self, entity_flag_t flag)
+{
+	self->_iflags |= flag;
+}
+
+static inline void entity_toggleFlag(entity_t *self, entity_flag_t flag)
+{
+	self->_iflags ^= flag;
+}
+
+static inline bool entity_isFlagSet(entity_t *self, entity_flag_t flag)
+{
+	return ((self->_iflags & flag) == flag);
+}
+
 const class_t entity_class = {
 	&object_class,
 	sizeof(entity_t),
