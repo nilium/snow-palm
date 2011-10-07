@@ -26,7 +26,7 @@ typedef enum
 	
 	ENTITY_DISABLED		=0x1<<6,	/*! Entity is currently disabled. */
 	ENTITY_HIDDEN		=0x1<<7,	/*! Entity is currently hidden. */
-} entity_flags_t;
+} entity_flag_t;
 
 typedef struct s_entity entity_t;
 
@@ -39,7 +39,7 @@ struct s_entity
 	entity_t *parent;
 	char *name;
 	/*! internal flags */
-	entity_flags_t _iflags;
+	entity_flag_t _iflags;
 	mat4_t transform;
 	mat4_t _world_transform;
 	quat_t rotation;
