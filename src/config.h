@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 
 /* define NULL ifndef */
 #if !defined(NULL)
@@ -24,11 +25,11 @@
    at least mapped similarly.
 */
 #if !defined(YES)
-#define YES (1)
+#	define YES (1)
 #endif
 
 #if !defined(NO)
-#define NO (0)
+#	define NO (0)
 #endif
 
 /* set up some macros for platforms */
@@ -46,7 +47,7 @@
 #define ARCH_PPC (__powerpc || __powerpc__ || __POWERPC__ || __ppc__ || _M_PPC)
 
 #if (PLATFORM_UNIX || PLATFORM_APPLE) && !defined(__USE_UNIX98)
-#define __USE_UNIX98
+#	define __USE_UNIX98
 #endif
 
 /* specify the use of pthreads on supported platforms */
@@ -57,7 +58,7 @@
 #if USE_PTHREADS
 #	include <pthread.h>
 #else
-#error "No threading API available"
+#	error "No threading API available"
 #endif /* USE_PTHREADS */
 
 #include "logging.h"
