@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"vendor": "Noel Cower",
 	"type": "pdk",
-	"main": "snow-palm",
+	"main": "bin/snow",
 	"title": "Snow-Palm",
 	"icon": "icon.png"
 }
