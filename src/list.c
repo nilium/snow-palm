@@ -7,12 +7,13 @@ extern "C"
 
 const int32_t LIST_ALLOC_TAG = 0x00115700;
 
-void list_init(list_t *list, memory_pool_t *pool)
+void list_init(list_t *list, memory_pool_t *pool, bool weak)
 {
 	list->head.next = list->head.prev = &list->head;
 	list->head.obj = NULL;
 	list->head.list = list;
 	list->pool = mem_retain_pool(pool);
+	list->weak = weak;
 }
 
 void list_destroy(list_t *list)
@@ -21,7 +22,7 @@ void list_destroy(list_t *list)
 	listnode_t *next = list->head.next;
 	while (next) {
 		listnode_t *temp = next->next;
-		if (next->obj) object_release(next->obj);
+		if (next->obj && !list->weak) object_release(next->obj);
 		mem_free(next);
 		next = temp;
 	}
@@ -37,7 +38,7 @@ listnode_t *list_insertBefore(listnode_t *node, object_t *obj)
 	listnode_t *newnode = mem_alloc(node->list->pool, sizeof(listnode_t), LIST_ALLOC_TAG);
 	node->list->size += 1;
 
-	if (obj) object_retain(obj);
+	if (obj && !node->list->weak) object_retain(obj);
 	
 	newnode->list = node->list;
 	newnode->obj = obj;
@@ -56,7 +57,7 @@ listnode_t *list_insertAfter(listnode_t *node, object_t *obj)
 	listnode_t *newnode = mem_alloc(node->list->pool, sizeof(listnode_t), LIST_ALLOC_TAG);
 	node->list->size += 1;
 	
-	if (obj) object_retain(obj);
+	if (obj && !node->list->weak) object_retain(obj);
 
 	newnode->list = node->list;
 	newnode->obj = obj;
@@ -150,7 +151,7 @@ void list_clear(list_t *list)
 
 	while (node) {
 		listnode_t *next = node->next;
-		if (node->obj) object_release(node->obj);
+		if (node->obj && !list->weak) object_release(node->obj);
 		mem_free(node);
 		node = next;
 	}
@@ -160,7 +161,7 @@ void list_remove(listnode_t *node)
 {
 	node->next->prev = node->prev;
 	node->prev->next = node->next;
-	if (node->obj) object_release(node->obj);
+	if (node->obj && !node->list->weak) object_release(node->obj);
 	mem_free(node);
 }
 

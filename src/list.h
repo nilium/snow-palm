@@ -27,6 +27,7 @@ struct s_list
 	listnode_t head;
 	int size;
 	memory_pool_t *pool;
+	bool weak;
 };
 
 /*! \p A Note on List Indices
@@ -46,8 +47,10 @@ struct s_list
 /*! \brief Initializes a linked list.
  *  \param[in] list The list to initialize.
  *  \param[in] pool The pool to allocate list nodes from.
+ *  \param[in] weak Whether or not the pool's objects are weakly stored. If true,
+ *  objects stored in the list are not retained.  If false, they are retained.
  */
-void list_init(list_t *list, memory_pool_t *pool);
+void list_init(list_t *list, memory_pool_t *pool, bool weak);
 /*! \brief Destroys a linked list. */
 void list_destroy(list_t *list);
 
