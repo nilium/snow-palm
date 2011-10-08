@@ -57,7 +57,7 @@ void sys_entity_init(void)
 void sys_entity_shutdown(void)
 {
 	list_destroy(&g_entities);
-	mem_destroy_pool(&g_entity_pool);
+	mem_release_pool(&g_entity_pool);
 }
 
 static entity_t *entity_ctor(entity_t *self)
