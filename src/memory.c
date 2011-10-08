@@ -348,7 +348,7 @@ void mem_free(void *buffer)
 	pool->nextUnused = block;
 	
 free_unlock_and_exit:
-	mutex_lock(&pool->lock);
+	mutex_unlock(&pool->lock);
 }
 
 
