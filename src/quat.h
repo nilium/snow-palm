@@ -21,6 +21,7 @@ void quat_inverse(const quat_t in, quat_t out);
 void quat_negate(const quat_t in, quat_t out);
 
 void quat_multiply(const quat_t left, const quat_t right, quat_t out);
+void quat_multiplyVec3(const quat_t left, const vec3_t right, vec3_t out);
 
 void quat_fromAngleAxis(float angle, float x, float y, float z, quat_t out);
 void quat_fromMat4(const mat4_t mat, quat_t out);

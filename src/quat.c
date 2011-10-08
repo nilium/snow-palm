@@ -68,6 +68,17 @@ void quat_multiply(const quat_t left, const quat_t right, quat_t out)
 	out[3] = w;
 }
 
+void quat_multiplyVec3(const quat_t left, const vec3_t right, vec3_t out)
+{
+	vec3_t lxrCross, lxlrCross;
+	vec3_crossProduct(left, right, lxrCross);
+	vec3_crossProduct(left, lxrCross, lxlrCross);
+	vec3_scale(2.0 * left[3], lxrCross);
+	vec3_scale(2.0, lxlrCross);
+	vec3_add(lxrCross, lxlrCross, lxrCross);
+	vec3_add(right, lxrCross, out);
+}
+
 void quat_fromAngleAxis(float angle, float x, float y, float z, quat_t out)
 {
 	vec3_t v = {x, y, z};
