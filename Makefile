@@ -35,6 +35,7 @@ device: export TARGET_LDFLAGS := $(LDFLAGS) $(CC_DEVICE_LDFLAGS)
 device: export TARGET := device
 device: makefile
 	cd src && $(MAKE)
+	palm-package -X exclude_from_package .
 
 makefile:
 	cd src && ./build-makefile.rb > Makefile
