@@ -16,6 +16,7 @@ static const char *mutex_err_unknown			= "unknown error";
 static const char *mutex_err_invalid_mutex		= "mutex value is invalid";
 static const char *mutex_err_invalid_attr		= "mutex attribute value is invalid";
 static const char *mutex_err_permission			= "the current thread does not hold a lock on the mutex";
+static const char *mutex_err_currently_locked   = "the mutex is currently locked by another thread";
 static const char *mutex_err_no_memory_attr		= "the system cannot allocate enough memory for new mutex attributes";
 static const char *mutex_err_no_memory_mutex	= "the system cannot allocate enough memory for a new mutex";
 static const char *mutex_err_temp_no_memory		= "the system temporarily lacks the memory for a new mutex";
@@ -89,7 +90,7 @@ void mutex_destroy(mutex_t *lock)
 		const char *reason = mutex_err_unknown;
 		switch (error) {
 		case EINVAL: reason = mutex_err_invalid_mutex; break;
-		case EBUSY: reason = mutex_err_permission; break;
+		case EBUSY: reason = mutex_err_currently_locked; break;
 		default: break;
 		}
 		log_error("Error destroying mutex: %s\n", reason);
