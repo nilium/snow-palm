@@ -15,27 +15,30 @@ CC_DEVICE_INCLUDE=-I$(PDK_DIR)/include
 CC_DEVICE_FLAGS=--sysroot=$(PDK_DIR)/arm-gcc/sysroot -Wl,--allow-shlib-undefined \
     -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp $(CC_DEVICE_INCLUDE)
 
-export OUTPUT=snow
+OUTPUT:=snow
 
-all: makefile device
-.PHONY:all host device makefile
+all: host device
+.PHONY:all host device makefile clean
 
+host: export TARGET_OUTPUT := $(OUTPUT)-host
 host: export TARGET_CC := $(CC_HOST)
 host: export TARGET_CFLAGS := $(CFLAGS) $(CC_HOST_FLAGS)
 host: export TARGET_LDFLAGS := $(LDFLAGS) $(CC_HOST_LDFLAGS)
 host: export TARGET := host
-host:
+host: makefile
 	cd src && $(MAKE)
 
+device: export TARGET_OUTPUT := $(OUTPUT)
 device: export TARGET_CC := $(CC_DEVICE)
 device: export TARGET_CFLAGS := $(CFLAGS) $(CC_DEVICE_FLAGS)
 device: export TARGET_LDFLAGS := $(LDFLAGS) $(CC_DEVICE_LDFLAGS)
 device: export TARGET := device
-device:
+device: makefile
 	cd src && $(MAKE)
 
 makefile:
 	cd src && ./build-makefile.rb > Makefile
 
-clean: clean_host clean_device
-	$(RM) -r ../obj/
+clean:
+	$(RM) -r obj/
+	$(RM) -r bin/

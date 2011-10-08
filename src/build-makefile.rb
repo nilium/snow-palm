@@ -1,22 +1,23 @@
 #!/usr/bin/env ruby -w
 
 MAKEFILE_TEMPLATE = <<-EOS
-OBJECT_PREFIX=../obj/$(TARGET)/
-OBJECTS=$(addsuffix .o,$(basename $(SOURCES)))
-OUTPUT_PREFIX=../bin/
+OBJECT_PREFIX:=../obj/$(TARGET)/
+OBJECTS:=$(addprefix $(OBJECT_PREFIX),$(addsuffix .o,$(basename $(SOURCES))))
+OUTPUT_PREFIX:=../bin/
+TARGET_OUTPUT:=$(addprefix $(OUTPUT_PREFIX),$(TARGET_OUTPUT))
 
-all: prepare_build $(OUTPUT)
+all: prepare_build $(TARGET_OUTPUT)
 
 prepare_build:
 	mkdir -p $(OBJECT_PREFIX)
 	mkdir -p $(OUTPUT_PREFIX)
 .PHONY: all prepare_build
 
-$(OUTPUT): $(OBJECTS)
-	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) $(LDFLAGS) $(CFLAGS) $(addprefix $(OBJECT_PREFIX),$^) -o $(addprefix $(OUTPUT_PREFIX),$@)
+$(TARGET_OUTPUT): $(OBJECTS)
+	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) $(LDFLAGS) $(CFLAGS) $^ -o $@
 EOS
 
-COMPILE_STMT = "\t$(TARGET_CC) $(TARGET_CFLAGS) $(CFLAGS) -c -o $(OBJECT_PREFIX)$@ $<"
+COMPILE_STMT = "\t$(TARGET_CC) $(TARGET_CFLAGS) $(CFLAGS) -c -o $@ $<"
 
 INCLUDE_FILE = /^\s*#\s*include\s+"([^"]+)"/
 SOURCE_FILE = /\.c$/
@@ -84,7 +85,7 @@ sources.each {
 	|file, prereqs|
 	
 	basename = File.basename(file, File.extname(file))
-	outString = "#{basename}.o:"
+	outString = "$(addprefix $(OBJECT_PREFIX),#{basename}.o):"
 	
 	if (!prereqs.empty?) then
 		outString += " #{prereqs.join(" ")}"
