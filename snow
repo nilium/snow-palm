@@ -1,8 +1,6 @@
 snow=~/snow-c CD=. flags=srT{
  source=src CD=. filter="Makefile *.host *.device *.c *.s" {
   Makefile
-  Makefile.host
-  Makefile.device
   entity.c
   list.c
   logging.c
@@ -39,48 +37,9 @@ snow=~/snow-c CD=. flags=srT{
  util=src/ CD=. filter="*.rb" {
   build-makefile.rb
  }
- SConstruct
+ exclude_from_package
  Makefile
  NOTES.md
  .gitignore
 }
 
-snowpalm=~/Projects/palm-snow/src filter="*.c *.h *.hpp *.cpp" flags=T {
- Atomic.c
- Log.c
- Atomic.h
- AutoreleasePool.h
- Component.h
- Entity.h
- Log.h
- Math3D.h
- Memory.h
- Message.h
- Mutex.h
- Object.h
- PoolAllocator.h
- RWLock.h
- Thread.h
- ThreadStorage.h
- WeakPointer.h
- Window.h
- snow-config.h
- AutoreleasePool.cpp
- Component.cpp
- Entity.cpp
- Mat4.cpp
- Memory.cpp
- Mutex.cpp
- Object.cpp
- PoolAllocator.cpp
- Quat.cpp
- RWLock.cpp
- Thread.cpp
- ThreadStorage.cpp
- Vec2.cpp
- Vec3.cpp
- Vec4.cpp
- WeakPointer.cpp
- Window.cpp
- main.cpp
-}
