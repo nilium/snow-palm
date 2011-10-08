@@ -29,7 +29,6 @@ void sys_object_init(void)
 {
 	mutex_init(&g_retain_lock, 1);
 	map_init(&g_retain_map, NULL);
-	atexit(sys_object_shutdown);
 }
 
 void sys_object_shutdown(void)
@@ -67,11 +66,11 @@ object_t *object_retain(object_t *self)
 
 	mutex_lock(&g_retain_lock);
 
-	map_getAddr(&g_retain_map, self, (void ***)&retainCount);
+	found = map_getAddr(&g_retain_map, self, (void ***)&retainCount);
 	if (found) {
 		*retainCount += 1;
 	} else {
-		map_insert(&g_retain_map, self, (void *)((uint32_t)1));
+		map_insert(&g_retain_map, self, (void *)((uint32_t)2));
 	}
 
 	mutex_unlock(&g_retain_lock);
@@ -90,7 +89,7 @@ void object_release(object_t *self)
 
 	mutex_lock(&g_retain_lock);
 
-	map_getAddr(&g_retain_map, self, (void ***)&retainCount);
+	found = map_getAddr(&g_retain_map, self, (void ***)&retainCount);
 	if (found) {
 		int count = (*retainCount) - 1;
 		
