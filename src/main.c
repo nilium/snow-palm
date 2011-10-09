@@ -11,6 +11,9 @@
 #include "autoreleasepool.h"
 #include "threadstorage.h"
 
+#include <SDL/SDL.h>
+#include <GLES2/gl2.h>
+
 static void main_shutdown(void)
 {
 	sys_entity_shutdown();
@@ -19,7 +22,7 @@ static void main_shutdown(void)
 	sys_mem_shutdown();
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
 	sys_mem_init();
     sys_object_init();
@@ -30,17 +33,32 @@ int main(int argc, const char *argv[])
 	sys_entity_init();
 	atexit(main_shutdown);
 
-
-	entity_t *entity = entity_new("foo", NULL);
-	entity_t *child = entity_new("bar", entity);
-	entity_t *child2 = entity_new("baz", entity);
-	object_release(entity);
-	object_release(child);
-	object_release(child2);
+	window_create();
 	
+	SDL_Event event;
+	bool running = true;
+
+	glClearColor(0.25, 0.3, 0.45, 1.0);
+
+	while (running) {
+		while (SDL_PollEvent(&event)) {
+			switch (event.type) {
+			case SDL_QUIT:
+				running = false;
+			break;
+			default:
+			break;
+			}
+		}
+
+		glClear(GL_COLOR_BUFFER_BIT);
+		SDL_GL_SwapBuffers();
+	}
+
 	/* do stuff! */
 
 	autoreleasepool_pop();
+	window_destroy();
 
 	return 0;
 }
