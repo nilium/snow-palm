@@ -71,6 +71,7 @@ struct s_object
 
 extern const class_t object_class;
 
+/** The object system depends on the memory system. */
 void sys_object_init(void);
 void sys_object_shutdown(void);
 
