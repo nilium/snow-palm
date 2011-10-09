@@ -7,6 +7,11 @@
 
 #include "dynarray.h"
 
+#if defined(__cplusplus)
+extern "C"
+{
+#endif /* __cplusplus */
+
 #define ARRAY_ALLOC_TAG 0x00A77A70
 
 static array_t *array_ctor(array_t *self);
@@ -156,3 +161,6 @@ void *array_buffer(array_t *self, size_t *byteLength)
 	return self->buf;
 }
 
+#if defined(__cplusplus)
+}
+#endif /* __cplusplus */

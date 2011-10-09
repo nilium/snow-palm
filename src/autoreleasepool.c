@@ -9,6 +9,11 @@
 #include "dynarray.h"
 #include "threadstorage.h"
 
+#if defined(__cplusplus)
+extern "C"
+{
+#endif /* __cplusplus */
+
 #define AUTORELEASE_POOL_ALLOC_TAG 0x0D007011
 
 typedef struct s_autoreleasepool autoreleasepool_t;
@@ -83,3 +88,6 @@ void autoreleasepool_pop()
 	array_resize(base->objectArray, dest);
 }
 
+#if defined(__cplusplus)
+}
+#endif /* __cplusplus */
