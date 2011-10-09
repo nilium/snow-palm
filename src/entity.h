@@ -51,6 +51,7 @@ struct s_entity
 
 extern const class_t entity_class;
 
+/** The entity system depends on the object and memory systems. */
 void sys_entity_init(void);
 void sys_entity_shutdown(void);
 
