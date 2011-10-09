@@ -1,3 +1,10 @@
+/*
+	Transformation matrix
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "matrix.h"
 #include "vec3.h"
 #include "vec4.h"

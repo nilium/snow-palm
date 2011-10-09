@@ -1,3 +1,10 @@
+/*
+	Game entity class
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef ENTITY_H
 
 #define ENTITY_H

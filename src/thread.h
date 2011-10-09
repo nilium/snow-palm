@@ -1,3 +1,10 @@
+/*
+	Threading routines
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef THREAD_H
 
 #define THREAD_H

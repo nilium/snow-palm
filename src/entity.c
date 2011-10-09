@@ -1,3 +1,10 @@
+/*
+	Game entity class
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "entity.h"
 
 #if defined(__cplusplus)

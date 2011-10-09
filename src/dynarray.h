@@ -1,3 +1,10 @@
+/*
+	Dynamic array class
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef DYNARRAY_H
 
 #define DYNARRAY_H

@@ -1,3 +1,10 @@
+/*
+	Autorelease pool routines
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "autoreleasepool.h"
 #include "dynarray.h"
 #include "threadstorage.h"

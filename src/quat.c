@@ -1,3 +1,10 @@
+/*
+	Quaternion maths
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "quat.h"
 #include "vec4.h"
 

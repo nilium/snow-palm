@@ -1,3 +1,10 @@
+/*
+	Map collection
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef MAP_H
 
 #define MAP_H

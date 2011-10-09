@@ -1,3 +1,10 @@
+/*
+	Object system / class
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef OBJECT_H
 
 #define OBJECT_H

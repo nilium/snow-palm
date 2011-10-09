@@ -1,3 +1,10 @@
+/*
+	3D vector maths
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef VEC3_H
 
 #define VEC3_H

@@ -1,3 +1,10 @@
+/*
+	Mutex object
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "mutex.h"
 
 #if USE_PTHREADS

@@ -1,3 +1,10 @@
+/*
+	Autorelease pool routines
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef AUTORELEASEPOOL_H
 
 #define AUTORELEASEPOOL_H

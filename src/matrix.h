@@ -1,9 +1,9 @@
 /*
- * matrix.h
- *
- * Created by Noel R. Cower on 29-09-2011.
- * Copyright (c) 2011 Noel R. Cower.  All rights reserved.
- */
+	Transformation matrix
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
 
 #ifndef MATRIX_H_3CZ1OZK7
 #define MATRIX_H_3CZ1OZK7

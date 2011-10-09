@@ -1,9 +1,10 @@
 /*
- * math3d.h
- *
- * Created by Noel R. Cower on 29-09-2011.
- * Copyright (c) 2011 Noel R. Cower.  All rights reserved.
- */
+	3D math types & macros
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 
 #ifndef MATH3D_H_G3RBNYON
 #define MATH3D_H_G3RBNYON

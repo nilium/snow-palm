@@ -1,3 +1,10 @@
+/*
+	Map collection
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "map.h"
 
 #if defined(__cplusplus)
