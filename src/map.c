@@ -5,6 +5,13 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+static int map_test(mapnode_t *node);
+static mapkey_t mapkey_copy(mapkey_t key);
+static void mapkey_destroy(mapkey_t key);
+static int mapkey_compare(mapkey_t left, mapkey_t right);
+static void *mapvalue_copy(void *value);
+static void mapvalue_destroy(void *value);
+
 const int MAP_ALLOC_TAG = 0x00773300;
 
 #define IS_BLACK(NODE) ((NODE)->color == BLACK)
@@ -17,9 +24,43 @@ const int MAP_ALLOC_TAG = 0x00773300;
 static mapnode_t NIL_NODE = {
 	&NIL_NODE, &NIL_NODE, &NIL_NODE, NULL, (mapkey_t)0, BLACK
 };
+
 static mapnode_t *NIL = &NIL_NODE;
 
-static int map_test(mapnode_t *node);
+const mapops_t g_mapops_default = {
+	mapkey_copy,
+	mapkey_destroy,
+	mapkey_compare,
+	mapvalue_copy,
+	mapvalue_destroy
+};
+
+/* implementation */
+
+static mapkey_t mapkey_copy(mapkey_t key)
+{
+	return key;
+}
+
+static void mapkey_destroy(mapkey_t key)
+{
+	return;
+}
+
+static int mapkey_compare(mapkey_t left, mapkey_t right)
+{
+	return ((left > right) - (left < right));
+}
+
+static void *mapvalue_copy(void *value)
+{
+	return value;
+}
+
+static void mapvalue_destroy(void *value)
+{
+	return;
+}
 
 static inline void node_rotate_left(map_t *map, mapnode_t *node)
 {
@@ -195,13 +236,15 @@ static void mapnode_replace(map_t *map, mapnode_t *node, mapnode_t *with)
 	with->parent = node->parent;
 }
 
-static mapnode_t *mapnode_find(mapnode_t *node, mapkey_t key)
+static mapnode_t *mapnode_find(const map_t *map, mapnode_t *node, mapkey_t key)
 {
 	while (node != NIL) {
-		if (node->key == key)
+		int comparison = map->ops.compare_key(key, node->key);
+
+		if (comparison == 0)
 			break;
 
-		if (key < node->key)
+		if (comparison < 0)
 			node = node->left;
 		else
 			node = node->right;
@@ -210,28 +253,40 @@ static mapnode_t *mapnode_find(mapnode_t *node, mapkey_t key)
 	return node;
 }
 
-void map_init(map_t *map, memory_pool_t *pool)
+void map_init(map_t *map, mapops_t ops, memory_pool_t *pool)
 {
 	map->root = NIL;
 	map->size = 0;
 	map->pool = mem_retain_pool(pool);
+
+	if (ops.copy_key == NULL) ops.copy_key = mapkey_copy;
+	if (ops.destroy_key == NULL) ops.destroy_key = mapkey_destroy;
+	if (ops.compare_key == NULL) ops.compare_key = mapkey_compare;
+	if (ops.copy_value == NULL) ops.copy_value = mapvalue_copy;
+	if (ops.destroy_value == NULL) ops.destroy_value = mapvalue_destroy;
+
+	map->ops = ops;
 }
 
-static void mapnode_destroy_r(mapnode_t *node)
+static void mapnode_destroy_r(map_t *map, mapnode_t *node)
 {
 	mapnode_t *l, *r;
 	if (node == NIL) return;
 	l = node->left;
 	r = node->right;
+
+	map->ops.destroy_key(node->key);
+	map->ops.destroy_value(node->p);
+
 	mem_free(node);
 
-	mapnode_destroy_r(l);
-	mapnode_destroy_r(r);
+	mapnode_destroy_r(map, l);
+	mapnode_destroy_r(map, r);
 }
 
 void map_destroy(map_t *map)
 {
-	mapnode_destroy_r(map->root);
+	mapnode_destroy_r(map, map->root);
 	map->root = NULL;
 	map->size = 0;
 	mem_release_pool(map->pool);
@@ -283,10 +338,12 @@ void map_insert(map_t *map, mapkey_t key, void *p)
 	mapnode_t *insert;
 
 	while (parent != NIL) {
-		if (key == parent->key) {
-			parent->p = p;
+		int comparison = map->ops.compare_key(key, parent->key);
+		if (comparison == 0) {
+			map->ops.destroy_value(parent->p);
+			parent->p = map->ops.copy_value(p);
 			return;
-		} else if (key < parent->key) {
+		} else if (comparison < 0) {
 			if (parent->left != NIL) {
 				parent = parent->left;
 				continue;
@@ -294,7 +351,7 @@ void map_insert(map_t *map, mapkey_t key, void *p)
 				slot = &parent->left;
 				break;
 			}
-		} else if (key > parent->key) {
+		} else {
 			if (parent->right != NIL) {
 				parent = parent->right;
 				continue;
@@ -308,8 +365,8 @@ void map_insert(map_t *map, mapkey_t key, void *p)
 	map->size += 1;
 	insert = (mapnode_t *)mem_alloc(map->pool, sizeof(mapnode_t), MAP_ALLOC_TAG);
 	insert->left = insert->right = NIL;
-	insert->key = key;
-	insert->p = p;
+	insert->key = map->ops.copy_key(key);
+	insert->p = map->ops.copy_value(p);
 	insert->color = RED;
 	insert->parent = parent;
 
@@ -353,10 +410,17 @@ void map_insert(map_t *map, mapkey_t key, void *p)
 
 bool map_remove(map_t *map, mapkey_t key)
 {
-	mapnode_t *node = mapnode_find(map->root, key);
+	mapnode_t *node = mapnode_find(map, map->root, key);
 	
 	if (node != NIL) {
+		void *p = node->p;
+		key = node->key;
+		
 		mapnode_remove(map, node);
+
+		map->ops.destroy_key(key);
+		map->ops.destroy_value(p);
+
 		return true;
 	}
 
@@ -368,24 +432,24 @@ int map_size(const map_t *map)
 	return map->size;
 }
 
-bool map_get(const map_t *map, mapkey_t key, void **result)
+void *map_get(const map_t *map, mapkey_t key)
 {
-	const mapnode_t *node = mapnode_find(map->root, key);
+	const mapnode_t *node = mapnode_find(map, map->root, key);
 
-	if (node != NIL && result)
-		*result = node->p;
+	if (node != NIL)
+		return node->p;
 
-	return (node != NIL);
+	return NULL;
 }
 
-bool map_getAddr(map_t *map, mapkey_t key, void ***result)
+void **map_getAddr(map_t *map, mapkey_t key)
 {
-	mapnode_t *node = mapnode_find(map->root, key);
+	mapnode_t *node = mapnode_find(map, map->root, key);
 
-	if (node != NIL && result)
-		*result = &node->p;
+	if (node != NIL)
+		return &node->p;
 
-	return (node != NIL);
+	return NULL;
 }
 
 static void map_getValues_r(const mapnode_t *node, mapkey_t *keys, void **values, int *count, size_t capacity)

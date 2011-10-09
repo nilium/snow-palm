@@ -12,6 +12,7 @@ extern "C"
 
 typedef struct s_mapnode mapnode_t;
 typedef struct s_map map_t;
+typedef struct s_mapops mapops_t;
 /* typedef int (*comparator_fn)(void *left, void *right); */
 typedef void *mapkey_t;
 
@@ -29,15 +30,27 @@ struct s_mapnode
 	mapnode_color_t color;
 };
 
+struct s_mapops
+{
+	mapkey_t (*copy_key)(mapkey_t key);
+	void (*destroy_key)(mapkey_t key);
+	int (*compare_key)(mapkey_t left, mapkey_t right);
+	void *(*copy_value)(void *value);
+	void (*destroy_value)(void *value);
+};
+
 struct s_map
 {
 	mapnode_t *root;
 	int size;
 /*	comparator_fn compare; */
 	memory_pool_t *pool;
+	mapops_t ops;
 };
 
-void map_init(map_t *map, memory_pool_t *pool);
+extern const mapops_t g_mapops_default;
+
+void map_init(map_t *map, mapops_t ops, memory_pool_t *pool);
 void map_destroy(map_t *map);
 
 void map_insert(map_t *map, mapkey_t key, void *p);
@@ -45,9 +58,9 @@ bool map_remove(map_t *map, mapkey_t key);
 
 int map_size(const map_t *map);
 
-bool map_get(const map_t *map, mapkey_t key, void **result);
+void *map_get(const map_t *map, mapkey_t key);
 /* ho-ho, now we're cooking with evil */
-bool map_getAddr(map_t *map, mapkey_t key, void ***result);
+void **map_getAddr(map_t *map, mapkey_t key);
 int map_getValues(const map_t *map, mapkey_t *keys, void **values, size_t capacity);
 
 #if defined(__cplusplus)
