@@ -1,3 +1,10 @@
+/*
+	Window creation/destruction routines
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "window.h"
 #include <SDL/SDL.h>
 
