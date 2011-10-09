@@ -10,6 +10,10 @@
 
 #include <stdio.h>
 
+#if PLATFORM_TOUCHPAD
+#include <PDL.h>
+#endif
+
 /*! Force the inclusion of logging macros regardless of release/debug mode. */
 #if !defined(FORCE_LOGGING)
 #define FORCE_LOGGING 0
@@ -36,16 +40,22 @@ void log_fatal_(const char *format, int error, ...);
 */
 #define log_fatal(FORMAT, ERROR, args...) log_fatal_("Fatal Error [%s:%s:%d]: " FORMAT, (ERROR), __FILE__, __FUNCTION__, __LINE__, ##args)
 
+#if PLATFORM_TOUCHPAD
+#define log(STR, args...) PDL_Log((STR), ##args)
+#else
+#define log(STR, args...) fprintf(stderr, (STR), ##args)
+#endif
+
 /* if debugging or logging is forcibly enabled, then provide additional logging macros */
 #if !defined(NDEBUG) || FORCE_LOGGING
 #if !defined(log_error)
-#define log_error(FORMAT, args...)   fprintf(stderr, "Error [%s:%s:%d]: "   FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
+#define log_error(FORMAT, args...)   log("Error [%s:%s:%d]: "   FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
 #if !defined(log_warning)
-#define log_warning(FORMAT, args...) fprintf(stderr, "Warning [%s:%s:%d]: " FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
+#define log_warning(FORMAT, args...) log("Warning [%s:%s:%d]: " FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
 #if !defined(log_note)
-#define log_note(FORMAT, args...)    fprintf(stderr, "Note [%s:%s:%d]: "    FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
+#define log_note(FORMAT, args...)    log("Note [%s:%s:%d]: "    FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
 #else
 /* unless previously defined, log macros do nothing in release builds */
