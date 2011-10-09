@@ -1,3 +1,10 @@
+/*
+	Linked list object container
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef LIST_H
 
 #define LIST_H

@@ -1,3 +1,10 @@
+/*
+	Object system / class
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "object.h"
 #include "map.h"
 #include "mutex.h"
@@ -45,7 +52,7 @@ static object_t *object_ctor(object_t *self)
 
 static void object_dtor(object_t *self)
 {
-	/* TODO: weak reference table, signal object deletion */
+	/* TODO: weak reference table->signal object deletion */
 }
 
 int object_compare(object_t *self, object_t *other)

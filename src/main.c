@@ -1,3 +1,10 @@
+/*
+	Snow entrypoint
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "config.h"
 #include "memory.h"
 #include "entity.h"

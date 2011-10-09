@@ -1,3 +1,10 @@
+/*
+	Logging routines / macros
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "logging.h"
 #include <stdarg.h>
 #include <stdlib.h>

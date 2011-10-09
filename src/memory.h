@@ -1,9 +1,9 @@
 /*
- * memory.h
- *
- * Created by Noel R. Cower on 16-09-2011.
- * Copyright (c) 2011 Noel R. Cower.  All rights reserved.
- */
+	Memory pool system
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
 
 #ifndef MEMORY_H_SA7RAUP3
 #define MEMORY_H_SA7RAUP3

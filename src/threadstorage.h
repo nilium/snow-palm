@@ -1,3 +1,10 @@
+/*
+	Thread-local storage system
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef THREADSTORAGE_H
 
 #define THREADSTORAGE_H

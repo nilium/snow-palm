@@ -1,3 +1,10 @@
+/*
+	4D vector maths
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "vec4.h"
 
 #if defined(__cplusplus)

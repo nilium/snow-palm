@@ -1,3 +1,10 @@
+/*
+	Dynamic array class
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "dynarray.h"
 
 #define ARRAY_ALLOC_TAG 0x00A77A70

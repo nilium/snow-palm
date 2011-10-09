@@ -1,3 +1,10 @@
+/*
+	4D vector maths
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef VEC4_H
 
 #define VEC4_H

@@ -1,3 +1,10 @@
+/*
+	Logging routines / macros
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef LOG_H_B31TON6M
 #define LOG_H_B31TON6M
 

@@ -1,10 +1,9 @@
 /*
- * memory.c
- *
- * Created by Noel R. Cower on 16-09-2011.
- * Copyright (c) 2011 Noel R. Cower.  All rights reserved.
- */
+	Memory pool system
+	Written by Noel Cower
 
+	See LICENSE.md for license information
+*/
 
 #include "memory.h"
 #include <stdlib.h>

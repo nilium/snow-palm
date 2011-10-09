@@ -1,3 +1,10 @@
+/*
+	Mutex object
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef MUTEX_H
 
 #define MUTEX_H

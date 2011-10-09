@@ -1,3 +1,10 @@
+/*
+	Quaternion maths
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef QUAT_H
 
 #define QUAT_H

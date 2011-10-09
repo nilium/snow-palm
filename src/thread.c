@@ -1,3 +1,10 @@
+/*
+	Threading routines
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #include "thread.h"
 
 #if defined(__cplusplus)

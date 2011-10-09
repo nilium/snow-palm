@@ -1,3 +1,10 @@
+/*
+	Configuration macros & project-wide includes
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef CONFIG_H
 
 #define CONFIG_H
