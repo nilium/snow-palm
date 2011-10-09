@@ -70,5 +70,9 @@
 
 #include "logging.h"
 
+#if PLATFORM_TOUCHPAD
+#include <PDL.h>
+#endif
+
 #endif /* end of include guard: CONFIG_H */
 
