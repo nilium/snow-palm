@@ -24,7 +24,15 @@ struct s_autoreleasepool
 	array_t *baseArray;
 };
 
-static tlskey_t g_arp_base_key = (tlskey_t)"arp_base_key";
+/* Note: this is a hack.  The key is a pointer to itself - this does not exactly
+ * guarantee uniqueness, but the assumption is that the global will be given a
+ * unique place in memory and the key will in turn be unique in that sense.  The
+ * problem is that this goes along with the assumption that all other TLS keys
+ * are unique and do not clash with this.  While I can guarantee this in my code,
+ * I cannot reasonably guarantee it the moment someone else touches it.  Hence
+ * this note - consider yourself warned, you are likely to be eaten by a grue.
+ */
+static tlskey_t g_arp_base_key = (tlskey_t)&g_arp_base_key;
 
 static void arpool_tls_dtor(tlskey_t key, void *value)
 {
