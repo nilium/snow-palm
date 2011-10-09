@@ -1,6 +1,8 @@
 snow=~/snow-c CD=. flags=srT{
  source=src CD=. filter="Makefile *.host *.device *.c *.s" {
   Makefile
+  autoreleasepool.c
+  dynarray.c
   entity.c
   list.c
   logging.c
@@ -12,11 +14,14 @@ snow=~/snow-c CD=. flags=srT{
   object.c
   quat.c
   thread.c
+  threadstorage.c
   vec3.c
   vec4.c
  }
  include=src CD=. filter="*.h" {
+  autoreleasepool.h
   config.h
+  dynarray.h
   entity.h
   list.h
   logging.h
@@ -28,6 +33,7 @@ snow=~/snow-c CD=. flags=srT{
   object.h
   quat.h
   thread.h
+  threadstorage.h
   vec3.h
   vec4.h
  }
