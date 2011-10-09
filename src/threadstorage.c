@@ -66,6 +66,7 @@ void sys_tls_init(void)
 
 void sys_tls_shutdown(void)
 {
+	tls_specific_dtor(pthread_getspecific(g_tls_key));
 	pthread_key_delete(&g_tls_key);
 }
 
