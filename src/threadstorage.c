@@ -7,6 +7,11 @@
 
 #include "threadstorage.h"
 
+#if defined(__cplusplus)
+extern "C"
+{
+#endif /* __cplusplus */
+
 #if USE_PTHREADS
 
 #define DTOR_KV_CAPACITY 32
@@ -113,4 +118,8 @@ void *tls_get(tlskey_t key)
 #error "No thread-local storage implementation available on this platform"
 
 #endif
+
+#if defined(__cplusplus)
+}
+#endif /* __cplusplus */
 
