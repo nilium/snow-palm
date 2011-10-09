@@ -1,3 +1,10 @@
+/*
+	Window creation/destruction routines
+	Written by Noel Cower
+
+	See LICENSE.md for license information
+*/
+
 #ifndef WINDOW_H
 
 #define WINDOW_H
