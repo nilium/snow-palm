@@ -30,8 +30,8 @@ typedef mapkey_t tlskey_t;
 typedef void (*tls_destructor_t)(tlskey_t key, void *value);
 
 /** TLS depends on the memory and object systems */
-void sys_tls_init();
-void sys_tls_shutdown();
+void sys_tls_init(void);
+void sys_tls_shutdown(void);
 
 /*! \brief Places a pointer in thread-local storage.
 	\param key The key to map the value to in TLS.
