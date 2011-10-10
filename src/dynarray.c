@@ -135,6 +135,22 @@ size_t array_capacity(const array_t *self)
 	return self->capacity;
 }
 
+void array_sort(array_t *self, int (*comparator)(const void *left, const void *right))
+{
+	if (self->size < 2)
+		return;
+
+	qsort(self->buf, self->size*self->obj_size, self->obj_size, comparator);
+}
+
+void *array_atIndex(array_t *self, size_t index)
+{
+	if (self->size <= index)
+		return NULL;
+	
+	return (self->buf + (index * self->obj_size));
+}
+
 bool array_push(array_t *self, const void *value)
 {
 	if (array_reserve(self, self->size + 1)) {

@@ -51,7 +51,9 @@ bool array_reserve(array_t *self, size_t capacity);
 size_t array_size(const array_t *self);
 size_t array_capacity(const array_t *self);
 
+void array_sort(array_t *self, int (*comparator)(const void *left, const void *right));
 
+void *array_atIndex(array_t *self, size_t index);
 
 bool array_push(array_t *self, const void *value);
 void array_pop(array_t *self, void *result);
