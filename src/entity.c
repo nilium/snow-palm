@@ -12,7 +12,7 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-#define ENTITY_POOL_SIZE ((1024 * sizeof(struct s_entity)))
+#define ENTITY_POOL_SIZE ((1024 * sizeof(entity_t)))
 #define ENTITY_POOL_TAG (0x0C0DFEED)
 
 static entity_t *entity_ctor(entity_t *self);
