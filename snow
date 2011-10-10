@@ -17,6 +17,7 @@ snow=~/snow-c CD=. flags=srT{
   threadstorage.c
   vec3.c
   vec4.c
+  window_touchpad.c
  }
  include=src CD=. filter="*.h" {
   autoreleasepool.h
@@ -36,6 +37,7 @@ snow=~/snow-c CD=. flags=srT{
   threadstorage.h
   vec3.h
   vec4.h
+  window.h
  }
  tests=../tests CD=. filter="*.c *.h *.s" {
   treetest.c
