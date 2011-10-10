@@ -56,18 +56,31 @@ struct s_entity
 	vec3_t scale;
 };
 
-extern const class_t entity_class;
+extern const class_t _entity_class;
+#define entity_class (&_entity_class)
 
 /** The entity system depends on the object and memory systems. */
 void sys_entity_init(void);
 void sys_entity_shutdown(void);
 
-entity_t *entity_new(const char *name, entity_t *parent);
+/*! Allocates a new instance of the given entity class.
+	\returns A new instance of the given entity class, or NULL if the class
+	doesn't inherit from ::entity_class.
+*/
+entity_t *entity_new(class_t *cls);
+/*! Initializes the given entity. */
+entity_t *entity_init(entity_t *self, const char *name, entity_t *parent);
 
+/*! Adds a child to the entity. */
 void entity_addChild(entity_t *self, entity_t *child);
+/*! Removes the entity from its parent entity. */
 void entity_removeFromParent(entity_t *self);
 
+/*! Set the entity's name to a copy of the name string provided, if any. */
 void entity_setName(entity_t *self, const char *name);
+/*! Get the entity's name.  This is not a copy of the name string, so you
+    must not free it.
+*/
 const char *entity_getName(const entity_t *self);
 
 /*! \brief Sets the position of the entity relative to its parent. */

@@ -12,10 +12,10 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-#define ENTITY_POOL_SIZE ((1024 * sizeof(entity_t)))
+#define ENTITY_POOL_SIZE ((4096 * sizeof(listnode_t)) + (1024 * sizeof(entity_t)))
 #define ENTITY_POOL_TAG (0x0C0DFEED)
 
-static entity_t *entity_ctor(entity_t *self);
+static entity_t *entity_ctor(entity_t *self, memory_pool_t *pool);
 static void entity_dtor(entity_t *self);
 static void entity_invalidateTransform(entity_t *self, bool invalidLocal, bool invalidWorld);
 static void entity_buildMatrices(entity_t *self);
@@ -40,8 +40,8 @@ static inline bool entity_isFlagSet(entity_t *self, entity_flag_t flag)
 	return ((self->_iflags & flag) == flag);
 }
 
-const class_t entity_class = {
-	&object_class,
+const class_t _entity_class = {
+	object_class,
 	sizeof(entity_t),
 
 	(constructor_t)entity_ctor,
@@ -50,34 +50,34 @@ const class_t entity_class = {
 	object_compare,
 };
 
-memory_pool_t g_entity_pool;
-memory_pool_t *const entity_memory_pool = &g_entity_pool;
+memory_pool_t _g_entity_pool;
+#define g_entity_pool (&_g_entity_pool)
 
-list_t g_entities;
+static list_t g_entities;
 
 void sys_entity_init(void)
 {
-	mem_init_pool(&g_entity_pool, ENTITY_POOL_SIZE, ENTITY_POOL_TAG);
-	list_init(&g_entities, &g_entity_pool, true);
+	mem_init_pool(g_entity_pool, ENTITY_POOL_SIZE, ENTITY_POOL_TAG);
+	list_init(&g_entities, g_entity_pool, true);
 }
 
 void sys_entity_shutdown(void)
 {
 	list_destroy(&g_entities);
-	mem_release_pool(&g_entity_pool);
+	mem_release_pool(g_entity_pool);
 }
 
-static entity_t *entity_ctor(entity_t *self)
+static entity_t *entity_ctor(entity_t *self, memory_pool_t *pool)
 {
-	self = (entity_t *)self->isa->super->ctor((object_t *)self);
+	self = (entity_t *)self->isa->super->ctor((object_t *)self, pool);
 	if (self) {
 		vec3_copy(g_vec3_zero, self->position);
 		vec3_copy(g_vec3_one, self->scale);
 		quat_identity(self->rotation);
 		mat4_identity(self->transform);
 
-		list_init(&self->children, &g_entity_pool, false);
-		list_init(&self->components, &g_entity_pool, false);
+		list_init(&self->children, g_entity_pool, false);
+		list_init(&self->components, g_entity_pool, false);
 
 		self->parent = NULL;
 		self->name = NULL;
@@ -108,13 +108,18 @@ static void entity_dtor(entity_t *self)
 	list_destroy(&self->components);
 }
 
-entity_t *entity_new(const char *name, entity_t *parent)
+entity_t *entity_new(class_t *cls)
 {
-	entity_t *self = (entity_t *)object_new(&entity_class, &g_entity_pool);
+	if (!class_isKindOf(cls, entity_class))
+		return NULL;
 
-	if (name != NULL) {
+	entity_t *self = object_new(entity_class, g_entity_pool);
+}
+
+entity_t *entity_init(entity_t *self, const char *name, entity_t *parent)
+{
+	if (name != NULL)
 		entity_setName(self, name);
-	}
 
 	if (parent)
 		entity_addChild(parent, self);
@@ -148,10 +153,10 @@ void entity_setName(entity_t *self, const char *name)
 {
 	if (self->name)
 		mem_free(self->name);
-	
+
 	if (name) {
 		size_t len = strlen(name);
-		self->name = mem_alloc(&g_entity_pool, len + 1, ENTITY_POOL_TAG);
+		self->name = mem_alloc(NULL, len + 1, ENTITY_POOL_TAG);
 		memcpy(self->name, name, len + 1);
 	} else {
 		self->name = NULL;
@@ -249,7 +254,7 @@ static void entity_invalidateTransform(entity_t *self, bool invalidLocal, bool i
 {
 	if (entity_isFlagSet(self, DIRTY_TRANSFORM | DIRTY_WORLD))
 		return;
-	
+
 	entity_flag_t flag = 0;
 	if (invalidLocal) flag |= DIRTY_TRANSFORM | DIRTY_WORLD;
 	if (invalidWorld) flag |= DIRTY_WORLD;
@@ -267,13 +272,17 @@ static void entity_invalidateTransform(entity_t *self, bool invalidLocal, bool i
 static void entity_buildMatrices(entity_t *self)
 {
 	mat4_t build;
+	/* rebuild local transform */
 	if (entity_isFlagSet(self, DIRTY_TRANSFORM)) {
 		mat4_fromQuat(self->rotation, build);
 		mat4_scale(build, vec3_expand(self->scale), build);
 		mat4_translate(vec3_expand(self->position), build);
 		mat4_copy(build, self->transform);
+		goto rebuild_world_transform;
 	}
+	/* rebuild world transform */
 	if (entity_isFlagSet(self, DIRTY_WORLD)) {
+rebuild_world_transform:
 		if (self->parent) {
 			entity_getWorldTransform(self, build);
 			mat4_multiply(build, self->transform, self->worldTransform);

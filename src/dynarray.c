@@ -14,11 +14,11 @@ extern "C"
 
 #define ARRAY_ALLOC_TAG 0x00A77A70
 
-static array_t *array_ctor(array_t *self);
+static array_t *array_ctor(array_t *self, memory_pool_t *pool);
 static void array_dtor(array_t *self);
 
-const class_t array_class = {
-	&object_class,
+const class_t _array_class = {
+	object_class,
 	sizeof(array_t),
 
 	(constructor_t)array_ctor,
@@ -27,12 +27,12 @@ const class_t array_class = {
 	object_compare
 };
 
-static array_t *array_ctor(array_t *self)
+static array_t *array_ctor(array_t *self, memory_pool_t *pool)
 {
 	self->size = 0;
 	self->capacity = 0;
 	self->buf = NULL;
-	self->pool = NULL;
+	self->pool = mem_retain_pool(pool);
 	self->obj_size = 0;
 
 	return self;
@@ -47,11 +47,8 @@ static void array_dtor(array_t *self)
 	self->pool = NULL;
 }
 
-array_t *array_new(size_t objectSize, size_t size, size_t capacity, memory_pool_t *pool)
+array_t *array_init(array_t *self, size_t objectSize, size_t size, size_t capacity)
 {
-	array_t *self = (array_t *)object_new(&array_class, pool);
-
-	self->pool = mem_retain_pool(pool);
 	self->obj_size = objectSize;
 	
 	array_reserve(self, capacity);
@@ -62,9 +59,12 @@ array_t *array_new(size_t objectSize, size_t size, size_t capacity, memory_pool_
 
 array_t *array_copy(array_t *other)
 {
-	array_t *self = array_new(other->obj_size, other->size, other->capacity, other->pool);
+	array_t *self = array_init(object_new(array_class, other->pool),
+		other->obj_size, other->size, other->capacity);
+
 	if (self->size && self->buf)
 		memcpy(self->buf, other->buf, self->size * self->obj_size);
+
 	return self;
 }
 

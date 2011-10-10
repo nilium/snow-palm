@@ -20,7 +20,7 @@ extern "C"
 typedef struct s_class class_t;
 typedef struct s_object object_t;
 
-typedef object_t *(*constructor_t)(object_t *self);
+typedef object_t *(*constructor_t)(object_t *self, memory_pool_t *pool);
 typedef void (*destructor_t)(object_t *self);
 typedef int (*comparator_t)(object_t *self, object_t *other);
 
@@ -76,7 +76,8 @@ struct s_object
 	const class_t *isa;
 };
 
-extern const class_t object_class;
+extern const class_t _object_class;
+#define object_class (&_object_class)
 
 /** The object system depends on the memory system. */
 void sys_object_init(void);
@@ -99,6 +100,18 @@ object_t *object_retain(object_t *self);
 object_t *object_autorelease(object_t *self);
 void object_release(object_t *self);
 int32_t object_retainCount(object_t *self);
+/*! Determines whether the object is a kind of the class provided.
+
+	\returns True the object inherits from this class or is an instance of the
+	class, otherwise false.
+*/
+bool object_isKindOf(object_t *self, class_t *cls);
+/*! Determines whether the object is an instance of the specific class provided.
+	\returns True if the object is an instance of the class in question,
+	otherwise false.  The object cannot be a descendant of the class, but must
+	be an instance of that specific class.
+*/
+bool object_isClass(object_t *self, class_t *cls);
 
 /* Object allocation and deletion functions.
 
@@ -106,9 +119,18 @@ int32_t object_retainCount(object_t *self);
    you are required to pass either NULL or a valid memory pool to object_new.
    If the pool is NULL, the object will be allocated out of the global memory
    pool, as noted in mem_alloc (see memory.h).
+
+   As a note, you should never explicitly call object_delete unless you're
+   desperate to kill a particular object.  Leave it to the reference counting
+   to determine when an object needs to be killed, that way it can be assumed
+   that there are no strong references to the object in possession anymore.
 */
 object_t *object_new(const class_t *cls, memory_pool_t *pool);
 void object_delete(object_t *object);
+
+/*! Determines whether or not a class is also a kind of another class (i.e., if
+	class inherited from the other class at some point). */
+bool class_isKindOf(const class_t *cls, const class_t *other);
 
 #if defined(__cplusplus)
 }
