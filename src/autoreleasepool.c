@@ -55,8 +55,8 @@ void autoreleasepool_push()
 	autoreleasepool_t *base = (autoreleasepool_t *)tls_get(g_arp_base_key);
 	if (!base) {
 		base = (autoreleasepool_t *)mem_alloc(NULL, sizeof(autoreleasepool_t), AUTORELEASE_POOL_ALLOC_TAG);
-		base->objectArray = array_new(sizeof(object_t *), 0, 32, NULL);
-		base->baseArray = array_new(sizeof(size_t), 1, 8, NULL);
+		base->objectArray = array_init(object_new(array_class, NULL), sizeof(object_t *), 0, 32);
+		base->baseArray = array_init(object_new(array_class, NULL), sizeof(size_t), 1, 8);
 		tls_put(g_arp_base_key, base, arpool_tls_dtor);
 		*(size_t *)array_buffer(base->baseArray, NULL) = 0;
 	} else {

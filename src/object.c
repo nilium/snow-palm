@@ -15,11 +15,11 @@ extern "C"
 #endif /* __cplusplus */
 
 /* The basic object constructor. */
-static object_t *object_ctor(object_t *self);
+static object_t *object_ctor(object_t *self, memory_pool_t *pool);
 /* The basic object destructor. */
 static void object_dtor(object_t *self);
 
-const class_t object_class = {
+const class_t _object_class = {
 	NULL,
 	sizeof(object_t),
 
@@ -44,8 +44,9 @@ void sys_object_shutdown(void)
 	mutex_destroy(&g_retain_lock);
 }
 
-static object_t *object_ctor(object_t *self)
+static object_t *object_ctor(object_t *self, memory_pool_t *pool)
 {
+	(void)pool;
 	/* retain count 1, NOP */
 	return self;
 }
@@ -141,7 +142,7 @@ object_t *object_new(const class_t *cls, memory_pool_t *pool)
 	/* assign the given class (cls) to the object's `isa` pointer */
 	self->isa = cls;
 	/* construct/initialize the object (see note on constructors in object.h) */
-	self = cls->ctor(self);
+	self = cls->ctor(self, pool);
 	
 	/* return the constructed object */
 	return self;
@@ -155,6 +156,16 @@ void object_delete(object_t *object)
 	object->isa->dtor(object);
 	memset(object, 0, object->isa->size);
 	mem_free(object);
+}
+
+bool class_isKindOf(const class_t *cls, const class_t *other)
+{
+	while (cls) {
+		if (cls == other)
+			return true;
+		cls = cls->super;
+	}
+	return false;
 }
 
 #if defined(__cplusplus)
