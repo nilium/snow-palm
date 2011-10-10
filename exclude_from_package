@@ -5,3 +5,4 @@ Makefile
 tests
 NOTES.md
 exclude_from_package
+./snow
