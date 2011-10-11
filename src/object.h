@@ -127,6 +127,8 @@ bool object_isClass(object_t *self, class_t *cls);
 */
 object_t *object_new(const class_t *cls, memory_pool_t *pool);
 void object_delete(object_t *object);
+#define obj_new(CLASS, POOL, args...) \
+	CLASS##_init((CLASS##_t *)object_new((CLASS##_class), (POOL)), ##args)
 
 /*! Stores a weak reference to value at the specified address.
 	This will write value to the given address.  If NULL, it will also cease
