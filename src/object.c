@@ -105,7 +105,7 @@ void sys_object_shutdown(void)
 	mem_release_pool(&g_refpool);
 	mem_release_pool(&g_retain_pool);
 #ifndef NDEBUG
-	log_note("Peak object allocations were %zu objects\n", max_objects);
+	log_note("Peak object allocation count was %zu objects\n", max_objects);
 #endif
 }
 
@@ -184,7 +184,7 @@ void object_release(object_t *self)
 
 	mutex_lock(&g_retain_lock);
 
-	retainCount = map_getAddr(&g_retain_map, (mapkey_t)self);
+	retainCount = (uint32_t *)map_getAddr(&g_retain_map, (mapkey_t)self);
 	if (retainCount) {
 		int count = (*retainCount) - 1;
 		
@@ -274,7 +274,7 @@ void object_storeWeak(object_t *obj, object_t **store)
 		}
 
 		list_t *list = map_get(&g_refmap, *prevValue);
-		list_removeValue(list, store);
+		list_removeValue(list, (object_t *)store);
 
 		if (obj) {
 			*prevValue = obj;
