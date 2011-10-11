@@ -8,6 +8,7 @@
 #include "object.h"
 #include "map.h"
 #include "mutex.h"
+#include "autoreleasepool.h"
 
 #if defined(__cplusplus)
 extern "C"
@@ -86,6 +87,7 @@ object_t *object_retain(object_t *self)
 
 object_t *object_autorelease(object_t *self)
 {
+	autoreleasepool_addObject(self);
 	return self;
 }
 
