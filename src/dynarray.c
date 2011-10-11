@@ -29,11 +29,15 @@ const class_t _array_class = {
 
 static array_t *array_ctor(array_t *self, memory_pool_t *pool)
 {
-	self->size = 0;
-	self->capacity = 0;
-	self->buf = NULL;
-	self->pool = mem_retain_pool(pool);
-	self->obj_size = 0;
+	self = (array_t *)self->isa->super->ctor(self, pool);
+
+	if (self) {
+		self->size = 0;
+		self->capacity = 0;
+		self->buf = NULL;
+		self->pool = mem_retain_pool(pool);
+		self->obj_size = 0;
+	}
 
 	return self;
 }
@@ -45,6 +49,8 @@ static void array_dtor(array_t *self)
 	self->size = self->capacity = self->obj_size = 0;
 	mem_release_pool(self->pool);
 	self->pool = NULL;
+
+	self->isa->super->dtor(self);
 }
 
 array_t *array_init(array_t *self, size_t objectSize, size_t size, size_t capacity)
