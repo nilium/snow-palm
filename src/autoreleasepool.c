@@ -20,8 +20,8 @@ typedef struct s_autoreleasepool autoreleasepool_t;
 
 struct s_autoreleasepool
 {
-	array_t *objectArray;
-	array_t *baseArray;
+	array_t *object_array;
+	array_t *base_array;
 };
 
 /* Note: this is a hack.  The key is a pointer to itself - this does not exactly
@@ -38,14 +38,14 @@ static void arpool_tls_dtor(tlskey_t key, void *value)
 {
 	autoreleasepool_t *base = (autoreleasepool_t *)value;
 	if (base) {
-		size_t len = array_size(base->objectArray);
-		object_t **objs = (object_t **)array_buffer(base->objectArray, NULL);
+		size_t len = array_size(base->object_array);
+		object_t **objs = (object_t **)array_buffer(base->object_array, NULL);
 		while (len) {
 			object_release(objs[--len]);
 		}
 
-		object_release(base->objectArray);
-		object_release(base->baseArray);
+		object_release(base->object_array);
+		object_release(base->base_array);
 		mem_free(base);
 	}
 }
@@ -55,17 +55,17 @@ void autoreleasepool_push()
 	autoreleasepool_t *base = (autoreleasepool_t *)tls_get(g_arp_base_key);
 	if (!base) {
 		base = (autoreleasepool_t *)mem_alloc(NULL, sizeof(autoreleasepool_t), AUTORELEASE_POOL_ALLOC_TAG);
-		base->objectArray = array_init(object_new(array_class, NULL), sizeof(object_t *), 0, 32);
-		base->baseArray = array_init(object_new(array_class, NULL), sizeof(size_t), 1, 8);
+		base->object_array = array_init(object_new(array_class, NULL), sizeof(object_t *), 0, 32);
+		base->base_array = array_init(object_new(array_class, NULL), sizeof(size_t), 1, 8);
 		tls_put(g_arp_base_key, base, arpool_tls_dtor);
-		*(size_t *)array_buffer(base->baseArray, NULL) = 0;
+		*(size_t *)array_buffer(base->base_array, NULL) = 0;
 	} else {
-		size_t baseIndex = array_size(base->objectArray);
-		array_push(base->baseArray, &baseIndex);
+		size_t base_index = array_size(base->object_array);
+		array_push(base->base_array, &base_index);
 	}
 }
 
-void autoreleasepool_addObject(object_t *object)
+void autoreleasepool_add_object(object_t *object)
 {
 	autoreleasepool_t *base = (autoreleasepool_t *)tls_get(g_arp_base_key);
 
@@ -74,7 +74,7 @@ void autoreleasepool_addObject(object_t *object)
 		return;
 	}
 
-	array_push(base->objectArray, &object);
+	array_push(base->object_array, &object);
 }
 
 void autoreleasepool_pop()
@@ -87,13 +87,13 @@ void autoreleasepool_pop()
 	}
 
 	size_t dest;
-	object_t **objs = (object_t **)array_buffer(base->objectArray, NULL);
-	size_t size = array_size(base->objectArray);
-	array_pop(base->baseArray, &dest);
+	object_t **objs = (object_t **)array_buffer(base->object_array, NULL);
+	size_t size = array_size(base->object_array);
+	array_pop(base->base_array, &dest);
 	while (size != dest) {
 		object_release(objs[--size]);
 	}
-	array_resize(base->objectArray, dest);
+	array_resize(base->object_array, dest);
 }
 
 #if defined(__cplusplus)

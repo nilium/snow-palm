@@ -53,9 +53,9 @@ static void array_dtor(array_t *self)
 	self->isa->super->dtor(self);
 }
 
-array_t *array_init(array_t *self, size_t objectSize, size_t size, size_t capacity)
+array_t *array_init(array_t *self, size_t object_size, size_t size, size_t capacity)
 {
-	self->obj_size = objectSize;
+	self->obj_size = object_size;
 	
 	array_reserve(self, capacity);
 	array_resize(self, size);
@@ -89,44 +89,44 @@ bool array_resize(array_t *self, size_t size)
 
 bool array_reserve(array_t *self, size_t capacity)
 {
-	size_t newSize, newCap, origSize;
-	bool triedMin = false;
+	size_t new_size, new_cap, orig_size;
+	bool tried_min = false;
 	if (capacity <= self->capacity || capacity == 0) return true;
 
-	newCap = self->capacity * 2;
-	if (newCap < capacity) {
-		newCap = capacity; /* minimum requested is larger, use it */
-		triedMin = true;
+	new_cap = self->capacity * 2;
+	if (new_cap < capacity) {
+		new_cap = capacity; /* minimum requested is larger, use it */
+		tried_min = true;
 	}
 
-	origSize = self->size * self->obj_size;
+	orig_size = self->size * self->obj_size;
 reserve_capacity:
-	newSize = newCap * self->obj_size;
+	new_size = new_cap * self->obj_size;
 
-	char *newBuf = (char *)mem_alloc(self->pool, newSize, ARRAY_ALLOC_TAG);
-	if (!newBuf) {
+	char *new_buf = (char *)mem_alloc(self->pool, new_size, ARRAY_ALLOC_TAG);
+	if (!new_buf) {
 		/* in the event that the new buffer can't be allocated, try one more route
 		   before giving up
 		*/
-		if (!triedMin) {
+		if (!tried_min) {
 			/* if the minimum capacity requested hasn't been tried yet, try it */
-			triedMin = true;
-			newCap = capacity;
+			tried_min = true;
+			new_cap = capacity;
 			goto reserve_capacity;
 		}
 
-		log_error("Failed to reserve %zu elements for array.\n", newCap);
+		log_error("Failed to reserve %zu elements for array.\n", new_cap);
 
 		return false;
 	}
 
-	if (self->buf && origSize)
-		memcpy(newBuf, self->buf, origSize);
+	if (self->buf && orig_size)
+		memcpy(new_buf, self->buf, orig_size);
 
-	memset(newBuf + origSize, 0, newSize - origSize);
+	memset(new_buf + orig_size, 0, new_size - orig_size);
 	if (self->buf) mem_free(self->buf);
-	self->buf = newBuf;
-	self->capacity = newCap;
+	self->buf = new_buf;
+	self->capacity = new_cap;
 
 	return true;
 }
@@ -149,7 +149,7 @@ void array_sort(array_t *self, int (*comparator)(const void *left, const void *r
 	qsort(self->buf, self->size*self->obj_size, self->obj_size, comparator);
 }
 
-void *array_atIndex(array_t *self, size_t index)
+void *array_at_index(array_t *self, size_t index)
 {
 	if (self->size <= index)
 		return NULL;
@@ -176,10 +176,10 @@ void array_pop(array_t *self, void *result)
 	self->size -= 1;
 }
 
-void *array_buffer(array_t *self, size_t *byteLength)
+void *array_buffer(array_t *self, size_t *byte_length)
 {
-	if (byteLength)
-		*byteLength = self->size * self->obj_size;
+	if (byte_length)
+		*byte_length = self->size * self->obj_size;
 	return self->buf;
 }
 

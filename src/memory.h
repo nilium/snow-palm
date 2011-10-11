@@ -90,7 +90,7 @@ struct s_memory_pool
 	/*! The ID tag of the memory pool. */
 	int32_t tag;
 	/*! The next free block of memory. */
-	block_head_t *nextUnused;
+	block_head_t *next_unused;
 	/*! Header block - size is always 0, used is always 1, etc. */
 	block_head_t head;
 	/*! Pool lock */

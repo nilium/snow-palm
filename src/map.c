@@ -449,7 +449,7 @@ void *map_get(const map_t *map, mapkey_t key)
 	return NULL;
 }
 
-void **map_getAddr(map_t *map, mapkey_t key)
+void **map_get_addr(map_t *map, mapkey_t key)
 {
 	mapnode_t *node = mapnode_find(map, map->root, key);
 
@@ -459,7 +459,7 @@ void **map_getAddr(map_t *map, mapkey_t key)
 	return NULL;
 }
 
-static void map_getValues_r(const mapnode_t *node, mapkey_t *keys, void **values, int *count, size_t capacity)
+static void map_get_values_r(const mapnode_t *node, mapkey_t *keys, void **values, int *count, size_t capacity)
 {
 	if (capacity <= *count)
 		return;
@@ -467,20 +467,20 @@ static void map_getValues_r(const mapnode_t *node, mapkey_t *keys, void **values
 	if (node == NIL)
 		return;
 	
-	if (node->left != NIL) map_getValues_r(node->left, keys, values, count, capacity);
+	if (node->left != NIL) map_get_values_r(node->left, keys, values, count, capacity);
 
 	if (keys)	keys[*count] = node->key;
 	if (values)	values[*count] = node->p;
 
 	*count += 1;
 
-	if (node->right != NIL) map_getValues_r(node->right, keys, values, count, capacity);
+	if (node->right != NIL) map_get_values_r(node->right, keys, values, count, capacity);
 }
 
-int map_getValues(const map_t *map, mapkey_t *keys, void **values, size_t capacity)
+int map_get_values(const map_t *map, mapkey_t *keys, void **values, size_t capacity)
 {
 	int count = 0;
-	map_getValues_r(map->root, keys, values, &count, capacity);
+	map_get_values_r(map->root, keys, values, &count, capacity);
 	return count;
 }
 

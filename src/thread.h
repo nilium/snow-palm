@@ -42,14 +42,14 @@ inline void thread_detach(thread_t thread)
 	pthread_detach(thread);
 }
 
-inline void thread_join(thread_t thread, void **returnValue)
+inline void thread_join(thread_t thread, void **return_value)
 {
-	pthread_join(thread, returnValue);
+	pthread_join(thread, return_value);
 }
 
-inline void thread_exit(void *returnValue)
+inline void thread_exit(void *return_value)
 {
-	pthread_exit(returnValue);
+	pthread_exit(return_value);
 }
 
 inline thread_t thread_current_thread(void)
@@ -65,8 +65,8 @@ void thread_create(thread_t *thread, thread_fn_t fn, void *context);
 void thread_kill(thread_t thread);
 int thread_equals(thread_t left, thread_t right);
 void thread_detach(thread_t thread);
-void thread_join(thread_t thread, void **returnValue);
-void thread_exit(void *returnValue);
+void thread_join(thread_t thread, void **return_value);
+void thread_exit(void *return_value);
 thread_t thread_current_thread(void);
 
 #endif

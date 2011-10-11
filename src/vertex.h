@@ -46,8 +46,8 @@ struct s_anim_vertex
 
 typedef union u_vertex
 {
-	anim_vertex_t animVert;
-	static_vertex_t staticVert;
+	anim_vertex_t anim_vert;
+	static_vertex_t static_vert;
 } vertex_t;
 
 #define S_VERTEX_STRIDE sizeof(vertex_t)

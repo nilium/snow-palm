@@ -91,7 +91,7 @@ void sys_object_shutdown(void);
 */
 int object_compare(object_t *self, object_t *other);
 
-/* Basic object retain, release, autorelease, and retainCount functions.
+/* Basic object retain, release, autorelease, and retain_count functions.
    
    Unless required, one should not override these functions in subclasses
    of object_class (classes that inherit from object_class).
@@ -99,19 +99,19 @@ int object_compare(object_t *self, object_t *other);
 object_t *object_retain(object_t *self);
 object_t *object_autorelease(object_t *self);
 void object_release(object_t *self);
-int32_t object_retainCount(object_t *self);
+int32_t object_retain_count(object_t *self);
 /*! Determines whether the object is a kind of the class provided.
 
 	\returns True the object inherits from this class or is an instance of the
 	class, otherwise false.
 */
-bool object_isKindOf(object_t *self, class_t *cls);
+bool object_is_kind_of(object_t *self, class_t *cls);
 /*! Determines whether the object is an instance of the specific class provided.
 	\returns True if the object is an instance of the class in question,
 	otherwise false.  The object cannot be a descendant of the class, but must
 	be an instance of that specific class.
 */
-bool object_isClass(object_t *self, class_t *cls);
+bool object_is_class(object_t *self, class_t *cls);
 
 /* Object allocation and deletion functions.
 
@@ -134,18 +134,18 @@ void object_delete(object_t *object);
 	This will write value to the given address.  If NULL, it will also cease
 	tracking weak references for the given address.
 */
-void object_storeWeak(object_t *obj, object_t **store);
+void object_store_weak(object_t *obj, object_t **store);
 /*! Gets the value pointed to by the weak reference.  (This is to ensure thread
-	safety, as object_getWeak, object_storeWeak, and object_zeroWeak are all
+	safety, as object_get_weak, object_store_weak, and object_zero_weak are all
 	wrapped in mutexes.)
 */
-object_t *object_getWeak(object_t **address);
+object_t *object_get_weak(object_t **address);
 /* Zeroes all weak references to the given value. */
-void object_zeroWeak(object_t *obj);
+void object_zero_weak(object_t *obj);
 
 /*! Determines whether or not a class is also a kind of another class (i.e., if
 	class inherited from the other class at some point). */
-bool class_isKindOf(const class_t *cls, const class_t *other);
+bool class_is_kind_of(const class_t *cls, const class_t *other);
 
 #if defined(__cplusplus)
 }
