@@ -53,17 +53,17 @@ const class_t _entity_class = {
 memory_pool_t _g_entity_pool;
 #define g_entity_pool (&_g_entity_pool)
 
-static list_t g_entities;
+static list_t *g_entities;
 
 void sys_entity_init(void)
 {
 	mem_init_pool(g_entity_pool, ENTITY_POOL_SIZE, ENTITY_POOL_TAG);
-	list_init(&g_entities, g_entity_pool, true);
+	g_entities = list_init(object_new(list_class, g_entity_pool), true);
 }
 
 void sys_entity_shutdown(void)
 {
-	list_destroy(&g_entities);
+	object_release(g_entities);
 	mem_release_pool(g_entity_pool);
 }
 
@@ -76,8 +76,8 @@ static entity_t *entity_ctor(entity_t *self, memory_pool_t *pool)
 		quat_identity(self->rotation);
 		mat4_identity(self->transform);
 
-		list_init(&self->children, g_entity_pool, false);
-		list_init(&self->components, g_entity_pool, false);
+		self->children = list_init(object_new(list_class, g_entity_pool), false);
+		self->components = list_init(object_new(list_class, g_entity_pool), false);
 
 		self->parent = NULL;
 		self->name = NULL;
@@ -94,7 +94,7 @@ static void entity_dtor(entity_t *self)
 	}
 	list_remove(self->parentnode);
 
-	listnode_t *node = list_firstNode(&self->children);
+	listnode_t *node = list_firstNode(self->children);
 	while (node) {
 		entity_t *child = (entity_t *)node->obj;
 		node = listnode_next(node);
@@ -104,8 +104,10 @@ static void entity_dtor(entity_t *self)
 	if (self->name)
 		mem_free(self->name);
 
-	list_destroy(&self->children);
-	list_destroy(&self->components);
+	object_release(self->children);
+	object_release(self->components);
+
+	self->isa->super->dtor((object_t *)self);
 }
 
 entity_t *entity_new(class_t *cls)
@@ -134,7 +136,7 @@ void entity_addChild(entity_t *self, entity_t *child)
 		return;
 	}
 	list_remove(child->parentnode);
-	child->parentnode = list_append(&self->children, child);
+	child->parentnode = list_append(self->children, child);
     child->parent = self;
 }
 
@@ -262,7 +264,7 @@ static void entity_invalidateTransform(entity_t *self, bool invalidLocal, bool i
 
 	entity_setFlag(self, flag);
 	
-	listnode_t *node = list_firstNode(&self->children);
+	listnode_t *node = list_firstNode(self->children);
 	while (node) {
 		entity_invalidateTransform((entity_t *)node->obj, false, invalidLocal);
 		node = listnode_next(node);
