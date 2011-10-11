@@ -12,32 +12,58 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+static list_t *list_ctor(list_t *self, memory_pool_t *pool);
+static void list_dtor(list_t *self);
+
+const class_t _list_class = {
+	object_class,
+	sizeof(list_t),
+
+	(constructor_t)list_ctor,
+	(destructor_t)list_dtor,
+
+	object_compare
+};
+
 const int32_t LIST_ALLOC_TAG = 0x00115700;
 
-void list_init(list_t *list, memory_pool_t *pool, bool weak)
+static list_t *list_ctor(list_t *self, memory_pool_t *pool)
 {
-	list->head.next = list->head.prev = &list->head;
-	list->head.obj = NULL;
-	list->head.list = list;
-	list->pool = mem_retain_pool(pool);
-	list->weak = weak;
+	self = self->isa->super->ctor(self, pool);
+
+	if (self) {
+		list->head.next = list->head.prev = &list->head;
+		list->head.obj = NULL;
+		list->head.list = list;
+		list->pool = mem_retain_pool(pool);
+		list->weak = false;
+	}
+
+	return self;
 }
 
-void list_destroy(list_t *list)
+static void list_dtor(list_t *self)
 {
-	list->head.prev->next = NULL;
-	listnode_t *next = list->head.next;
+	self->head.prev->next = NULL;
+	listnode_t *next = self->head.next;
 	while (next) {
 		listnode_t *temp = next->next;
-		if (next->obj && !list->weak) object_release(next->obj);
+		if (next->obj && !self->weak) object_release(next->obj);
 		mem_free(next);
 		next = temp;
 	}
 
-	memset(&list->head, 0, sizeof(listnode_t));
+	memset(&self->head, 0, sizeof(listnode_t));
 
-	mem_release_pool(list->pool);
-	list->pool = NULL;
+	mem_release_pool(self->pool);
+	self->pool = NULL;
+
+	self->isa->super->dtor(self);
+}
+
+void list_init(list_t *list, bool weak)
+{
+	list->weak = weak;
 }
 
 listnode_t *list_insertBefore(listnode_t *node, object_t *obj)

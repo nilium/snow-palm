@@ -37,6 +37,9 @@ struct s_list
 	bool weak;
 };
 
+extern const class_t _list_class;
+#define list_class (&_list_class)
+
 /*! \p A Note on List Indices
  * List indices, in the context of linked lists in snow, go two ways:
  * 1. Positive indices are from zero to N, and begin at the start of the list
@@ -53,13 +56,10 @@ struct s_list
 
 /*! \brief Initializes a linked list.
  *  \param[in] list The list to initialize.
- *  \param[in] pool The pool to allocate list nodes from.
- *  \param[in] weak Whether or not the pool's objects are weakly stored. If true,
+ *  \param[in] weak Whether or not the list's objects are weakly stored. If true,
  *  objects stored in the list are not retained.  If false, they are retained.
  */
-void list_init(list_t *list, memory_pool_t *pool, bool weak);
-/*! \brief Destroys a linked list. */
-void list_destroy(list_t *list);
+void list_init(list_t *list, bool weak);
 
 listnode_t *list_insertBefore(listnode_t *node, object_t *obj);
 listnode_t *list_insertAfter(listnode_t *node, object_t *obj);
