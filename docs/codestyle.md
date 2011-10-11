@@ -104,6 +104,16 @@ Though not really a structure in the same sense as a `union` or `struct`, the co
 
 Member variables follow the same convention as general identifiers, with one exception: if the variable is considered very private or internal, its name should be preceded with a single underscore.
 
+#### Class Names
+
+When defining a new class using `class_t` (or a derivative of that type), you should define a global named `_<classname>_class` followed by a macro `<classname>_class` for the address of the class.  Note that although the class structure is global and constant (ideally), it is _not_ prefixed with either `g_` or `c_`.  There is no particularly good reason for that, it's just arbitrary.  For example:
+
+	extern const class_t _list_class;
+	#define list_class (&_list_class)
+
+The reason for this is mainly ease of use.  `object_new()` takes a `class_t *`, so it is much more useful to treat it as though it's always pointing to the class.
+
+
 ### Macros
 
 #### Constant Macros
