@@ -21,7 +21,7 @@ void vec3_set(float x, float y, float z, vec3_t v);
  * Gets the squared length of a vector.  Useful for approximations and when
  * you don't need the actual magnitude.
  */
-float vec3_lengthSquared(const vec3_t v);
+float vec3_length_squared(const vec3_t v);
 /*!
  * Gets the length/magnitude of a vector.
  */
@@ -33,8 +33,8 @@ void vec3_add(const vec3_t left, const vec3_t right, vec3_t out);
 void vec3_multiply(const vec3_t left, const vec3_t right, vec3_t out);
 void vec3_invert(vec3_t v);
 
-void vec3_crossProduct(const vec3_t left, const vec3_t right, vec3_t out);
-float vec3_dotProduct(const vec3_t left, const vec3_t right);
+void vec3_cross_product(const vec3_t left, const vec3_t right, vec3_t out);
+float vec3_dot_product(const vec3_t left, const vec3_t right);
 
 void vec3_scale(float scalar, vec3_t v);
 /*!

@@ -17,25 +17,25 @@ extern "C"
 
 static entity_t *entity_ctor(entity_t *self, memory_pool_t *pool);
 static void entity_dtor(entity_t *self);
-static void entity_invalidateTransform(entity_t *self, bool invalidLocal, bool invalidWorld);
-static void entity_buildMatrices(entity_t *self);
+static void entity_invalidate_transform(entity_t *self, bool invalid_local, bool invalid_world);
+static void entity_build_matrices(entity_t *self);
 
-static inline void entity_unsetFlag(entity_t *self, entity_flag_t flag)
+static inline void entity_unset_flag(entity_t *self, entity_flag_t flag)
 {
 	self->_iflags &= ~flag;
 }
 
-static inline void entity_setFlag(entity_t *self, entity_flag_t flag)
+static inline void entity_set_flag(entity_t *self, entity_flag_t flag)
 {
 	self->_iflags |= flag;
 }
 
-static inline void entity_toggleFlag(entity_t *self, entity_flag_t flag)
+static inline void entity_toggle_flag(entity_t *self, entity_flag_t flag)
 {
 	self->_iflags ^= flag;
 }
 
-static inline bool entity_isFlagSet(entity_t *self, entity_flag_t flag)
+static inline bool entity_is_flag_set(entity_t *self, entity_flag_t flag)
 {
 	return ((self->_iflags & flag) == flag);
 }
@@ -90,15 +90,15 @@ static entity_t *entity_ctor(entity_t *self, memory_pool_t *pool)
 static void entity_dtor(entity_t *self)
 {
 	if (self->parent) {
-		entity_removeFromParent(self);
+		entity_remove_from_parent(self);
 	}
 	list_remove(self->parentnode);
 
-	listnode_t *node = list_firstNode(self->children);
+	listnode_t *node = list_first_node(self->children);
 	while (node) {
 		entity_t *child = (entity_t *)node->obj;
 		node = listnode_next(node);
-		entity_removeFromParent(child);
+		entity_remove_from_parent(child);
 	}
 
 	if (self->name)
@@ -112,7 +112,7 @@ static void entity_dtor(entity_t *self)
 
 entity_t *entity_new(class_t *cls)
 {
-	if (!class_isKindOf(cls, entity_class))
+	if (!class_is_kind_of(cls, entity_class))
 		return NULL;
 
 	entity_t *self = object_new(entity_class, g_entity_pool);
@@ -121,15 +121,15 @@ entity_t *entity_new(class_t *cls)
 entity_t *entity_init(entity_t *self, const char *name, entity_t *parent)
 {
 	if (name != NULL)
-		entity_setName(self, name);
+		entity_set_name(self, name);
 
 	if (parent)
-		entity_addChild(parent, self);
+		entity_add_child(parent, self);
 
 	return self;
 }
 
-void entity_addChild(entity_t *self, entity_t *child)
+void entity_add_child(entity_t *self, entity_t *child)
 {
 	if (child->parent != NULL) {
 		log_error("Attempting to add an entity as a child it already has a parent.\n");
@@ -140,7 +140,7 @@ void entity_addChild(entity_t *self, entity_t *child)
     child->parent = self;
 }
 
-void entity_removeFromParent(entity_t *self)
+void entity_remove_from_parent(entity_t *self)
 {
 	if (self->parent) {
 		list_remove(self->parentnode);
@@ -151,7 +151,7 @@ void entity_removeFromParent(entity_t *self)
 	}
 }
 
-void entity_setName(entity_t *self, const char *name)
+void entity_set_name(entity_t *self, const char *name)
 {
 	if (self->name)
 		mem_free(self->name);
@@ -165,7 +165,7 @@ void entity_setName(entity_t *self, const char *name)
 	}
 }
 
-const char *entity_getName(const entity_t *self)
+const char *entity_get_name(const entity_t *self)
 {
 	return self->name;
 }
@@ -175,17 +175,17 @@ const char *entity_getName(const entity_t *self)
 void entity_position(entity_t *self, float x, float y, float z)
 {
 	self->position[0] = x;
-	entity_invalidateTransform(self, true, true);
+	entity_invalidate_transform(self, true, true);
 }
 
 void entity_move(entity_t *self, float x, float y, float z)
 {
-	entity_buildMatrices(self);
+	entity_build_matrices(self);
 	vec3_t movement = {x, y, z};
-	quat_multiplyVec3(self->rotation, movement, movement);
+	quat_multiply_vec3(self->rotation, movement, movement);
 	vec3_add(movement, self->position, self->position);
 	mat4_translate(x, y, z, self->transform);
-//	entity_invalidateTransform(self, true, true);
+//	entity_invalidate_transform(self, true, true);
 }
 
 void entity_translate(entity_t *self, float x, float y, float z)
@@ -193,19 +193,19 @@ void entity_translate(entity_t *self, float x, float y, float z)
 	self->position[0] += x;
 	self->position[1] += y;
 	self->position[2] += z;
-	entity_invalidateTransform(self, true, true);
+	entity_invalidate_transform(self, true, true);
 }
 
 void entity_rotate(entity_t *self, quat_t rot)
 {
 	quat_copy(rot, self->rotation);
-	entity_invalidateTransform(self, true, true);
+	entity_invalidate_transform(self, true, true);
 }
 
 void entity_turn(entity_t *self, quat_t rot)
 {
 	quat_multiply(rot, self->rotation, self->rotation);
-	entity_invalidateTransform(self, true, true);
+	entity_invalidate_transform(self, true, true);
 }
 
 void entity_scale(entity_t *self, float x, float y, float z)
@@ -213,36 +213,36 @@ void entity_scale(entity_t *self, float x, float y, float z)
 	self->scale[0] = x;
 	self->scale[1] = y;
 	self->scale[2] = z;
-	entity_invalidateTransform(self, true, true);
+	entity_invalidate_transform(self, true, true);
 }
 
 /* tform getters */
 
-void entity_getTransform(entity_t *self, mat4_t out)
+void entity_get_transform(entity_t *self, mat4_t out)
 {
-	entity_buildMatrices(self);
+	entity_build_matrices(self);
 	mat4_copy(self->transform, out);
 }
 
-void entity_getWorldTransform(entity_t *self, mat4_t out)
+void entity_get_world_transform(entity_t *self, mat4_t out)
 {
-	entity_buildMatrices(self);
-	mat4_copy(self->worldTransform, out);
+	entity_build_matrices(self);
+	mat4_copy(self->world_transform, out);
 }
 
-void entity_getScale(entity_t *self, float *x, float *y, float *z)
+void entity_get_scale(entity_t *self, float *x, float *y, float *z)
 {
 	if (x) *x = self->scale[0];
 	if (y) *y = self->scale[1];
 	if (z) *z = self->scale[2];
 }
 
-void entity_getRotation(entity_t *self, quat_t out)
+void entity_get_rotation(entity_t *self, quat_t out)
 {
 	quat_copy(self->rotation, out);
 }
 
-void entity_getPosition(entity_t *self, float *x, float *y, float *z)
+void entity_get_position(entity_t *self, float *x, float *y, float *z)
 {
 	if (x) *x = self->position[0];
 	if (y) *y = self->position[1];
@@ -252,47 +252,47 @@ void entity_getPosition(entity_t *self, float *x, float *y, float *z)
 
 /** private API of sorts */
 
-static void entity_invalidateTransform(entity_t *self, bool invalidLocal, bool invalidWorld)
+static void entity_invalidate_transform(entity_t *self, bool invalid_local, bool invalid_world)
 {
-	if (entity_isFlagSet(self, DIRTY_TRANSFORM | DIRTY_WORLD))
+	if (entity_is_flag_set(self, DIRTY_TRANSFORM | DIRTY_WORLD))
 		return;
 
 	entity_flag_t flag = 0;
-	if (invalidLocal) flag |= DIRTY_TRANSFORM | DIRTY_WORLD;
-	if (invalidWorld) flag |= DIRTY_WORLD;
+	if (invalid_local) flag |= DIRTY_TRANSFORM | DIRTY_WORLD;
+	if (invalid_world) flag |= DIRTY_WORLD;
 	if (!flag) return;
 
-	entity_setFlag(self, flag);
+	entity_set_flag(self, flag);
 	
-	listnode_t *node = list_firstNode(self->children);
+	listnode_t *node = list_first_node(self->children);
 	while (node) {
-		entity_invalidateTransform((entity_t *)node->obj, false, invalidLocal);
+		entity_invalidate_transform((entity_t *)node->obj, false, invalid_local);
 		node = listnode_next(node);
 	}
 }
 
-static void entity_buildMatrices(entity_t *self)
+static void entity_build_matrices(entity_t *self)
 {
 	mat4_t build;
 	/* rebuild local transform */
-	if (entity_isFlagSet(self, DIRTY_TRANSFORM)) {
-		mat4_fromQuat(self->rotation, build);
+	if (entity_is_flag_set(self, DIRTY_TRANSFORM)) {
+		mat4_from_quat(self->rotation, build);
 		mat4_scale(build, vec3_expand(self->scale), build);
 		mat4_translate(vec3_expand(self->position), build);
 		mat4_copy(build, self->transform);
 		goto rebuild_world_transform;
 	}
 	/* rebuild world transform */
-	if (entity_isFlagSet(self, DIRTY_WORLD)) {
+	if (entity_is_flag_set(self, DIRTY_WORLD)) {
 rebuild_world_transform:
 		if (self->parent) {
-			entity_getWorldTransform(self, build);
-			mat4_multiply(build, self->transform, self->worldTransform);
+			entity_get_world_transform(self, build);
+			mat4_multiply(build, self->transform, self->world_transform);
 		} else {
-			mat4_copy(self->transform, self->worldTransform);
+			mat4_copy(self->transform, self->world_transform);
 		}
 	}
-	entity_unsetFlag(self, DIRTY_FLAGS);
+	entity_unset_flag(self, DIRTY_FLAGS);
 }
 
 #if defined(__cplusplus)

@@ -21,7 +21,7 @@ void vec4_set(float x, float y, float z, float w, vec4_t v);
  * Gets the squared length of a vector.  Useful for approximations and when
  * you don't need the actual magnitude.
  */
-float vec4_lengthSquared(const vec4_t v);
+float vec4_length_squared(const vec4_t v);
 /*!
  * Gets the length/magnitude of a vector.
  */
@@ -33,7 +33,7 @@ void vec4_add(const vec4_t left, const vec4_t right, vec4_t out);
 void vec4_multiply(const vec4_t left, const vec4_t right, vec4_t out);
 void vec4_invert(vec4_t v);
 
-float vec4_dotProduct(const vec4_t left, const vec4_t right);
+float vec4_dot_product(const vec4_t left, const vec4_t right);
 
 void vec4_scale(float scalar, vec4_t v);
 /*!

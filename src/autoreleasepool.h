@@ -20,7 +20,7 @@ extern "C"
 /** Autorelease pools depend on the object, memory, and TLS systems. */
 
 void autoreleasepool_push();
-void autoreleasepool_addObject(object_t *object);
+void autoreleasepool_add_object(object_t *object);
 void autoreleasepool_pop();
 
 #if defined(__cplusplus)

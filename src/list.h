@@ -63,15 +63,15 @@ extern const class_t _list_class;
  */
 list_t *list_init(list_t *self, bool weak);
 
-listnode_t *list_insertBefore(listnode_t *node, object_t *obj);
-listnode_t *list_insertAfter(listnode_t *node, object_t *obj);
+listnode_t *list_insert_before(listnode_t *node, object_t *obj);
+listnode_t *list_insert_after(listnode_t *node, object_t *obj);
 
 listnode_t *list_append(list_t *list, object_t *obj);
 listnode_t *list_prepend(list_t *list, object_t *obj);
 
 void *list_at(const list_t *list, int index);
-listnode_t *list_nodeAt(const list_t *list, int index);
-listnode_t *list_nodeWithValue(const list_t *list, object_t *obj);
+listnode_t *list_node_at(const list_t *list, int index);
+listnode_t *list_node_with_value(const list_t *list, object_t *obj);
 
 /*! Gets the length of the list.
 	\returns The length of the list, [0,N).  Returns -1 if the list is NULL.
@@ -80,15 +80,15 @@ int list_count(const list_t *list);
 /*! Determines whether or not the list is empty.
 	\returns 1 if the list is empty, 0 if not.  Returns -1 if the list is NULL.
 */
-bool list_isEmpty(const list_t *list);
+bool list_is_empty(const list_t *list);
 
 void list_clear(list_t *list);
 void list_remove(listnode_t *node);
-bool list_removeValue(list_t *list, object_t *obj);
-int list_removeAllOfValue(list_t *list, object_t *obj);
+bool list_remove_value(list_t *list, object_t *obj);
+int list_remove_all_of_value(list_t *list, object_t *obj);
 
-listnode_t *list_firstNode(list_t *list);
-listnode_t *list_lastNode(list_t *list);
+listnode_t *list_first_node(list_t *list);
+listnode_t *list_last_node(list_t *list);
 
 listnode_t *listnode_next(listnode_t *node);
 listnode_t *listnode_previous(listnode_t *node);

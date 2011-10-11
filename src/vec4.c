@@ -31,7 +31,7 @@ void vec4_set(float x, float y, float z, float w, vec4_t v)
 	v[3] = w;
 }
 
-float vec4_lengthSquared(const vec4_t v)
+float vec4_length_squared(const vec4_t v)
 {
 	return (v[0] * v[0]) + (v[1] * v[1]) + (v[2] * v[2]) + (v[3] * v[3]);
 }
@@ -83,7 +83,7 @@ void vec4_invert(vec4_t v)
 	v[3] = -v[3];
 }
 
-float vec4_dotProduct(const vec4_t left, const vec4_t right)
+float vec4_dot_product(const vec4_t left, const vec4_t right)
 {
 	return ((left[0] * right[0]) + (left[1] * right[1]) + (left[2] * right[2]) + (left[3] * right[3]));
 }

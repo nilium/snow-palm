@@ -45,7 +45,7 @@ static void tls_specific_dtor(void *value)
 
 	base = (tls_base_t *)value;
 
-	while ((kvindex = map_getValues(&base->kvmap, keys, values, DTOR_KV_CAPACITY)))
+	while ((kvindex = map_get_values(&base->kvmap, keys, values, DTOR_KV_CAPACITY)))
 	{
 		while (kvindex--) {
 			tls_entry_t *entry = (tls_entry_t *)(values[kvindex]);

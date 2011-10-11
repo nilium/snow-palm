@@ -118,7 +118,7 @@ static object_t *object_ctor(object_t *self, memory_pool_t *pool)
 
 static void object_dtor(object_t *self)
 {
-	object_zeroWeak(self);
+	object_zero_weak(self);
 #ifndef NDEBUG
 	/* for the sake of tracking object allocations (to determine necessary memory use) */
 	mutex_lock(&g_retain_lock);
@@ -144,13 +144,13 @@ object_t *object_retain(object_t *self)
 		log_warning("Attempting to retain NULL.\n");
 		return NULL;
 	}
-	uint32_t *retainCount;
+	uint32_t *retain_count;
 
 	mutex_lock(&g_retain_lock);
 
-	retainCount = (uint32_t *)map_getAddr(&g_retain_map, (mapkey_t)self);
-	if (retainCount) {
-		*retainCount += 1;
+	retain_count = (uint32_t *)map_get_addr(&g_retain_map, (mapkey_t)self);
+	if (retain_count) {
+		*retain_count += 1;
 	} else {
 		map_insert(&g_retain_map, self, (void *)((uint32_t)2));
 	}
@@ -167,7 +167,7 @@ object_t *object_autorelease(object_t *self)
 	}
 
 	mutex_lock(&g_retain_lock);
-	autoreleasepool_addObject(self);
+	autoreleasepool_add_object(self);
 	mutex_unlock(&g_retain_lock);
 
 	return self;
@@ -175,7 +175,7 @@ object_t *object_autorelease(object_t *self)
 
 void object_release(object_t *self)
 {
-	uint32_t *retainCount;
+	uint32_t *retain_count;
 
 	if (self == NULL) {
 		log_warning("Attempting to release NULL.\n");
@@ -184,14 +184,14 @@ void object_release(object_t *self)
 
 	mutex_lock(&g_retain_lock);
 
-	retainCount = (uint32_t *)map_getAddr(&g_retain_map, (mapkey_t)self);
-	if (retainCount) {
-		int count = (*retainCount) - 1;
+	retain_count = (uint32_t *)map_get_addr(&g_retain_map, (mapkey_t)self);
+	if (retain_count) {
+		int count = (*retain_count) - 1;
 		
 		if (count == 1)
 			map_remove(&g_retain_map, self);
 		else
-			*retainCount = count;
+			*retain_count = count;
 	}
 
 	mutex_unlock(&g_retain_lock);
@@ -199,21 +199,21 @@ void object_release(object_t *self)
 	/* if no entry in the map is found, the object's retain count
 	   was 1, and is now 0, so delete it
 	*/
-	if (!retainCount) object_delete(self);
+	if (!retain_count) object_delete(self);
 }
 
-int32_t object_retainCount(object_t *self)
+int32_t object_retain_count(object_t *self)
 {
-	uint32_t retainCount;
+	uint32_t retain_count;
 
 	mutex_lock(&g_retain_lock);
 
-	retainCount = (uint32_t)map_get(&g_retain_map, self);
-	if (retainCount == (uint32_t)NULL) retainCount = 1;
+	retain_count = (uint32_t)map_get(&g_retain_map, self);
+	if (retain_count == (uint32_t)NULL) retain_count = 1;
 
 	mutex_unlock(&g_retain_lock);
 
-	return retainCount;
+	return retain_count;
 }
 
 object_t *object_new(const class_t *cls, memory_pool_t *pool)
@@ -254,16 +254,16 @@ void object_delete(object_t *object)
 	mem_free(object);
 }
 
-void object_storeWeak(object_t *obj, object_t **store)
+void object_store_weak(object_t *obj, object_t **store)
 {
-	object_t **prevValue;
+	object_t **prev_value;
 	
 	mutex_lock(&g_retain_lock);
 
-	prevValue = (object_t **)map_getAddr(&g_refvaluemap, (mapkey_t)store);
-	if (prevValue) {
+	prev_value = (object_t **)map_get_addr(&g_refvaluemap, (mapkey_t)store);
+	if (prev_value) {
 		/* already has a weak reference */
-		if (*prevValue == obj) {
+		if (*prev_value == obj) {
 			/** in the event that the weak reference being stored is the same,
 				we can just go ahead and skip doing anything.
 
@@ -273,11 +273,11 @@ void object_storeWeak(object_t *obj, object_t **store)
 			goto finish_store_weak;
 		}
 
-		list_t *list = map_get(&g_refmap, *prevValue);
-		list_removeValue(list, (object_t *)store);
+		list_t *list = map_get(&g_refmap, *prev_value);
+		list_remove_value(list, (object_t *)store);
 
 		if (obj) {
-			*prevValue = obj;
+			*prev_value = obj;
 		} else {
 			map_remove(&g_refvaluemap, (mapkey_t)store);
 		}
@@ -303,7 +303,7 @@ finish_store_weak:
 	mutex_unlock(&g_retain_lock);
 }
 
-object_t *object_getWeak(object_t **store)
+object_t *object_get_weak(object_t **store)
 {
 	mutex_lock(&g_retain_lock);
 	object_t *obj = *store;
@@ -312,7 +312,7 @@ object_t *object_getWeak(object_t **store)
 	return obj;
 }
 
-void object_zeroWeak(object_t *obj)
+void object_zero_weak(object_t *obj)
 {
 	list_t *list;
 
@@ -322,7 +322,7 @@ void object_zeroWeak(object_t *obj)
 
 	list = map_get(&g_refmap, obj);
 	if (list) {
-		listnode_t *node = list_firstNode(list);
+		listnode_t *node = list_first_node(list);
 		while (node) {
 			map_remove(&g_refvaluemap, (mapkey_t)node->obj);
 			*((object_t **)node->obj) = NULL;
@@ -334,7 +334,7 @@ void object_zeroWeak(object_t *obj)
 	mutex_unlock(&g_retain_lock);
 }
 
-bool class_isKindOf(const class_t *cls, const class_t *other)
+bool class_is_kind_of(const class_t *cls, const class_t *other)
 {
 	while (cls) {
 		if (cls == other)

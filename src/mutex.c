@@ -131,7 +131,7 @@ int mutex_trylock(mutex_t *lock)
 		/* case EBUSY: reason = mutex_err_permission; break; */
 		default: break;
 		}
-		log_error("Error trying to lock mutex (tryLock): %s\n", reason);
+		log_error("Error trying to lock mutex (trylock): %s\n", reason);
 	}
 	
 	return !error;

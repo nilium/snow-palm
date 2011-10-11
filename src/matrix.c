@@ -73,7 +73,7 @@ void mat4_set(
 	out[15] = m15;
 }
 
-void mat4_setAxes3(const vec3_t x, const vec3_t y, const vec3_t z, const vec3_t w, mat4_t out)
+void mat4_set_axes3(const vec3_t x, const vec3_t y, const vec3_t z, const vec3_t w, mat4_t out)
 {
 	out[0] = x[0];
 	out[4] = x[1];
@@ -95,7 +95,7 @@ void mat4_setAxes3(const vec3_t x, const vec3_t y, const vec3_t z, const vec3_t 
 	out[15] = 1.0;
 }
 
-void mat4_getAxes3(const mat4_t m, vec3_t x, vec3_t y, vec3_t z, vec3_t w)
+void mat4_get_axes3(const mat4_t m, vec3_t x, vec3_t y, vec3_t z, vec3_t w)
 {
 	if (x) {
 		x[0] = m[0];
@@ -122,7 +122,7 @@ void mat4_getAxes3(const mat4_t m, vec3_t x, vec3_t y, vec3_t z, vec3_t w)
 	}
 }
 
-void mat4_setAxes4(const vec4_t x, const vec4_t y, const vec4_t z, const vec4_t w, mat4_t out)
+void mat4_set_axes4(const vec4_t x, const vec4_t y, const vec4_t z, const vec4_t w, mat4_t out)
 {
 	out[0] = x[0];
 	out[4] = x[1];
@@ -145,7 +145,7 @@ void mat4_setAxes4(const vec4_t x, const vec4_t y, const vec4_t z, const vec4_t 
 	out[15] = w[3];
 }
 
-void mat4_getAxes4(const mat4_t m, vec4_t x, vec4_t y, vec4_t z, vec4_t w)
+void mat4_get_axes4(const mat4_t m, vec4_t x, vec4_t y, vec4_t z, vec4_t w)
 {
 	if (x) {
 		x[0] = m[0];
@@ -241,50 +241,50 @@ void mat4_orthographic(float left, float right, float bottom, float top, float n
 	out[8] = out[9] = out[11] = 0.0;
 }
 
-void mat4_perspective(float fovY, float aspect, float near, float far, mat4_t out)
+void mat4_perspective(float fov_y, float aspect, float near, float far, mat4_t out)
 {
-	const float r = tanf(fovY * 0.5 * S_DEG2RAD);
+	const float r = tanf(fov_y * 0.5 * S_DEG2RAD);
 	const float left = -r * aspect;
 	const float right = r * aspect;
 	const float bottom = -r;
 	const float top = r;
-	const float twoNear = 2 * near;
+	const float two_near = 2 * near;
 	const float zdelta = 1.0 / (near - far);
 
-	out[0] = twoNear * (right - left);
-	out[5] = twoNear / (top - bottom);
+	out[0] = two_near * (right - left);
+	out[5] = two_near / (top - bottom);
 	out[10] = (far + near) * zdelta;
 	out[11] = -1.0;
-	out[14] = (twoNear * far) * zdelta;
+	out[14] = (two_near * far) * zdelta;
 	out[1] = out[2] = out[3] =
 	out[4] = out[6] = out[7] =
 	out[8] = out[9] = out[12] =
 	out[13] = out[15] = 0.0;
 }
 
-void mat4_lookAt(const vec3_t eye, const vec3_t center, const vec3_t up, mat4_t out)
+void mat4_look_at(const vec3_t eye, const vec3_t center, const vec3_t up, mat4_t out)
 {
-	vec3_t facingNorm, upNorm, s;
-	/* facingNorm */
-	vec3_subtract(center, eye, facingNorm);
-	vec3_normalize(facingNorm, facingNorm);
-	/* upNorm */
-	vec3_normalize(up, upNorm);
+	vec3_t facing_norm, up_norm, s;
+	/* facing_norm */
+	vec3_subtract(center, eye, facing_norm);
+	vec3_normalize(facing_norm, facing_norm);
+	/* up_norm */
+	vec3_normalize(up, up_norm);
 	/* s */
-	vec3_crossProduct(facingNorm, upNorm, s);
+	vec3_cross_product(facing_norm, up_norm, s);
 	vec3_normalize(s, s);
-	/* upNorm rejigged */
-	vec3_crossProduct(s, facingNorm, upNorm);
-	upNorm[1] = -upNorm[1];
-	facingNorm[0] = -facingNorm[0];
-	facingNorm[1] = -facingNorm[1];
-	facingNorm[2] = -facingNorm[2];
+	/* up_norm rejigged */
+	vec3_cross_product(s, facing_norm, up_norm);
+	up_norm[1] = -up_norm[1];
+	facing_norm[0] = -facing_norm[0];
+	facing_norm[1] = -facing_norm[1];
+	facing_norm[2] = -facing_norm[2];
 
-	mat4_setAxes3(s, upNorm, facingNorm, g_vec3_zero, out);
+	mat4_set_axes3(s, up_norm, facing_norm, g_vec3_zero, out);
 	mat4_translate(-eye[0], -eye[1], -eye[2], out);
 }
 
-void mat4_fromQuat(const quat_t quat, mat4_t out)
+void mat4_from_quat(const quat_t quat, mat4_t out)
 {
 	float tx, ty, tz, xx, xy, xz, yy, yz, zz, wx, wy, wz;
 
@@ -325,7 +325,7 @@ void mat4_fromQuat(const quat_t quat, mat4_t out)
 	out[15] = 1.0;
 }
 
-void mat4_getRow4(const mat4_t in, int row, vec4_t out)
+void mat4_get_row4(const mat4_t in, int row, vec4_t out)
 {
 	if (0 <= row && row < 4) {
 		const float *rowvec = in+(row * 4);
@@ -336,7 +336,7 @@ void mat4_getRow4(const mat4_t in, int row, vec4_t out)
 	}
 }
 
-void mat4_getRow3(const mat4_t in, int row, vec3_t out)
+void mat4_get_row3(const mat4_t in, int row, vec3_t out)
 {
 	if (0 <= row && row < 4) {
 		const float *rowvec = in+(row * 4);
@@ -346,7 +346,7 @@ void mat4_getRow3(const mat4_t in, int row, vec3_t out)
 	}
 }
 
-void mat4_getColumn4(const mat4_t in, int column, vec4_t out)
+void mat4_get_column4(const mat4_t in, int column, vec4_t out)
 {
 	if (0 <= column && column < 4) {
 		const float *colvec = in+column;
@@ -357,7 +357,7 @@ void mat4_getColumn4(const mat4_t in, int column, vec4_t out)
 	}
 }
 
-void mat4_getColumn3(const mat4_t in, int column, vec3_t out)
+void mat4_get_column3(const mat4_t in, int column, vec3_t out)
 {
 	if (0 <= column && column < 4) {
 		const float *colvec = in+column;
@@ -400,20 +400,20 @@ int mat4_equals(const mat4_t left, const mat4_t right)
 void mat4_transpose(const mat4_t in, mat4_t out)
 {
 	float temp;
-	#define swapElem(X, Y) temp = in[(X)]; out[(X)] = in[(Y)]; out[(Y)] = temp
-	swapElem(1, 4);
-	swapElem(8, 2);
-	swapElem(9, 6);
-	swapElem(12, 3);
-	swapElem(13, 7);
-	swapElem(14, 11);
+	#define swap_elem(X, Y) temp = in[(X)]; out[(X)] = in[(Y)]; out[(Y)] = temp
+	swap_elem(1, 4);
+	swap_elem(8, 2);
+	swap_elem(9, 6);
+	swap_elem(12, 3);
+	swap_elem(13, 7);
+	swap_elem(14, 11);
 	out[0] = in[0];
 	out[5] = in[5];
 	out[10] = in[10];
 	out[15] = in[15];
 }
 
-void mat4_inverseOrthogonal(const mat4_t in, mat4_t out)
+void mat4_inverse_orthogonal(const mat4_t in, mat4_t out)
 {
 	const float m12 = in[12];
 	const float m13 = in[13];
@@ -441,7 +441,7 @@ void mat4_inverseOrthogonal(const mat4_t in, mat4_t out)
 	mat4_copy(temp, out);
 }
 
-int mat4_inverseAffine(const mat4_t in, mat4_t out)
+int mat4_inverse_affine(const mat4_t in, mat4_t out)
 {
 	mat4_t temp;
 	float det;
@@ -560,7 +560,7 @@ float mat4_determinant(const mat4_t m)
 		);
 }
 
-int mat4_inverseGeneral(const mat4_t in, mat4_t out)
+int mat4_inverse_general(const mat4_t in, mat4_t out)
 {
 	int index;
 	float det = mat4_determinant(in);
@@ -606,7 +606,7 @@ void mat4_multiply(const mat4_t left, const mat4_t right, mat4_t out)
 	mat4_copy(temp, out);
 }
 
-void mat4_multiplyVec4(const mat4_t left, const vec4_t right, vec4_t out)
+void mat4_multiply_vec4(const mat4_t left, const vec4_t right, vec4_t out)
 {
 	const float x = right[0], y = right[1], z = right[2], w = right[3];
 	out[0] = (x * left[0]) + (y * left[4]) + (z * left[8 ]) + (w * left[12]);
@@ -615,7 +615,7 @@ void mat4_multiplyVec4(const mat4_t left, const vec4_t right, vec4_t out)
 	out[3] = (x * left[3]) + (y * left[7]) + (z * left[11]) + (w * left[15]);
 }
 
-void mat4_transformVec3(const mat4_t left, const vec3_t right, vec3_t out)
+void mat4_transform_vec3(const mat4_t left, const vec3_t right, vec3_t out)
 {
 	const float x = right[0], y = right[1], z = right[2];
 	out[0] = (x * left[0]) + (y * left[4]) + (z * left[8 ]) + left[12];
@@ -623,7 +623,7 @@ void mat4_transformVec3(const mat4_t left, const vec3_t right, vec3_t out)
 	out[2] = (x * left[2]) + (y * left[6]) + (z * left[10]) + left[14];
 }
 
-void mat4_rotateVec3(const mat4_t left, const vec3_t right, vec3_t out)
+void mat4_rotate_vec3(const mat4_t left, const vec3_t right, vec3_t out)
 {
 	const float x = right[0], y = right[1], z = right[2];
 	out[0] = (x * left[0]) + (y * left[4]) + (z * left[8 ]);
@@ -631,7 +631,7 @@ void mat4_rotateVec3(const mat4_t left, const vec3_t right, vec3_t out)
 	out[2] = (x * left[2]) + (y * left[6]) + (z * left[10]);
 }
 
-void mat4_invRotateVec3(const mat4_t left, const vec3_t right, vec3_t out)
+void mat4_inv_rotate_vec3(const mat4_t left, const vec3_t right, vec3_t out)
 {
 	const float x = right[0], y = right[1], z = right[2];
 	out[0] = (x * left[0]) + (y * left[1]) + (z * left[2 ]);

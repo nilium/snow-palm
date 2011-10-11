@@ -67,8 +67,8 @@ int map_size(const map_t *map);
 
 void *map_get(const map_t *map, mapkey_t key);
 /* ho-ho, now we're cooking with evil */
-void **map_getAddr(map_t *map, mapkey_t key);
-int map_getValues(const map_t *map, mapkey_t *keys, void **values, size_t capacity);
+void **map_get_addr(map_t *map, mapkey_t key);
+int map_get_values(const map_t *map, mapkey_t *keys, void **values, size_t capacity);
 
 #if defined(__cplusplus)
 }

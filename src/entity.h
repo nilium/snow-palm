@@ -49,7 +49,7 @@ struct s_entity
 	/*! internal flags */
 	entity_flag_t _iflags;
 
-	mat4_t worldTransform;
+	mat4_t world_transform;
 	mat4_t transform;
 	quat_t rotation;
 	vec3_t position;
@@ -72,16 +72,16 @@ entity_t *entity_new(class_t *cls);
 entity_t *entity_init(entity_t *self, const char *name, entity_t *parent);
 
 /*! Adds a child to the entity. */
-void entity_addChild(entity_t *self, entity_t *child);
+void entity_add_child(entity_t *self, entity_t *child);
 /*! Removes the entity from its parent entity. */
-void entity_removeFromParent(entity_t *self);
+void entity_remove_from_parent(entity_t *self);
 
 /*! Set the entity's name to a copy of the name string provided, if any. */
-void entity_setName(entity_t *self, const char *name);
+void entity_set_name(entity_t *self, const char *name);
 /*! Get the entity's name.  This is not a copy of the name string, so you
     must not free it.
 */
-const char *entity_getName(const entity_t *self);
+const char *entity_get_name(const entity_t *self);
 
 /*! \brief Sets the position of the entity relative to its parent. */
 void entity_position(entity_t *self, float x, float y, float z);
@@ -101,15 +101,15 @@ void entity_turn(entity_t *self, quat_t rot);
 void entity_scale(entity_t *self, float x, float y, float z);
 
 /*! Gets the entity's transformation matrix. */
-void entity_getTransform(entity_t *self, mat4_t out);
+void entity_get_transform(entity_t *self, mat4_t out);
 /*! Gets the entity's world transformation matrix. */
-void entity_getWorldTransform(entity_t *self, mat4_t out);
+void entity_get_world_transform(entity_t *self, mat4_t out);
 /*! Gets the entity's scale (relative to its parent). */
-void entity_getScale(entity_t *self, float *x, float *y, float *z);
+void entity_get_scale(entity_t *self, float *x, float *y, float *z);
 /*! Gets the entity's rotation (relative to its parent). */
-void entity_getRotation(entity_t *self, quat_t out);
+void entity_get_rotation(entity_t *self, quat_t out);
 /*! Gets the entity's position (relative to its parent). */
-void entity_getPosition(entity_t *self, float *x, float *y, float *z);
+void entity_get_position(entity_t *self, float *x, float *y, float *z);
 
 #if defined(__cplusplus)
 }

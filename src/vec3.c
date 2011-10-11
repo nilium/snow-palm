@@ -29,7 +29,7 @@ void vec3_set(float x, float y, float z, vec3_t v)
 	v[2] = z;
 }
 
-float vec3_lengthSquared(const vec3_t v)
+float vec3_length_squared(const vec3_t v)
 {
 	return (v[0] * v[0]) + (v[1] * v[1]) + (v[2] * v[2]);
 }
@@ -76,7 +76,7 @@ void vec3_invert(vec3_t v)
 	v[2] = -v[2];
 }
 
-void vec3_crossProduct(const vec3_t left, const vec3_t right, vec3_t out)
+void vec3_cross_product(const vec3_t left, const vec3_t right, vec3_t out)
 {
 	float x, y, z;
 	x = (left[1] * right[2]) - (left[2] * right[1]);
@@ -87,7 +87,7 @@ void vec3_crossProduct(const vec3_t left, const vec3_t right, vec3_t out)
 	out[2] = z;
 }
 
-float vec3_dotProduct(const vec3_t left, const vec3_t right)
+float vec3_dot_product(const vec3_t left, const vec3_t right)
 {
 	return ((left[0] * right[0]) + (left[1] * right[1]) + (left[2] * right[2]));
 }

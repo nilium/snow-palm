@@ -39,7 +39,7 @@ extern "C"
 #endif
 
 /*! Main memory pool's tag. */
-const int32_t MAIN_POOL_TAG = 0x8FFFFFFF; /*"net.spifftastic.snow.mainMemoryPool";*/
+const int32_t MAIN_POOL_TAG = 0x8FFFFFFF; /*"net.spifftastic.snow.main_memory_pool";*/
 
 /*! Unused memory block tag. */
 /*static const char *DEFAULT_BLOCK_TAG_UNUSED = "net.spifftastic.snow.unused";*/
@@ -112,7 +112,7 @@ void mem_init_pool(memory_pool_t *pool, buffersize_t size, int32_t tag)
 		pool->head.prev = block;
 		pool->tag = tag;
 		pool->head.pool = pool;
-		pool->nextUnused = block;
+		pool->next_unused = block;
 		pool->sequence = 1;
 		pool->refs = 1;
 		mutex_unlock(&pool->lock);
@@ -138,7 +138,7 @@ void mem_destroy_pool(memory_pool_t *pool)
 		pool->buffer = NULL;
 		pool->head.next = NULL;
 		pool->head.prev = NULL;
-		pool->nextUnused = NULL;
+		pool->next_unused = NULL;
 		pool->head.used = 0;
 		pool->sequence = 0;
 		pool->refs = 0;
@@ -196,32 +196,32 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
 		goto alloc_unlock_and_exit;
 	}
 	
-	buffersize_t blockSize = BLOCK_SIZE(size);
-	if (blockSize < MIN_BLOCK_SIZE) {
-		blockSize = MIN_BLOCK_SIZE;
+	buffersize_t block_size = BLOCK_SIZE(size);
+	if (block_size < MIN_BLOCK_SIZE) {
+		block_size = MIN_BLOCK_SIZE;
 		log_warning("Allocation of %zu is too small, allocating minimum size of %zu instead\n", size, MIN_ALLOC_SIZE);
 	}
 	
-	if (blockSize > pool->size) {
+	if (block_size > pool->size) {
 		log_error("Allocation failed - [%X] requested size %zu exceeds pool capacity (%zu)\n", pool->tag, size, pool->size);
 		goto alloc_unlock_and_exit;
 	}
 	
 	
-	block_head_t *block = pool->nextUnused;
-	block_head_t *const terminator = pool->nextUnused->prev;
+	block_head_t *block = pool->next_unused;
+	block_head_t *const terminator = pool->next_unused->prev;
 	for (; block != terminator; block = block->next) {
 		/* skip used blocks and blocks that're too small */
 		if (block->used) continue;
 		
-		if (block->size < blockSize) continue;
+		if (block->size < block_size) continue;
 		
 		/* if the free block is large enough to be split into two blocks, do that */
-		if ((block->size - blockSize) > MIN_BLOCK_SIZE) {
-			block_head_t *unused = (block_head_t *)((char *)block + blockSize);
+		if ((block->size - block_size) > MIN_BLOCK_SIZE) {
+			block_head_t *unused = (block_head_t *)((char *)block + block_size);
 			
-			unused->size = block->size - blockSize;
-			block->size = blockSize;
+			unused->size = block->size - block_size;
+			block->size = block_size;
 			
 			unused->used = 0;
 			unused->tag = 0;
@@ -240,23 +240,23 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
 		if (pool->sequence == 0) pool->sequence = 1; /* in case of overflow */
 		block->used = ++pool->sequence;
 		block->tag = tag;
-		((uint32_t *)((char *)block + blockSize))[-1] = MEMORY_GUARD;
-		pool->nextUnused = block->next;
+		((uint32_t *)((char *)block + block_size))[-1] = MEMORY_GUARD;
+		pool->next_unused = block->next;
 		
 #if !NDEBUG
 		/* store source file, function, line, and requested size in debugging struct */
 
-		size_t fileLength = strlen(file) + 1;
-		size_t fnLength = strlen(function) + 1; /* account for \0 in both cases */
+		size_t file_length = strlen(file) + 1;
+		size_t fn_length = strlen(function) + 1; /* account for \0 in both cases */
 		/* to avoid pointless fragmentation, we'll allocate this using malloc normally */
-		char *fileCopy = (char *)malloc((fileLength + fnLength) * sizeof(char));
-		strncpy(fileCopy, file, fileLength + 1);
-		block->debug_info.source_file = fileCopy;
+		char *file_copy = (char *)malloc((file_length + fn_length) * sizeof(char));
+		strncpy(file_copy, file, file_length + 1);
+		block->debug_info.source_file = file_copy;
 		
 		/* copy function as well */
-		char *fnCopy = fileCopy + fileLength;
-		strncpy(fnCopy, function, fnLength);
-		block->debug_info.function = fnCopy;
+		char *fn_copy = file_copy + file_length;
+		strncpy(fn_copy, function, fn_length);
+		block->debug_info.function = fn_copy;
 		
 		block->debug_info.line = line;
 		block->debug_info.requested_size = size;
@@ -344,7 +344,7 @@ void mem_free(void *buffer)
 
 #endif /* !NDEBUG */
 	
-	pool->nextUnused = block;
+	pool->next_unused = block;
 	
 free_unlock_and_exit:
 	mutex_unlock(&pool->lock);

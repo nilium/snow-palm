@@ -63,30 +63,30 @@ void quat_multiply(const quat_t left, const quat_t right, quat_t out)
 	w1 = left[3];
 	w2 = right[3];
 
-	w = (w1 * w2) - vec3_dotProduct(left, right);
+	w = (w1 * w2) - vec3_dot_product(left, right);
 	vec3_copy(right, t1);
 	vec3_scale(w1, t1);
 	vec3_copy(left, t2);
 	vec3_scale(w2, t2);
 	vec3_add(t1, t2, t1);
-	vec3_crossProduct(right, left, t2);
+	vec3_cross_product(right, left, t2);
 	vec3_add(t1, t2, t1);
 	vec3_copy(t1, out);
 	out[3] = w;
 }
 
-void quat_multiplyVec3(const quat_t left, const vec3_t right, vec3_t out)
+void quat_multiply_vec3(const quat_t left, const vec3_t right, vec3_t out)
 {
-	vec3_t lxrCross, lxlrCross;
-	vec3_crossProduct(left, right, lxrCross);
-	vec3_crossProduct(left, lxrCross, lxlrCross);
-	vec3_scale(2.0 * left[3], lxrCross);
-	vec3_scale(2.0, lxlrCross);
-	vec3_add(lxrCross, lxlrCross, lxrCross);
-	vec3_add(right, lxrCross, out);
+	vec3_t lxr_cross, lxlr_cross;
+	vec3_cross_product(left, right, lxr_cross);
+	vec3_cross_product(left, lxr_cross, lxlr_cross);
+	vec3_scale(2.0 * left[3], lxr_cross);
+	vec3_scale(2.0, lxlr_cross);
+	vec3_add(lxr_cross, lxlr_cross, lxr_cross);
+	vec3_add(right, lxr_cross, out);
 }
 
-void quat_fromAngleAxis(float angle, float x, float y, float z, quat_t out)
+void quat_from_angle_axis(float angle, float x, float y, float z, quat_t out)
 {
 	vec3_t v = {x, y, z};
 	vec3_normalize(v, v);
@@ -100,7 +100,7 @@ void quat_fromAngleAxis(float angle, float x, float y, float z, quat_t out)
 	out[3] = cosf(angle);
 }
 
-void quat_fromMat4(const mat4_t mat, quat_t out)
+void quat_from_mat4(const mat4_t mat, quat_t out)
 {
 	float trace, r;
 	int index;
@@ -148,10 +148,10 @@ void quat_fromMat4(const mat4_t mat, quat_t out)
 
 void quat_slerp(const quat_t from, const quat_t to, float delta, quat_t out)
 {
-	float dot, scale0, scale1, angle, inverseSin;
+	float dot, scale0, scale1, angle, inverse_sin;
 	float dx, dy, dz, dw;
 	
-	dot = vec4_dotProduct((const float *)from, (const float *)to);
+	dot = vec4_dot_product((const float *)from, (const float *)to);
 	
 	if (dot < 0.0) {
 		dot = -dot;
@@ -169,10 +169,10 @@ void quat_slerp(const quat_t from, const quat_t to, float delta, quat_t out)
 	delta = fminf(fmaxf(delta, 0.0), 1.0);
 
 	angle = acosf(dot);
-	inverseSin = 1.0 / sinf(dot);
+	inverse_sin = 1.0 / sinf(dot);
 
-	scale0 = sin((1.0 - delta) * angle) * inverseSin;
-	scale1 = sin(delta * angle) * inverseSin;
+	scale0 = sin((1.0 - delta) * angle) * inverse_sin;
+	scale1 = sin(delta * angle) * inverse_sin;
 
 	out[0] = (from[0] * scale0) + (dx * scale1);
 	out[1] = (from[1] * scale0) + (dy * scale1);
