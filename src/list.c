@@ -32,11 +32,11 @@ static list_t *list_ctor(list_t *self, memory_pool_t *pool)
 	self = self->isa->super->ctor(self, pool);
 
 	if (self) {
-		list->head.next = list->head.prev = &list->head;
-		list->head.obj = NULL;
-		list->head.list = list;
-		list->pool = mem_retain_pool(pool);
-		list->weak = false;
+		self->head.next = self->head.prev = &self->head;
+		self->head.obj = NULL;
+		self->head.list = self;
+		self->pool = mem_retain_pool(pool);
+		self->weak = false;
 	}
 
 	return self;
@@ -61,9 +61,10 @@ static void list_dtor(list_t *self)
 	self->isa->super->dtor(self);
 }
 
-void list_init(list_t *list, bool weak)
+list_t *list_init(list_t *self, bool weak)
 {
-	list->weak = weak;
+	self->weak = weak;
+	return self;
 }
 
 listnode_t *list_insertBefore(listnode_t *node, object_t *obj)

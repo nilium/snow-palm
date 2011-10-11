@@ -31,6 +31,8 @@ struct s_listnode
 
 struct s_list
 {
+	class_t *isa;
+
 	listnode_t head;
 	int size;
 	memory_pool_t *pool;
@@ -59,7 +61,7 @@ extern const class_t _list_class;
  *  \param[in] weak Whether or not the list's objects are weakly stored. If true,
  *  objects stored in the list are not retained.  If false, they are retained.
  */
-void list_init(list_t *list, bool weak);
+list_t *list_init(list_t *self, bool weak);
 
 listnode_t *list_insertBefore(listnode_t *node, object_t *obj);
 listnode_t *list_insertAfter(listnode_t *node, object_t *obj);
