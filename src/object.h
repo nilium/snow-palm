@@ -132,9 +132,14 @@ void object_delete(object_t *object);
 	This will write value to the given address.  If NULL, it will also cease
 	tracking weak references for the given address.
 */
-void object_storeWeak(void *value, void **address);
+void object_storeWeak(object_t *obj, object_t **store);
+/*! Gets the value pointed to by the weak reference.  (This is to ensure thread
+	safety, as object_getWeak, object_storeWeak, and object_zeroWeak are all
+	wrapped in mutexes.)
+*/
+object_t *object_getWeak(object_t **address);
 /* Zeroes all weak references to the given value. */
-void object_zeroWeak(void *value);
+void object_zeroWeak(object_t *obj);
 
 /*! Determines whether or not a class is also a kind of another class (i.e., if
 	class inherited from the other class at some point). */

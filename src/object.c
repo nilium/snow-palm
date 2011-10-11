@@ -56,10 +56,9 @@ static mutex_t g_retain_lock;
 static memory_pool_t g_refpool;
 static map_t g_refmap; /* kv-pair: (object address, (list_t of void **)) */
 static map_t g_refvaluemap; /* kv-pair: (store address, object address) */
-static mutex_t g_reflock;
 
 /* mapops to retain/release the lists assigned to them as values */
-static void refval_copy(void *value);
+static void *refval_copy(void *value);
 static void refval_destroy(void *value);
 
 static mapops_t g_refops = {
@@ -70,16 +69,17 @@ static mapops_t g_refops = {
 	refval_destroy
 };
 
-static void refval_copy(void* value)
+static void *refval_copy(void* value)
 {
 	if (value != NULL)
-		object_retain(value);
+		object_retain((object_t *)value);
+	return value;
 }
 
 static void refval_destroy(void *value)
 {
 	if (value != NULL)
-		object_release(value);
+		object_release((object_t *)value);
 }
 
 void sys_object_init(void)
@@ -88,7 +88,6 @@ void sys_object_init(void)
 	mem_init_pool(&g_refpool, WEAKREF_POOL_SIZE, WEAKREF_POOL_TAG);
 
 	mutex_init(&g_retain_lock, 1);
-	mutex_init(&g_reflock, 0);
 
 	map_init(&g_retain_map, g_mapops_default, &g_retain_pool);
 	map_init(&g_refmap, g_refops, &g_refpool);
@@ -98,8 +97,13 @@ void sys_object_init(void)
 void sys_object_shutdown(void)
 {
 	map_destroy(&g_retain_map);
+	map_destroy(&g_refmap);
+	map_destroy(&g_refvaluemap);
+	
 	mutex_destroy(&g_retain_lock);
 
+	mem_release_pool(&g_refpool);
+	mem_release_pool(&g_retain_pool);
 #ifndef NDEBUG
 	log_note("Peak object allocations were %zu objects\n", max_objects);
 #endif
@@ -136,11 +140,15 @@ int object_compare(object_t *self, object_t *other)
 
 object_t *object_retain(object_t *self)
 {
+	if (self == NULL) {
+		log_warning("Attempting to retain NULL.\n");
+		return NULL;
+	}
 	uint32_t *retainCount;
 
 	mutex_lock(&g_retain_lock);
 
-	retainCount = (uint32_t *)map_getAddr(&g_retain_map, self);
+	retainCount = (uint32_t *)map_getAddr(&g_retain_map, (mapkey_t)self);
 	if (retainCount) {
 		*retainCount += 1;
 	} else {
@@ -153,7 +161,15 @@ object_t *object_retain(object_t *self)
 
 object_t *object_autorelease(object_t *self)
 {
+	if (self == NULL) {
+		log_warning("Attempting to autorelease NULL.\n");
+		return NULL;
+	}
+
+	mutex_lock(&g_retain_lock);
 	autoreleasepool_addObject(self);
+	mutex_unlock(&g_retain_lock);
+
 	return self;
 }
 
@@ -161,9 +177,14 @@ void object_release(object_t *self)
 {
 	uint32_t *retainCount;
 
+	if (self == NULL) {
+		log_warning("Attempting to release NULL.\n");
+		return;
+	}
+
 	mutex_lock(&g_retain_lock);
 
-	retainCount = map_getAddr(&g_retain_map, self);
+	retainCount = map_getAddr(&g_retain_map, (mapkey_t)self);
 	if (retainCount) {
 		int count = (*retainCount) - 1;
 		
@@ -233,63 +254,84 @@ void object_delete(object_t *object)
 	mem_free(object);
 }
 
-void object_storeWeak(void *value, void **address)
+void object_storeWeak(object_t *obj, object_t **store)
 {
-	void **prevValue;
+	object_t **prevValue;
 	
-	mutex_lock(&g_reflock);
+	mutex_lock(&g_retain_lock);
 
-	prevValue = map_getAddr(&g_refvaluemap, (mapkey_t)address);
+	prevValue = (object_t **)map_getAddr(&g_refvaluemap, (mapkey_t)store);
 	if (prevValue) {
 		/* already has a weak reference */
-		if (*prevValue == value) return;
-		list_t *list = map_get(&g_refmap, *prevValue);
-		list_removeValue(list, address);
+		if (*prevValue == obj) {
+			/** in the event that the weak reference being stored is the same,
+				we can just go ahead and skip doing anything.
 
-		if (value) {
-			*prevValue = value;
-		} else {
-			map_remove(&g_refvaluemap, (mapkey_t)address);
+				I swear, my use of goto is probably going to make a few people
+				want to tear their eyeballs out.
+			*/
+			goto finish_store_weak;
 		}
-	} else if (value) {
-		map_insert(&g_refvaluemap, (mapkey_t)address, value);
+
+		list_t *list = map_get(&g_refmap, *prevValue);
+		list_removeValue(list, store);
+
+		if (obj) {
+			*prevValue = obj;
+		} else {
+			map_remove(&g_refvaluemap, (mapkey_t)store);
+		}
+	} else if (obj) {
+		map_insert(&g_refvaluemap, (mapkey_t)store, obj);
 	}
 
-	if (value) {
-		list_t *valrefs = map_get(&g_refmap, (mapkey_t)value);
+	if (obj) {
+		list_t *valrefs = map_get(&g_refmap, (mapkey_t)obj);
 		if (!valrefs) {
 			valrefs = list_init(object_new(list_class, &g_refpool), true);
-			map_insert(&g_refmap, value, valrefs);
+			map_insert(&g_refmap, obj, valrefs);
 		}
-		/* something of a hack since a list assumes it's storing object references */
-		list_prepend(valrefs, (object_t *)address);
+		/** This is not actually an object, but I'm relying on the fact that lists
+			can store weak references, so it's all good.  Sort of.
+		*/
+		list_prepend(valrefs, (object_t *)store);
 	}
 
-	*address = value;
+	*store = obj;
 
-	mutex_unlock(&g_reflock);
+finish_store_weak:
+	mutex_unlock(&g_retain_lock);
 }
 
-void object_zeroWeak(void *value)
+object_t *object_getWeak(object_t **store)
+{
+	mutex_lock(&g_retain_lock);
+	object_t *obj = *store;
+	if (obj) object_autorelease(object_retain(obj));
+	mutex_unlock(&g_retain_lock);
+	return obj;
+}
+
+void object_zeroWeak(object_t *obj)
 {
 	list_t *list;
 
-	if (!value) return;
+	if (!obj) return;
 
-	mutex_lock(&g_reflock);
+	mutex_lock(&g_retain_lock);
 
-	list = map_get(&g_refmap, value);
+	list = map_get(&g_refmap, obj);
 	if (list) {
 		listnode_t *node = list_firstNode(list);
 		while (node) {
 			map_remove(&g_refvaluemap, (mapkey_t)node->obj);
-			*((void**)node->obj) = NULL;
+			*((object_t **)node->obj) = NULL;
 			node = listnode_next(node);
 		}
-		map_remove(&g_refmap, value);
+		map_remove(&g_refmap, obj);
 	}
 
-	mutex_unlock(&g_reflock);
+	mutex_unlock(&g_retain_lock);
 }
 
 bool class_isKindOf(const class_t *cls, const class_t *other)
