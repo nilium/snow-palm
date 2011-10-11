@@ -38,9 +38,9 @@ struct s_entity
 {
 	class_t *isa;
 
-	list_t components;
+	list_t *components;
 
-	list_t children;
+	list_t *children;
 	listnode_t *parentnode;
 	entity_t *parent;
 
