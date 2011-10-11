@@ -128,6 +128,14 @@ bool object_isClass(object_t *self, class_t *cls);
 object_t *object_new(const class_t *cls, memory_pool_t *pool);
 void object_delete(object_t *object);
 
+/*! Stores a weak reference to value at the specified address.
+	This will write value to the given address.  If NULL, it will also cease
+	tracking weak references for the given address.
+*/
+void object_storeWeak(void *value, void **address);
+/* Zeroes all weak references to the given value. */
+void object_zeroWeak(void *value);
+
 /*! Determines whether or not a class is also a kind of another class (i.e., if
 	class inherited from the other class at some point). */
 bool class_isKindOf(const class_t *cls, const class_t *other);
