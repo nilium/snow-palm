@@ -31,6 +31,19 @@ const class_t _object_class = {
 	object_compare,
 };
 
+#ifndef NDEBUG
+/** These globals are here mainly to track the maximum number of objects allocated
+	during runtime.  This, in turn, allows me to tweak the size of the retain
+	memory pool.  I should probably do the same for weak references, but the
+	reality is that weak references are unlikely to be heavily used due to
+	their relatively high performance cost (this could be optimized later, probably).
+*/
+/* max_objects tracks the peak number of objects at runtime */
+static size_t max_objects = 0;
+/* total_objects tracks the number of objects currently instantiated */
+static size_t total_objects = 0;
+#endif
+
 #define RETAIN_POOL_SIZE (16384 * sizeof(void *))
 #define WEAKREF_POOL_SIZE (16384* sizeof(listnode_t))
 #define RETAIN_POOL_TAG 0x00F8800A
@@ -86,6 +99,10 @@ void sys_object_shutdown(void)
 {
 	map_destroy(&g_retain_map);
 	mutex_destroy(&g_retain_lock);
+
+#ifndef NDEBUG
+	log_note("Peak object allocations were %zu objects\n", max_objects);
+#endif
 }
 
 static object_t *object_ctor(object_t *self, memory_pool_t *pool)
@@ -98,6 +115,12 @@ static object_t *object_ctor(object_t *self, memory_pool_t *pool)
 static void object_dtor(object_t *self)
 {
 	object_zeroWeak(self);
+#ifndef NDEBUG
+	/* for the sake of tracking object allocations (to determine necessary memory use) */
+	mutex_lock(&g_retain_lock);
+	total_objects -= 1;
+	mutex_unlock(&g_retain_lock);
+#endif
 }
 
 int object_compare(object_t *self, object_t *other)
@@ -174,6 +197,13 @@ int32_t object_retainCount(object_t *self)
 
 object_t *object_new(const class_t *cls, memory_pool_t *pool)
 {
+#ifndef NDEBUG
+	/* for the sake of tracking object allocations (to determine necessary memory use) */
+	mutex_lock(&g_retain_lock);
+	total_objects += 1;
+	if (total_objects > max_objects) max_objects = total_objects;
+	mutex_unlock(&g_retain_lock);
+#endif
 	/* allocate the object from the given memory pool */
 	object_t *self = (object_t *)mem_alloc(pool, cls->size, (int32_t)(cls));
 	
