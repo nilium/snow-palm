@@ -47,7 +47,7 @@ struct s_entity
 	char *name;
 	
 	/*! internal flags */
-	entity_flag_t _iflags;
+	entity_flag_t prv_iflags;
 
 	mat4_t world_transform;
 	mat4_t transform;
@@ -56,8 +56,8 @@ struct s_entity
 	vec3_t scale;
 };
 
-extern const class_t _entity_class;
-#define entity_class (&_entity_class)
+extern const class_t g_entity_class;
+#define entity_class (&g_entity_class)
 
 /** The entity system depends on the object and memory systems. */
 void sys_entity_init(void);

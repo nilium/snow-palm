@@ -76,8 +76,8 @@ struct s_object
 	const class_t *isa;
 };
 
-extern const class_t _object_class;
-#define object_class (&_object_class)
+extern const class_t g_object_class;
+#define object_class (&g_object_class)
 
 /** The object system depends on the memory system. */
 void sys_object_init(void);

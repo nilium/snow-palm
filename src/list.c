@@ -15,7 +15,7 @@ extern "C"
 static list_t *list_ctor(list_t *self, memory_pool_t *pool);
 static void list_dtor(list_t *self);
 
-const class_t _list_class = {
+const class_t g_list_class = {
 	object_class,
 	sizeof(list_t),
 

@@ -17,7 +17,7 @@ extern "C"
 static array_t *array_ctor(array_t *self, memory_pool_t *pool);
 static void array_dtor(array_t *self);
 
-const class_t _array_class = {
+const class_t g_array_class = {
 	object_class,
 	sizeof(array_t),
 
