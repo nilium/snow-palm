@@ -22,25 +22,25 @@ static void entity_build_matrices(entity_t *self);
 
 static inline void entity_unset_flag(entity_t *self, entity_flag_t flag)
 {
-	self->_iflags &= ~flag;
+	self->prv_iflags &= ~flag;
 }
 
 static inline void entity_set_flag(entity_t *self, entity_flag_t flag)
 {
-	self->_iflags |= flag;
+	self->prv_iflags |= flag;
 }
 
 static inline void entity_toggle_flag(entity_t *self, entity_flag_t flag)
 {
-	self->_iflags ^= flag;
+	self->prv_iflags ^= flag;
 }
 
 static inline bool entity_is_flag_set(entity_t *self, entity_flag_t flag)
 {
-	return ((self->_iflags & flag) == flag);
+	return ((self->prv_iflags & flag) == flag);
 }
 
-const class_t _entity_class = {
+const class_t g_entity_class = {
 	object_class,
 	sizeof(entity_t),
 
@@ -50,8 +50,8 @@ const class_t _entity_class = {
 	object_compare,
 };
 
-memory_pool_t _g_entity_pool;
-#define g_entity_pool (&_g_entity_pool)
+memory_pool_t gv_entity_pool;
+#define g_entity_pool (&gv_entity_pool)
 
 static list_t *g_entities;
 

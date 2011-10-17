@@ -39,8 +39,8 @@ struct s_array
 	memory_pool_t *pool;
 };
 
-extern const class_t _array_class;
-#define array_class (&_array_class)
+extern const class_t g_array_class;
+#define array_class (&g_array_class)
 
 array_t *array_init(array_t *self, size_t object_size, size_t size, size_t capacity);
 array_t *array_copy(array_t *other);

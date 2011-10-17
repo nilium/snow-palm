@@ -21,7 +21,7 @@ static object_t *object_ctor(object_t *self, memory_pool_t *pool);
 /* The basic object destructor. */
 static void object_dtor(object_t *self);
 
-const class_t _object_class = {
+const class_t g_object_class = {
 	NULL,
 	sizeof(object_t),
 

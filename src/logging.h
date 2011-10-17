@@ -33,12 +33,12 @@ extern "C"
  *  @param[in] format The format for the error message.
  *  @param[in] error The error code to exit with.
  */
-void log_fatal_(const char *format, int error, ...);
+void log_fatal_impl(const char *format, int error, ...);
 
 /*! \brief Macro around ::log_fatal_ to pass in additional file, line number,
 	and callee information to the format string.  This is never a no-op.
 */
-#define log_fatal(FORMAT, ERROR, args...) log_fatal_("Fatal Error [%s:%s:%d]: " FORMAT, (ERROR), __FILE__, __FUNCTION__, __LINE__, ##args)
+#define log_fatal(FORMAT, ERROR, args...) log_fatal_impl("Fatal Error [%s:%s:%d]: " FORMAT, (ERROR), __FILE__, __FUNCTION__, __LINE__, ##args)
 
 #if PLATFORM_TOUCHPAD
 #define log(STR, args...) PDL_Log((STR), ##args)

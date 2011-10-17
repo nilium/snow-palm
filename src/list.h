@@ -39,8 +39,8 @@ struct s_list
 	bool weak;
 };
 
-extern const class_t _list_class;
-#define list_class (&_list_class)
+extern const class_t g_list_class;
+#define list_class (&g_list_class)
 
 /*! \p A Note on List Indices
  * List indices, in the context of linked lists in snow, go two ways:
