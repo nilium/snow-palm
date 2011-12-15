@@ -50,7 +50,7 @@ static void arpool_tls_dtor(tlskey_t key, void *value)
 	}
 }
 
-void autoreleasepool_push()
+void autoreleasepool_push(void)
 {
 	autoreleasepool_t *base = (autoreleasepool_t *)tls_get(g_arp_base_key);
 	if (!base) {
@@ -77,7 +77,7 @@ void autoreleasepool_add_object(object_t *object)
 	array_push(base->object_array, &object);
 }
 
-void autoreleasepool_pop()
+void autoreleasepool_pop(void)
 {
 	autoreleasepool_t *base = (autoreleasepool_t *)tls_get(g_arp_base_key);
 
