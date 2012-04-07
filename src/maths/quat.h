@@ -9,7 +9,7 @@
 
 #define QUAT_H
 
-#include "math3d.h"
+#include "maths.h"
 
 #if defined(__cplusplus)
 extern "C"

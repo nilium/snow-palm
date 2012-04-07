@@ -9,8 +9,8 @@
 
 #define AUTORELEASEPOOL_H
 
-#include "config.h"
-#include "object.h"
+#include "../config.h"
+#include "../object.h"
 
 #if defined(__cplusplus)
 extern "C"

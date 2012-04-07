@@ -6,8 +6,8 @@
 */
 
 
-#ifndef MATH3D_H_G3RBNYON
-#define MATH3D_H_G3RBNYON
+#ifndef MATHS_H_G3RBNYON
+#define MATHS_H_G3RBNYON
 
 #if defined(__cplusplus)
 extern "C"
@@ -23,30 +23,31 @@ typedef float quat_t[4];
  * macros to expand vectors/matrices/quaternions for passing their components as arguments
  */
 
-/* vector expansion */
+/* Expands a vector to the value of each component of the vector. */
 #define vec2_expand(V) ((V)[0]), ((V)[1])
 #define vec3_expand(V) ((V)[0]), ((V)[1]), ((V)[2])
 #define vec4_expand(V) ((V)[0]), ((V)[1]), ((V)[2]), ((V)[3])
 
+/* Expands a vector to an address for each component of the vector */
 #define vec2_expand_addr(V) (V), (V+1)
 #define vec3_expand_addr(V) (V), (V+1), ((V)+2)
 #define vec4_expand_addr(V) (V), (V+1), ((V)+2), ((V)+3)
 
-/* matrix expansion */
+/* Matrix expansion - works the same as vec*_expand by providing a comma-separated list of the matrix's components. */
 #define mat4_expand(M) \
 	((M)[0 ]), ((M)[1 ]), ((M)[2 ]), ((M)[3 ]), \
 	((M)[4 ]), ((M)[5 ]), ((M)[6 ]), ((M)[7 ]), \
 	((M)[8 ]), ((M)[9 ]), ((M)[10]), ((M)[11]), \
 	((M)[12]), ((M)[13]), ((M)[14]), ((M)[15])
 
-/* matrix expansion transposed */
+/* Transposed matrix expansion - same as mat4_expand, but transposed. */
 #define mat4_expand_transposed(M) \
 	((M)[0 ]), ((M)[4 ]), ((M)[8 ]), ((M)[12]), \
 	((M)[1 ]), ((M)[5 ]), ((M)[9 ]), ((M)[13]), \
 	((M)[2 ]), ((M)[6 ]), ((M)[10]), ((M)[14]), \
 	((M)[3 ]), ((M)[7 ]), ((M)[11]), ((M)[15])
 
-/* matrix column expansion */
+/* Matrix column expansion */
 #define mat4_expand_cX(M) \
 	((M)[0 ]), ((M)[4 ]), ((M)[8 ]), ((M)[12])
 #define mat4_expand_cY(M) \
@@ -66,15 +67,15 @@ typedef float quat_t[4];
 #define mat4_expand_rW(M) \
 	((M)[12]), ((M)[13]), ((M)[14]), ((M)[15])
 
-/* quaternion expansion */
+/* Quaternion expansion */
 #define quat_expand(Q) ((Q)[0]), ((Q)[1]), ((Q)[2]), ((Q)[3])
 #define quat_expand_addr(Q) (Q), (Q+1), ((Q)+2), ((Q)+3)
 
 
 /*!
- * Floating point epsilon for float comparisons.  This is, more or less, the limit
- * to accuracy.  If the difference between two floating point values is less than
- * the epsilon, they are for all intents and purposes the same.
+ * Floating point epsilon for float comparisons.  This is, more or less, the
+ * limit to accuracy.  If the difference between two floating point values is
+ * less than the epsilon, they are for all intents and purposes the same.
  *
  * It should be stressed that this is absolutely not an accurate epsilon.
  */
@@ -93,5 +94,5 @@ typedef float quat_t[4];
 #include "matrix.h"
 #include "quat.h"
 
-#endif /* end of include guard: MATH3D_H_G3RBNYON */
+#endif /* end of include guard: MATHS_H_G3RBNYON */
 

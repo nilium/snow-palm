@@ -9,7 +9,7 @@
 
 #define VEC4_H
 
-#include "math3d.h"
+#include "maths.h"
 
 extern const vec4_t g_vec4_zero;
 extern const vec4_t g_vec4_one;

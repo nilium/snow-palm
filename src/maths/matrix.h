@@ -8,7 +8,7 @@
 #ifndef MATRIX_H_3CZ1OZK7
 #define MATRIX_H_3CZ1OZK7
 
-#include "math3d.h"
+#include "maths.h"
 
 #if defined(__cplusplus)
 extern "C"

@@ -8,8 +8,8 @@
 #ifndef MEMORY_H_SA7RAUP3
 #define MEMORY_H_SA7RAUP3
 
-#include "config.h"
-#include "mutex.h"
+#include "../config.h"
+#include "../threads/mutex.h"
 
 /*!
 	\file
