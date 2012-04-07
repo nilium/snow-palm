@@ -9,8 +9,8 @@
 
 #define THREADSTORAGE_H
 
-#include "config.h"
-#include "map.h"
+#include "../config.h"
+#include "../structs/map.h"
 
 #if defined(__cplusplus)
 extern "C"
