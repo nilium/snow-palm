@@ -12,18 +12,18 @@ typedef struct s_allocator {
   void *context;
 } allocator_t;
 
-inline void *com_malloc(allocator_t alloc, size_t min_size) {
-  return alloc.malloc(min_size, alloc.context);
+inline void *com_malloc(allocator_t *alloc, size_t min_size) {
+  return alloc->malloc(min_size, alloc->context);
 }
 
-inline void *com_realloc(allocator_t alloc, void *p, size_t min_size) {
-  return alloc.realloc(p, min_size, alloc.context);
+inline void *com_realloc(allocator_t *alloc, void *p, size_t min_size) {
+  return alloc->realloc(p, min_size, alloc->context);
 }
 
-inline void com_free(allocator_t alloc, void *p) {
-  return alloc.free(p, alloc.context);
+inline void com_free(allocator_t *alloc, void *p) {
+  return alloc->free(p, alloc->context);
 }
 
-allocator_t default_allocator(void);
+extern allocator_t *g_default_allocator;
 
 #endif /* end __SNOW_ALLOCATOR_H__ include guard */

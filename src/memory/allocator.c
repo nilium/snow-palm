@@ -16,9 +16,11 @@ static void *sn_realloc(void *p, size_t min_size, void *ctx) {
   return realloc(p, min_size);
 }
 
-allocator_t default_allocator() {
-  static allocator_t g_default_allocator = {
-    sn_malloc, sn_realloc, sn_free, NULL
-  };
-  return g_default_allocator;
-}
+static allocator_t default_allocator = {
+  .malloc = sn_malloc,
+  .realloc = sn_realloc,
+  .free = sn_free,
+  .context = NULL
+};
+
+allocator_t *g_default_allocator = &default_allocator;

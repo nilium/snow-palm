@@ -17,7 +17,7 @@ void array_destroy(array_t *self)
   if (self == NULL)
     s_fatal_error(1, "Cannot destroy NULL array.");
 
-  allocator_t alloc = self->allocator;
+  allocator_t *alloc = self->allocator;
 
   if (self->buf != NULL)
     com_free(alloc, self->buf);
@@ -25,9 +25,12 @@ void array_destroy(array_t *self)
   com_free(alloc, self);
 }
 
-array_t *array_new(size_t object_size, size_t capacity, allocator_t alloc)
+array_t *array_new(size_t object_size, size_t capacity, allocator_t *alloc)
 {
-  if (!(alloc.malloc && alloc.free)) {
+  if (alloc == NULL)
+    alloc = g_default_allocator;
+
+  if (!(alloc->malloc && alloc->free)) {
     s_fatal_error(1, "malloc & free pointers are NULL");
     return NULL;
   }

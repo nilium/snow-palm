@@ -39,11 +39,11 @@ struct s_mapnode
 
 struct s_mapops
 {
-  mapkey_t (*copy_key)(mapkey_t key, allocator_t alloc);
-  void (*destroy_key)(mapkey_t key, allocator_t alloc);
+  mapkey_t (*copy_key)(mapkey_t key, allocator_t *alloc);
+  void (*destroy_key)(mapkey_t key, allocator_t *alloc);
   int (*compare_key)(mapkey_t left, mapkey_t right);
-  void *(*copy_value)(void *value, allocator_t alloc);
-  void (*destroy_value)(void *value, allocator_t alloc);
+  void *(*copy_value)(void *value, allocator_t *alloc);
+  void (*destroy_value)(void *value, allocator_t *alloc);
 };
 
 struct s_map
@@ -52,12 +52,12 @@ struct s_map
   int size;
 /*  comparator_fn compare; */
   mapops_t ops;
-  allocator_t allocator;
+  allocator_t *allocator;
 };
 
 extern const mapops_t g_mapops_default;
 
-void map_init(map_t *map, mapops_t ops, allocator_t alloc);
+void map_init(map_t *map, mapops_t ops, allocator_t *alloc);
 void map_destroy(map_t *map);
 
 void map_insert(map_t *map, mapkey_t key, void *p);

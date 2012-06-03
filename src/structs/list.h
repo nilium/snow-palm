@@ -35,7 +35,7 @@ struct s_list
   size_t size;
   size_t obj_size;
   bool release;
-  allocator_t allocator;
+  allocator_t *allocator;
 };
 
 /*! \p A Note on List Indices
@@ -57,7 +57,7 @@ struct s_list
  *  \param[in] list The list to be initialized.
  *  \param[in] object_size The size of objects contained in the list.
  */
-list_t *list_init(list_t *list, size_t object_size, allocator_t alloc);
+list_t *list_init(list_t *list, size_t object_size, allocator_t *alloc);
 void list_destroy(list_t *self);
 
 listnode_t *list_insert_before(listnode_t *node, void *value);

@@ -34,10 +34,10 @@ struct s_array
     currently holds. */
   size_t size;
   /*! The array's allocator */
-  allocator_t allocator;
+  allocator_t *allocator;
 };
 
-array_t *array_new(size_t object_size, size_t capacity, allocator_t alloc);
+array_t *array_new(size_t object_size, size_t capacity, allocator_t *alloc);
 
 void array_destroy(array_t *self);
 array_t *array_copy(const array_t *src);

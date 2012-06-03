@@ -32,7 +32,7 @@ static listnode_t *list_alloc_node(list_t *list, const void *value) {
 
 void list_destroy(list_t *self)
 {
-  allocator_t alloc = self->allocator;
+  allocator_t *alloc = self->allocator;
 
   self->head.prev->next = NULL;
   listnode_t *next = self->head.next;
@@ -45,7 +45,7 @@ void list_destroy(list_t *self)
   memset(self, 0, sizeof(*self));
 }
 
-list_t *list_init(list_t *self, size_t object_size, allocator_t alloc)
+list_t *list_init(list_t *self, size_t object_size, allocator_t *alloc)
 {
   self->allocator = alloc;
   self->obj_size = object_size;
@@ -158,7 +158,7 @@ bool list_is_empty(const list_t *list)
 
 void list_clear(list_t *list)
 {
-  allocator_t alloc = list->allocator;
+  allocator_t *alloc = list->allocator;
   listnode_t *node = list->head.next;
 
   if (node == &list->head) return;
