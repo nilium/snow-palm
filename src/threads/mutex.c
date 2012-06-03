@@ -69,7 +69,7 @@ static void init_mutex_attr(void)
   atexit(destroy_mutex_attr);
 }
 
-void mutex_init(mutex_t *lock, int recursive)
+void mutex_init(mutex_t *lock, bool recursive)
 {
   pthread_mutexattr_t *attr = (recursive ? &g_recursive_attr : &g_normal_attr);
   pthread_once(&g_mutex_attr_once, init_mutex_attr);
@@ -119,7 +119,7 @@ void mutex_lock(mutex_t *lock)
   }
 }
 
-int mutex_trylock(mutex_t *lock)
+bool mutex_trylock(mutex_t *lock)
 {
   int error = pthread_mutex_trylock((pthread_mutex_t *)lock);
   
