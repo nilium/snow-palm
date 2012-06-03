@@ -14,7 +14,7 @@ extern "C"
 {
 #endif
 
-void log_fatal_impl(const char *format, int error, ...)
+void s_log_fatal_impl(const char *format, int error, ...)
 {
 	va_list args;
 	va_start(args, error);
