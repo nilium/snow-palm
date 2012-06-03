@@ -8,6 +8,7 @@
 #ifndef lconfig_h
 #define lconfig_h
 
+#include <snow-config.h>
 #include <limits.h>
 #include <stddef.h>
 
@@ -376,14 +377,14 @@
 ** ===================================================================
 */
 
-#define LUA_NUMBER_DOUBLE
-#define LUA_NUMBER	double
+#define LUA_NUMBER_FLOAT
+#define LUA_NUMBER	s_float_t
 
 /*
 @@ LUAI_UACNUMBER is the result of an 'usual argument conversion'
 @* over a number.
 */
-#define LUAI_UACNUMBER	double
+#define LUAI_UACNUMBER	s_float_t
 
 
 /*
