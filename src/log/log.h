@@ -14,9 +14,18 @@
 #include <PDL.h>
 #endif
 
+#define SNOW_LOG_NOTHING          (0)
+#define SNOW_LOG_ERRORS           (1)
+#define SNOW_LOG_WARNINGS_ERRORS  (2)
+#define SNOW_LOG_EVERYTHING       (3)
+
 /*! Force the inclusion of logging macros regardless of release/debug mode. */
 #if !defined(FORCE_LOGGING)
 #define FORCE_LOGGING 0
+#endif
+
+#if !defined(SNOW_LOGGING_LEVEL)
+#define SNOW_LOGGING_LEVEL SNOW_LOG_EVERYTHING
 #endif
 
 #if defined(__cplusplus)
@@ -51,26 +60,26 @@ void s_fatal_error_impl(const char *format, int error, ...);
 
 /* if debugging or logging is forcibly enabled, then provide additional logging macros */
 #if !defined(NDEBUG) || FORCE_LOGGING
-#if !defined(log_error)
-#define s_log_error(FORMAT, args...)   log("Error [%s:%s:%d]: "   FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
+#if !defined(s_log_error) && SNOW_LOGGING_LEVEL > SNOW_LOG_ERRORS
+#define s_log_error(FORMAT, args...)   s_log("Error [%s:%s:%d]: "   FORMAT "\n", __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
-#if !defined(log_warning)
-#define s_log_warning(FORMAT, args...) log("Warning [%s:%s:%d]: " FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
+#if !defined(s_log_warning) && SNOW_LOGGING_LEVEL > SNOW_LOG_WARNINGS_ERRORS
+#define s_log_warning(FORMAT, args...) s_log("Warning [%s:%s:%d]: " FORMAT "\n", __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
-#if !defined(log_note)
-#define s_log_note(FORMAT, args...)    log("Note [%s:%s:%d]: "    FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
+#if !defined(s_log_note) && SNOW_LOGGING_LEVEL > SNOW_LOG_EVERYTHING
+#define s_log_note(FORMAT, args...)    s_log("Note [%s:%s:%d]: "    FORMAT "\n", __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
-#else
+#endif
+
 /* unless previously defined, log macros do nothing in release builds */
-#if !defined(log_error)
+#if !defined(s_log_error)
 #define s_log_error(FORMAT, args...) 
 #endif
-#if !defined(log_warning)
+#if !defined(s_log_warning)
 #define s_log_warning(FORMAT, args...) 
 #endif
-#if !defined(log_note)
+#if !defined(s_log_note)
 #define s_log_note(FORMAT, args...) 
-#endif
 #endif
 
 /*! \def log_error(FORMAT, args...)
