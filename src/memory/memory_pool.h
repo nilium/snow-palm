@@ -87,8 +87,6 @@ struct s_memory_pool
 	int32_t sequence;
 	/*! The memory used by the memory pool. */
 	char *buffer;
-	/*! The ID tag of the memory pool. */
-	int32_t tag;
 	/*! The next free block of memory. */
 	block_head_t *next_unused;
 	/*! Header block - size is always 0, used is always 1, etc. */
@@ -114,11 +112,8 @@ void sys_mem_shutdown(void);
  * 
  * \param[inout]	pool The address of an uninitialized pool to be initialized.
  * \param[in]		size The size of the memory pool to initialize.
- * \param[in]		tag An integer tag to identify the memory pool by.  Cannot be
- *	zero or the same as ::MAIN_POOL_TAG.  Recommendation: set up an enum for all
- *	pools and only use those values for tags.
  */
-void mem_init_pool(memory_pool_t *pool, buffersize_t size, int32_t tag);
+void mem_init_pool(memory_pool_t *pool, buffersize_t size);
 
 /*!
  * Destroys a memory pool.
