@@ -9,7 +9,7 @@
 
 #define THREADSTORAGE_H
 
-#include "../config.h"
+#include <snow-config.h>
 #include "../structs/map.h"
 
 #if defined(__cplusplus)

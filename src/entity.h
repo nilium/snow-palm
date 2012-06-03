@@ -9,7 +9,7 @@
 
 #define ENTITY_H
 
-#include "config.h"
+#include <snow-config.h>
 #include "math3d.h"
 #include "list.h"
 #include "object.h"

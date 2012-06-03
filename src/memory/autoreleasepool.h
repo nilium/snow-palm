@@ -9,7 +9,7 @@
 
 #define AUTORELEASEPOOL_H
 
-#include "../config.h"
+#include <snow-config.h>
 #include "../object.h"
 
 #if defined(__cplusplus)

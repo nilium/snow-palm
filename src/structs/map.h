@@ -9,7 +9,7 @@
 
 #define MAP_H
 
-#include "config.h"
+#include <snow-config.h>
 #include "memory.h"
 
 #if defined(__cplusplus)

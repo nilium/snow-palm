@@ -5,7 +5,7 @@
 	See LICENSE.md for license information
 */
 
-#include "config.h"
+#include <snow-config.h>
 #include "memory.h"
 #include "entity.h"
 #include "autoreleasepool.h"
