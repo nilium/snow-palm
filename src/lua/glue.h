@@ -5,7 +5,7 @@
 #define sn__lua_arg(POS) sn__lua_arg_##POS
 // OPTIONAL ARGUMENT STUFF
 #define sn__lua_glue_optarg(POS, LUA_ISA, DEFAULT, VALUE)\
-  (((POS) >= sn__lua_stack_size && LUA_ISA(L, (POS))) ? (VALUE) : (DEFAULT))
+  (((POS) <= sn__lua_stack_size && LUA_ISA(L, (POS))) ? (VALUE) : (DEFAULT))
 // GLUE FUNCTION NAME
 #define sn__lua_glue_function_name(NAME) sn_##NAME##_glue
 
@@ -243,7 +243,7 @@
 // MATHS TYPES
 #define sn__lua_glue_handle_arg_maths_generic(POS, TYPENAME, TONAME)\
   TYPENAME sn__lua_arg(POS) = {0.0};\
-  if (sn__lua_stack_size >= (POS)) lua_to##TONAME(L, POS, sn__lua_arg(POS));
+  if ((POS) <= sn__lua_stack_size) lua_to##TONAME(L, POS, sn__lua_arg(POS));
 #define sn__lua_glue_handle_arg_vec3_t(POS)\
   sn__lua_glue_handle_arg_maths_generic(POS, vec3_t, vec3)
 #define sn__lua_glue_handle_arg_vec4_t(POS)\
