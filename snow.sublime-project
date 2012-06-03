@@ -1,0 +1,12 @@
+{
+	"folders":
+	[
+		{
+			"path": "/Users/noel/snow-c"
+		}
+	],
+
+  "settings": {
+    "include_guard_prefix": "SNOW_"
+  }
+}
