@@ -5,9 +5,9 @@
 	See LICENSE.md for license information
 */
 
-#ifndef CONFIG_H
+#ifndef __SNOW_CONFIG_H__
 
-#define CONFIG_H
+#define __SNOW_CONFIG_H__
 
 #include <stdint.h>
 #include <stddef.h>
@@ -87,5 +87,5 @@
 #include "src/vec3.h"
 #include "src/vec4.h"
 
-#endif /* end of include guard: CONFIG_H */
+#endif /* end of include guard: __SNOW_CONFIG_H__ */
 

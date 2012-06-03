@@ -9,7 +9,7 @@
 
 #define MUTEX_H
 
-#include "../config.h"
+#include <snow-config.h>
 
 #if defined(__cplusplus)
 extern "C"

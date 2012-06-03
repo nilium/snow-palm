@@ -9,7 +9,7 @@
 
 #define DYNARRAY_H
 
-#include "config.h"
+#include <snow-config.h>
 #include "memory.h"
 #include "object.h"
 
