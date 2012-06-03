@@ -5,6 +5,16 @@ so it won't be wildly confusing later.  This is to ensure some manner of
 uniformity in snow-palm code, but really is just my personal preferences
 outlined in a document, since I'm the only person working on it.
 
+## Commit Messages
+
+Standard git commit messages.  In general, I'll just refer to [Tim Pope's
+article][commits] on git commit messages.
+
+Detailed explanations aren't necessary if the first line and diff more
+or less explain the changes, but try to include something.
+
+[commits]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
+
 ## Indentation
 
 * Soft tabs (use spaces)
