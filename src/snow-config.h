@@ -81,11 +81,11 @@
 #include <PDL.h>
 #endif
 
-#include "src/maths.h"
-#include "src/mat4.h"
-#include "src/quat.h"
-#include "src/vec3.h"
-#include "src/vec4.h"
+#include <maths/maths.h>
+#include <maths/mat4.h>
+#include <maths/quat.h>
+#include <maths/vec3.h>
+#include <maths/vec4.h>
 
 #endif /* end of include guard: __SNOW_CONFIG_H__ */
 
