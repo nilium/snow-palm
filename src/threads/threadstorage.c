@@ -12,7 +12,7 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-#if USE_PTHREADS
+#if S_USE_PTHREADS
 
 #define DTOR_KV_CAPACITY 32
 #define TLS_ALLOC_TAG 0x006000F8
@@ -31,7 +31,8 @@ struct s_tls_entry
   void *value;
 };
 
-pthread_key_t g_tls_key;
+static allocator_t *g_tls_allocator = NULL;
+static pthread_key_t g_tls_key;
 
 static void tls_specific_dtor(void *value)
 {
@@ -54,24 +55,27 @@ static void tls_specific_dtor(void *value)
       if (entry->dtor != NULL)
         entry->dtor(keys[kvindex], entry->value);
 
-      mem_free(entry);
+      com_free(g_tls_allocator, entry);
     }
   }
 
   map_destroy(&base->kvmap);
 
-  mem_free(base);
+  com_free(g_tls_allocator, base);
 }
 
-void sys_tls_init(void)
+void sys_tls_init(allocator_t *allocator)
 {
+  if (allocator == NULL)
+    allocator = g_default_allocator;
+  g_tls_allocator = allocator;
   pthread_key_create(&g_tls_key, tls_specific_dtor);
 }
 
 void sys_tls_shutdown(void)
 {
   tls_specific_dtor(pthread_getspecific(g_tls_key));
-  pthread_key_delete(&g_tls_key);
+  pthread_key_delete(g_tls_key);
 }
 
 void tls_put(tlskey_t key, void *value, tls_destructor_t dtor)
@@ -81,7 +85,7 @@ void tls_put(tlskey_t key, void *value, tls_destructor_t dtor)
   tls_entry_t *entry;
 
   if (specific == NULL) {
-    base = (tls_base_t *)mem_alloc(NULL, sizeof(tls_base_t), TLS_ALLOC_TAG);
+    base = (tls_base_t *)com_malloc(g_tls_allocator, sizeof(*base));
     map_init(&base->kvmap, g_mapops_default, NULL);
     pthread_setspecific(g_tls_key, (void *)base);
   } else {
@@ -90,7 +94,7 @@ void tls_put(tlskey_t key, void *value, tls_destructor_t dtor)
   
   entry = map_get(&base->kvmap, key);
   if (!entry) {
-    entry = (tls_entry_t *)mem_alloc(NULL, sizeof(tls_entry_t), TLS_ALLOC_TAG);
+    entry = (tls_entry_t *)com_malloc(g_tls_allocator, sizeof(*entry));
   }
 
   entry->dtor = dtor;

@@ -18,7 +18,7 @@ extern "C"
 
 typedef void *(*thread_fn_t)(void *context);
 
-#if USE_PTHREADS
+#if S_USE_PTHREADS
 typedef pthread_t thread_t;
 
 /*! Initializes a thread. */
@@ -57,7 +57,7 @@ inline thread_t thread_current_thread(void)
   return pthread_self();
 }
 
-#else /* USE_PTHREADS */
+#else /* S_USE_PTHREADS */
 
 /*! Initializes a thread. */
 void thread_create(thread_t *thread, thread_fn_t fn, void *context);

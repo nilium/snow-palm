@@ -10,7 +10,8 @@
 #define THREADSTORAGE_H
 
 #include <snow-config.h>
-#include "../structs/map.h"
+#include <structs/map.h>
+#include <memory/allocator.h>
 
 #if defined(__cplusplus)
 extern "C"
@@ -30,7 +31,7 @@ typedef mapkey_t tlskey_t;
 typedef void (*tls_destructor_t)(tlskey_t key, void *value);
 
 /** TLS depends on the memory and object systems */
-void sys_tls_init(void);
+void sys_tls_init(allocator_t *allocator);
 void sys_tls_shutdown(void);
 
 /*! \brief Places a pointer in thread-local storage.
