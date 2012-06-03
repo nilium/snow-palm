@@ -5,7 +5,7 @@
 	See LICENSE.md for license information
 */
 
-#include "logging.h"
+#include "log.h"
 #include <stdarg.h>
 #include <stdlib.h>
 
