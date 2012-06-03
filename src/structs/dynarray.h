@@ -1,5 +1,5 @@
 /*
-  Dynamic array class
+  Dynamic array object
   Written by Noel Cower
 
   See LICENSE.md for license information
@@ -10,8 +10,7 @@
 #define DYNARRAY_H
 
 #include <snow-config.h>
-#include "memory.h"
-#include "object.h"
+#include <memory/allocator.h>
 
 #if defined(__cplusplus)
 extern "C"
@@ -20,11 +19,10 @@ extern "C"
 
 /*! Array object type */
 typedef struct s_array array_t;
+typedef void (*iterator_fn_t)(void *elem, size_t index, void *context, bool *stop);
 
 struct s_array
 {
-  const class_t *isa;
-
   /*! The array's buffer */
   char *buf;
   /*! Size of each element in the array */
@@ -35,15 +33,14 @@ struct s_array
   /*! The size (or length) of the array - this is how many elements the array
     currently holds. */
   size_t size;
-  /*! The memory pool associated with the array. */
-  memory_pool_t *pool;
+  /*! The array's allocator */
+  allocator_t allocator;
 };
 
-extern const class_t g_array_class;
-#define array_class (&g_array_class)
+array_t *array_new(size_t object_size, size_t capacity, allocator_t alloc);
 
-array_t *array_init(array_t *self, size_t object_size, size_t size, size_t capacity);
-array_t *array_copy(array_t *other);
+void array_destroy(array_t *self);
+array_t *array_copy(const array_t *src);
 
 bool array_resize(array_t *self, size_t size);
 bool array_reserve(array_t *self, size_t capacity);
@@ -51,14 +48,18 @@ bool array_reserve(array_t *self, size_t capacity);
 size_t array_size(const array_t *self);
 size_t array_capacity(const array_t *self);
 
-void array_sort(array_t *self, int (*comparator)(const void *left, const void *right));
+bool array_sort(array_t *self, int (*comparator)(const void *left, const void *right));
 
+bool array_get(array_t *self, size_t index, void *dst);
+bool array_store(array_t *self, size_t index, const void *src);
 void *array_at_index(array_t *self, size_t index);
 
 bool array_push(array_t *self, const void *value);
-void array_pop(array_t *self, void *result);
+bool array_pop(array_t *self, void *result);
 
 void *array_buffer(array_t *self, size_t *byte_length);
+
+void array_each(array_t *self, iterator_fn_t iter, void *context);
 
 #if defined(__cplusplus)
 }

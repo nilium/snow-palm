@@ -1,5 +1,5 @@
 /*
-  Dynamic array class
+  Dynamic array object
   Written by Noel Cower
 
   See LICENSE.md for license information
@@ -12,77 +12,87 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-#define ARRAY_ALLOC_TAG 0x00A77A70
-
-static array_t *array_ctor(array_t *self, memory_pool_t *pool);
-static void array_dtor(array_t *self);
-
-const class_t g_array_class = {
-  object_class,
-  sizeof(array_t),
-
-  (constructor_t)array_ctor,
-  (destructor_t)array_dtor,
-
-  object_compare
-};
-
-static array_t *array_ctor(array_t *self, memory_pool_t *pool)
+void array_destroy(array_t *self)
 {
-  self = (array_t *)self->isa->super->ctor(self, pool);
+  if (self == NULL)
+    s_fatal_error(1, "Cannot destroy NULL array.");
 
-  if (self) {
-    self->size = 0;
-    self->capacity = 0;
-    self->buf = NULL;
-    self->pool = mem_retain_pool(pool);
-    self->obj_size = 0;
+  allocator_t alloc = self->allocator;
+
+  if (self->buf != NULL)
+    com_free(alloc, self->buf);
+
+  com_free(alloc, self);
+}
+
+array_t *array_new(size_t object_size, size_t capacity, allocator_t alloc)
+{
+  if (!(alloc.malloc && alloc.free)) {
+    s_fatal_error(1, "malloc & free pointers are NULL");
+    return NULL;
+  }
+
+  array_t *self = (array_t *)com_malloc(alloc, sizeof(*self));
+  if (NULL == self) {
+    s_fatal_error(1, "Failed to allocate array");
+    return NULL;
+  }
+
+  self->allocator = alloc;
+  self->obj_size = object_size;
+  self->size = 0;
+  self->capacity = 0;
+  self->buf = NULL;
+  
+  if (!array_reserve(self, capacity)) {
+    array_destroy(self);
+    s_fatal_error(1, "Failed to create array with capacity %zu", capacity);
+    return NULL;
   }
 
   return self;
 }
 
-static void array_dtor(array_t *self)
+array_t *array_copy(const array_t *src)
 {
-  mem_free(self->buf);
-  self->buf = NULL;
-  self->size = self->capacity = self->obj_size = 0;
-  mem_release_pool(self->pool);
-  self->pool = NULL;
+  if (src == NULL) {
+    s_fatal_error(1, "Cannot copy NULL array");
+    return NULL;
+  }
 
-  self->isa->super->dtor(self);
-}
-
-array_t *array_init(array_t *self, size_t object_size, size_t size, size_t capacity)
-{
-  self->obj_size = object_size;
+  array_t *copy = array_new(src->obj_size, src->capacity, src->allocator);
+  if (NULL == copy) {
+    s_fatal_error(1, "Failed to allocate array");
+    return NULL;
+  } else if (!array_resize(copy, src->size)) {
+    array_destroy(copy);
+    s_fatal_error(1, "Failed to copy array");
+    return NULL;
+  }
   
-  array_reserve(self, capacity);
-  array_resize(self, size);
+  if (src->size > 0 && src->buf && copy->buf && copy->size == src->size)
+    memcpy(copy->buf, src->buf, copy->size * copy->obj_size);
 
-  return self;
-}
-
-array_t *array_copy(array_t *other)
-{
-  array_t *self = array_init(object_new(array_class, other->pool),
-    other->obj_size, other->size, other->capacity);
-
-  if (self->size && self->buf)
-    memcpy(self->buf, other->buf, self->size * self->obj_size);
-
-  return self;
+  return copy;
 }
 
 bool array_resize(array_t *self, size_t size)
 {
+  if (self == NULL) {
+    s_fatal_error(1, "Cannot resize NULL array.");
+    return false;
+  }
+
   if (array_reserve(self, size)) {
-    if (size < self->size && self->buf)
-      memset(self->buf + (size * self->obj_size), 0, (self->capacity - self->size) * self->obj_size);
+    if (size < self->size && self->buf) {
+      memset(self->buf + (size * self->obj_size), 0, (self->size - size) * self->obj_size);
+    }
     self->size = size;
 
     return true;
   }
+
+  s_fatal_error(1, "Failed to resize array.");
 
   return false;
 }
@@ -90,7 +100,9 @@ bool array_resize(array_t *self, size_t size)
 bool array_reserve(array_t *self, size_t capacity)
 {
   size_t new_size, new_cap, orig_size;
+  char *new_buf = NULL;
   bool tried_min = false;
+
   if (capacity <= self->capacity || capacity == 0) return true;
 
   new_cap = self->capacity * 2;
@@ -100,11 +112,12 @@ bool array_reserve(array_t *self, size_t capacity)
   }
 
   orig_size = self->size * self->obj_size;
+
 reserve_capacity:
   new_size = new_cap * self->obj_size;
 
-  char *new_buf = (char *)mem_alloc(self->pool, new_size, ARRAY_ALLOC_TAG);
-  if (!new_buf) {
+  new_buf = (char *)com_malloc(self->allocator, new_size);
+  if (NULL == new_buf) {
     /* in the event that the new buffer can't be allocated, try one more route
        before giving up
     */
@@ -115,7 +128,7 @@ reserve_capacity:
       goto reserve_capacity;
     }
 
-    log_error("Failed to reserve %zu elements for array.\n", new_cap);
+    s_fatal_error(1, "Failed to reserve %zu elements for array.", new_cap);
 
     return false;
   }
@@ -124,7 +137,7 @@ reserve_capacity:
     memcpy(new_buf, self->buf, orig_size);
 
   memset(new_buf + orig_size, 0, new_size - orig_size);
-  if (self->buf) mem_free(self->buf);
+  if (self->buf) com_free(self->allocator, self->buf);
   self->buf = new_buf;
   self->capacity = new_cap;
 
@@ -133,47 +146,120 @@ reserve_capacity:
 
 size_t array_size(const array_t *self)
 {
+  if (self == NULL) {
+    s_fatal_error(1, "Cannot access NULL array.");
+    return 0;
+  }
   return self->size;
 }
 
 size_t array_capacity(const array_t *self)
 {
+  if (self == NULL) {
+    s_fatal_error(1, "Cannot access NULL array.");
+    return 0;
+  }
   return self->capacity;
 }
 
-void array_sort(array_t *self, int (*comparator)(const void *left, const void *right))
+bool array_sort(array_t *self, int (*comparator)(const void *left, const void *right))
 {
+  if (self == NULL) {
+    s_fatal_error(1, "Cannot sort NULL array.");
+    return false;
+  }
+
   if (self->size < 2)
-    return;
+    return true;
 
   qsort(self->buf, self->size*self->obj_size, self->obj_size, comparator);
+
+  return true;
+}
+
+bool array_get(array_t *self, size_t index, void *dst) {
+  const void *src = array_at_index(self, index);
+
+  if (src == NULL) {
+    s_fatal_error(1, "Index %zu out of range [0..%zu]", index, (self->size - 1));
+    return false;
+  } else if (dst == NULL) {
+    s_fatal_error(1, "Attempt to write to NULL pointer.");
+    return false;
+  }
+
+  memcpy(dst, src, self->obj_size);
+
+  return true;
+}
+
+bool array_store(array_t *self, size_t index, const void *src) {
+  void *dst = array_at_index(self, index);
+  if (dst == NULL) {
+    s_fatal_error(1, "Index %zu out of range [0..%zu]", index, (self->size - 1));
+    return false;
+  }
+
+  if (src == NULL) {
+    memset(dst, 0, self->obj_size);
+  } else {
+    memcpy(dst, src, self->obj_size);
+  }
+
+  return true;
 }
 
 void *array_at_index(array_t *self, size_t index)
 {
-  if (self->size <= index)
+  if (!self) {
+    s_fatal_error(1, "Cannot access NULL array");
     return NULL;
+  }
+
+  if (self->size <= index) {
+    s_fatal_error(1, "Index %zu out of bounds [0..%zu]", index, (self->size - 1));
+    return NULL;
+  }
   
   return (self->buf + (index * self->obj_size));
 }
 
 bool array_push(array_t *self, const void *value)
 {
+  if (self == NULL) {
+    s_fatal_error(1, "Cannot push to NULL array.");
+    return false;
+  } else if (value == NULL) {
+    size_t new_size = self->size + 1;
+    if (!array_resize(self, new_size))
+      return true;
+
+    s_fatal_error(1, "Failed to pushed value into array.");
+    return false;
+  }
+
   if (array_reserve(self, self->size + 1)) {
     memcpy(self->buf + (self->size * self->obj_size), value, self->obj_size);
     self->size += 1;
     return true;
+  } else {
+    s_fatal_error(1, "Failed to reserve space for array_push.");
   }
 
   return false;
 }
 
-void array_pop(array_t *self, void *result)
+bool array_pop(array_t *self, void *result)
 {
+  if (self->size == 0)
+    return false;
+  
   char *addr = self->buf + ((self->size - 1) * self->obj_size);
   memcpy(result, addr, self->obj_size);
   memset(addr, 0, self->obj_size);
   self->size -= 1;
+
+  return true;
 }
 
 void *array_buffer(array_t *self, size_t *byte_length)
@@ -181,6 +267,17 @@ void *array_buffer(array_t *self, size_t *byte_length)
   if (byte_length)
     *byte_length = self->size * self->obj_size;
   return self->buf;
+}
+
+void array_each(array_t *self, iterator_fn_t iter, void *context)
+{
+  char *buf;
+  size_t index;
+  const size_t end = self->size;
+  const size_t obj_size = self->obj_size;
+  bool stop = false;
+  for (buf = self->buf, index = 0; !stop && index < end; ++index, buf += obj_size)
+    iter(buf, index, context, &stop);
 }
 
 #if defined(__cplusplus)
