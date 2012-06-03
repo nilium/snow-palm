@@ -7,7 +7,7 @@ Alright, I'm outlining the coding style for snow-palm as best I can right now so
 * Hard tabs
 * Tab width of four characters/spaces in editors
 
-Indentation is done with hard tabs, each tab is four spaces in length.  If possible, trim all whitespace from lines where it's not needed (git doesn't like it), but otherwise it doesn't matter too much if there's whitespace on a blank line.
+Indentation is done with spaces, each tab is two spaces in length.  If possible, trim all whitespace from lines where it's not needed (git doesn't like it), but otherwise it doesn't matter too much if there's whitespace on a blank line.
 
 ## Brace Positions
 
