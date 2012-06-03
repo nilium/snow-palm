@@ -24,6 +24,7 @@ extern "C"
 {
 #endif
 
+#if !defined(s_fatal_error)
 /*! Writes an error message to stderr then kills the program with the given
  *  error code.  This should be used only when an error absolutely cannot be
  *  recovered from.  It should be obvious, but this function does not return.
@@ -33,12 +34,14 @@ extern "C"
  *  @param[in] format The format for the error message.
  *  @param[in] error The error code to exit with.
  */
-void s_log_fatal_impl(const char *format, int error, ...);
+#define USE_FATAL_ERROR_IMPL 1
+void s_fatal_error_impl(const char *format, int error, ...);
 
 /*! \brief Macro around ::log_fatal_ to pass in additional file, line number,
   and callee information to the format string.  This is never a no-op.
 */
-#define s_log_fatal(FORMAT, ERROR, args...) log_fatal_impl("Fatal Error [%s:%s:%d]: " FORMAT, (ERROR), __FILE__, __FUNCTION__, __LINE__, ##args)
+#define s_fatal_error(ERROR, FORMAT, args...) s_fatal_error_impl("Fatal Error [%s:%s:%d]: " FORMAT "\n", (ERROR), __FILE__, __FUNCTION__, __LINE__, ##args)
+#endif
 
 #if PLATFORM_TOUCHPAD
 #define s_log(STR, args...) PDL_Log((STR), ##args)
