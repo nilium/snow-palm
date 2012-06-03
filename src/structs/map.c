@@ -13,11 +13,11 @@ extern "C"
 #endif /* __cplusplus */
 
 static int map_test(mapnode_t *node);
-static mapkey_t mapkey_copy(mapkey_t key);
-static void mapkey_destroy(mapkey_t key);
+static mapkey_t mapkey_copy(mapkey_t key, allocator_t alloc);
+static void mapkey_destroy(mapkey_t key, allocator_t alloc);
 static int mapkey_compare(mapkey_t left, mapkey_t right);
-static void *mapvalue_copy(void *value);
-static void mapvalue_destroy(void *value);
+static void *mapvalue_copy(void *value, allocator_t alloc);
+static void mapvalue_destroy(void *value, allocator_t alloc);
 
 const int MAP_ALLOC_TAG = 0x00773300;
 
@@ -44,13 +44,16 @@ const mapops_t g_mapops_default = {
 
 /* implementation */
 
-static mapkey_t mapkey_copy(mapkey_t key)
+static mapkey_t mapkey_copy(mapkey_t key, allocator_t alloc)
 {
+  (void)alloc;
   return key;
 }
 
-static void mapkey_destroy(mapkey_t key)
+static void mapkey_destroy(mapkey_t key, allocator_t alloc)
 {
+  (void)alloc;
+  (void)key;
   return;
 }
 
@@ -59,13 +62,16 @@ static int mapkey_compare(mapkey_t left, mapkey_t right)
   return ((left > right) - (left < right));
 }
 
-static void *mapvalue_copy(void *value)
+static void *mapvalue_copy(void *value, allocator_t alloc)
 {
+  (void)alloc;
   return value;
 }
 
-static void mapvalue_destroy(void *value)
+static void mapvalue_destroy(void *value, allocator_t alloc)
 {
+  (void)alloc;
+  (void)value;
   return;
 }
 
@@ -148,6 +154,7 @@ static const rotate_fn g_rotations[2] = {
 
 static void mapnode_remove(map_t *map, mapnode_t *node)
 {
+  allocator_t alloc = map->allocator;
   mapnode_t *destroyed, *y, *z;
   
   if (node->left == NIL) {
@@ -219,7 +226,7 @@ static void mapnode_remove(map_t *map, mapnode_t *node)
   }
   
 finish_removal:
-  mem_free(destroyed);
+  com_free(alloc, destroyed);
   map->size -= 1;
 
 #if !defined(NDEBUG)
@@ -260,11 +267,11 @@ static mapnode_t *mapnode_find(const map_t *map, mapnode_t *node, mapkey_t key)
   return node;
 }
 
-void map_init(map_t *map, mapops_t ops, memory_pool_t *pool)
+void map_init(map_t *map, mapops_t ops, allocator_t alloc)
 {
   map->root = NIL;
   map->size = 0;
-  map->pool = mem_retain_pool(pool);
+  map->allocator = alloc;
 
   if (ops.copy_key == NULL) ops.copy_key = mapkey_copy;
   if (ops.destroy_key == NULL) ops.destroy_key = mapkey_destroy;
@@ -277,15 +284,16 @@ void map_init(map_t *map, mapops_t ops, memory_pool_t *pool)
 
 static void mapnode_destroy_r(map_t *map, mapnode_t *node)
 {
+  allocator_t alloc = map->allocator;
   mapnode_t *l, *r;
   if (node == NIL) return;
   l = node->left;
   r = node->right;
 
-  map->ops.destroy_key(node->key);
-  map->ops.destroy_value(node->p);
+  map->ops.destroy_key(node->key, alloc);
+  map->ops.destroy_value(node->p, alloc);
 
-  mem_free(node);
+  com_free(map->allocator, node);
 
   mapnode_destroy_r(map, l);
   mapnode_destroy_r(map, r);
@@ -294,10 +302,7 @@ static void mapnode_destroy_r(map_t *map, mapnode_t *node)
 void map_destroy(map_t *map)
 {
   mapnode_destroy_r(map, map->root);
-  map->root = NULL;
-  map->size = 0;
-  mem_release_pool(map->pool);
-  map->pool = NULL;
+  memset(map, 0, sizeof(*map));
 }
 
 #if !defined(NDEBUG)
@@ -314,7 +319,7 @@ static int map_test(mapnode_t *node)
   right = node->right;
 
   if (IS_RED(node) && (IS_RED(right) || IS_RED(right))) {
-    log_note("Red violation on node with key %p\n", node->key);
+    s_log_note("Red violation on node with key %p\n", node->key);
     return 0;
   }
 
@@ -322,12 +327,12 @@ static int map_test(mapnode_t *node)
   int rh = map_test(right);
 
   if (left != NIL && left->key > node->key) {
-    log_note("Left node (key: %p) of parent node (key: %p) is incorrectly ordered\n", left->key, node->key);
+    s_log_note("Left node (key: %p) of parent node (key: %p) is incorrectly ordered\n", left->key, node->key);
     return 0;
   }
 
   if (right != NIL && right->key < node->key) {
-    log_note("Right node (key: %p) of parent node (key: %p) is incorrectly ordered\n", right->key, node->key);
+    s_log_note("Right node (key: %p) of parent node (key: %p) is incorrectly ordered\n", right->key, node->key);
     return 0;
   }
 
@@ -340,6 +345,7 @@ static int map_test(mapnode_t *node)
 
 void map_insert(map_t *map, mapkey_t key, void *p)
 {
+  allocator_t alloc = map->allocator;
   mapnode_t *parent = map->root;
   mapnode_t **slot = &map->root;
   mapnode_t *insert;
@@ -347,8 +353,8 @@ void map_insert(map_t *map, mapkey_t key, void *p)
   while (parent != NIL) {
     int comparison = map->ops.compare_key(key, parent->key);
     if (comparison == 0) {
-      map->ops.destroy_value(parent->p);
-      parent->p = map->ops.copy_value(p);
+      map->ops.destroy_value(parent->p, alloc);
+      parent->p = map->ops.copy_value(p, alloc);
       return;
     } else if (comparison < 0) {
       if (parent->left != NIL) {
@@ -370,10 +376,10 @@ void map_insert(map_t *map, mapkey_t key, void *p)
   }
 
   map->size += 1;
-  insert = (mapnode_t *)mem_alloc(map->pool, sizeof(mapnode_t), MAP_ALLOC_TAG);
+  insert = (mapnode_t *)com_malloc(map->allocator, sizeof(mapnode_t));
   insert->left = insert->right = NIL;
-  insert->key = map->ops.copy_key(key);
-  insert->p = map->ops.copy_value(p);
+  insert->key = map->ops.copy_key(key, alloc);
+  insert->p = map->ops.copy_value(p, alloc);
   insert->color = RED;
   insert->parent = parent;
 
@@ -420,13 +426,14 @@ bool map_remove(map_t *map, mapkey_t key)
   mapnode_t *node = mapnode_find(map, map->root, key);
   
   if (node != NIL) {
+    allocator_t alloc = map->allocator;
     void *p = node->p;
     key = node->key;
     
     mapnode_remove(map, node);
 
-    map->ops.destroy_key(key);
-    map->ops.destroy_value(p);
+    map->ops.destroy_key(key, alloc);
+    map->ops.destroy_value(p, alloc);
 
     return true;
   }
