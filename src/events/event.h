@@ -1,10 +1,8 @@
-#ifndef __EVENT_HH__
-#define __EVENT_HH__ 1
+#ifndef __SNOW_EVENT_H__
+#define __SNOW_EVENT_H__ 1
 
 #include <snow-config.h>
-#include <set>
 #include <maths/maths.h>
-#include <memory/memory_pool.hh>
 
 #ifdef __APPLE__
   #ifdef TARGET_OS_MAC
@@ -122,4 +120,4 @@ struct event_t {
 
 }
 
-#endif /* end __EVENT_HH__ include guard */
+#endif /* end __SNOW_EVENT_H__ include guard */
