@@ -1,0 +1,7 @@
+CC=clang
+CXX=clang++
+LDFLAGS+= -lstdc++ -framework Cocoa -framework OpenGL -framework QuartzCore -m64
+CFLAGS+= -framework Cocoa -framework OpenGL -framework QuartzCore -D TARGET_OS_MAC -m64
+CXXFLAGS+= -x objective-c++
+
+APP_OUT=bin/snow
