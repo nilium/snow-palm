@@ -1,8 +1,8 @@
 /*
-	3D math types & macros
-	Written by Noel Cower
+  3D math types & macros
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef MATHS_H_G3RBNYON
@@ -37,37 +37,37 @@ typedef s_float_t quat_t[4];
 
 /* Matrix expansion - works the same as vec*_splat by providing a comma-separated list of the matrix's components. */
 #define mat4_splat(M) \
-	((M)[0 ]), ((M)[1 ]), ((M)[2 ]), ((M)[3 ]), \
-	((M)[4 ]), ((M)[5 ]), ((M)[6 ]), ((M)[7 ]), \
-	((M)[8 ]), ((M)[9 ]), ((M)[10]), ((M)[11]), \
-	((M)[12]), ((M)[13]), ((M)[14]), ((M)[15])
+  ((M)[0 ]), ((M)[1 ]), ((M)[2 ]), ((M)[3 ]), \
+  ((M)[4 ]), ((M)[5 ]), ((M)[6 ]), ((M)[7 ]), \
+  ((M)[8 ]), ((M)[9 ]), ((M)[10]), ((M)[11]), \
+  ((M)[12]), ((M)[13]), ((M)[14]), ((M)[15])
 
 /* Transposed matrix expansion - same as mat4_splat, but transposed. */
 #define mat4_splat_transposed(M) \
-	((M)[0 ]), ((M)[4 ]), ((M)[8 ]), ((M)[12]), \
-	((M)[1 ]), ((M)[5 ]), ((M)[9 ]), ((M)[13]), \
-	((M)[2 ]), ((M)[6 ]), ((M)[10]), ((M)[14]), \
-	((M)[3 ]), ((M)[7 ]), ((M)[11]), ((M)[15])
+  ((M)[0 ]), ((M)[4 ]), ((M)[8 ]), ((M)[12]), \
+  ((M)[1 ]), ((M)[5 ]), ((M)[9 ]), ((M)[13]), \
+  ((M)[2 ]), ((M)[6 ]), ((M)[10]), ((M)[14]), \
+  ((M)[3 ]), ((M)[7 ]), ((M)[11]), ((M)[15])
 
 /* Matrix column expansion */
 #define mat4_splat_cX(M) \
-	((M)[0 ]), ((M)[4 ]), ((M)[8 ]), ((M)[12])
+  ((M)[0 ]), ((M)[4 ]), ((M)[8 ]), ((M)[12])
 #define mat4_splat_cY(M) \
-	((M)[1 ]), ((M)[5 ]), ((M)[9 ]), ((M)[13])
+  ((M)[1 ]), ((M)[5 ]), ((M)[9 ]), ((M)[13])
 #define mat4_splat_cZ(M) \
-	((M)[2 ]), ((M)[6 ]), ((M)[10]), ((M)[14])
+  ((M)[2 ]), ((M)[6 ]), ((M)[10]), ((M)[14])
 #define mat4_splat_cW(M) \
-	((M)[3 ]), ((M)[7 ]), ((M)[11]), ((M)[15])
+  ((M)[3 ]), ((M)[7 ]), ((M)[11]), ((M)[15])
 
 /* matrix row expansion */
 #define mat4_splat_rX(M) \
-	((M)[0 ]), ((M)[1 ]), ((M)[2 ]), ((M)[3 ])
+  ((M)[0 ]), ((M)[1 ]), ((M)[2 ]), ((M)[3 ])
 #define mat4_splat_rY(M) \
-	((M)[4 ]), ((M)[5 ]), ((M)[6 ]), ((M)[7 ])
+  ((M)[4 ]), ((M)[5 ]), ((M)[6 ]), ((M)[7 ])
 #define mat4_splat_rZ(M) \
-	((M)[8 ]), ((M)[9 ]), ((M)[10]), ((M)[11])
+  ((M)[8 ]), ((M)[9 ]), ((M)[10]), ((M)[11])
 #define mat4_splat_rW(M) \
-	((M)[12]), ((M)[13]), ((M)[14]), ((M)[15])
+  ((M)[12]), ((M)[13]), ((M)[14]), ((M)[15])
 
 /* Quaternion expansion */
 #define quat_splat(Q) ((Q)[0]), ((Q)[1]), ((Q)[2]), ((Q)[3])
@@ -87,11 +87,11 @@ typedef s_float_t quat_t[4];
 #define S_RAD2DEG (57.2957795)
 
 inline int float_is_zero(const s_float_t x) {
-	return (fabs(x) < S_FLOAT_EPSILON);
+  return (fabs(x) < S_FLOAT_EPSILON);
 }
 
 inline int float_equals(const s_float_t x, const s_float_t y) {
-	return (fabs(x - y) < S_FLOAT_EPSILON);
+  return (fabs(x - y) < S_FLOAT_EPSILON);
 }
 
 #if defined(__cplusplus)

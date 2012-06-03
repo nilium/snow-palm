@@ -1,8 +1,8 @@
 /*
-	3D vector maths
-	Written by Noel Cower
+  3D vector maths
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #include "vec3.h"

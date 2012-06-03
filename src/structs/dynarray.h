@@ -1,8 +1,8 @@
 /*
-	Dynamic array class
-	Written by Noel Cower
+  Dynamic array class
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef DYNARRAY_H
@@ -23,20 +23,20 @@ typedef struct s_array array_t;
 
 struct s_array
 {
-	const class_t *isa;
+  const class_t *isa;
 
-	/*! The array's buffer */
-	char *buf;
-	/*! Size of each element in the array */
-	size_t obj_size;
-	/*! The capacity of the array (how many elements it can hold before the
-		it has to reallocate its buffer). */
-	size_t capacity;
-	/*! The size (or length) of the array - this is how many elements the array
-		currently holds. */
-	size_t size;
-	/*! The memory pool associated with the array. */
-	memory_pool_t *pool;
+  /*! The array's buffer */
+  char *buf;
+  /*! Size of each element in the array */
+  size_t obj_size;
+  /*! The capacity of the array (how many elements it can hold before the
+    it has to reallocate its buffer). */
+  size_t capacity;
+  /*! The size (or length) of the array - this is how many elements the array
+    currently holds. */
+  size_t size;
+  /*! The memory pool associated with the array. */
+  memory_pool_t *pool;
 };
 
 extern const class_t g_array_class;

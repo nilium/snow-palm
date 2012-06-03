@@ -1,8 +1,8 @@
 /*
-	Game entity class
-	Written by Noel Cower
+  Game entity class
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef ENTITY_H
@@ -21,39 +21,39 @@ extern "C"
 
 typedef enum
 {
-	DIRTY_TRANSFORM		=0x1<<0,	/*! Transformation matrix is dirty. */
-	DIRTY_WORLD			=0x1<<1, 	/*! World transform is dirty. */
-	/*! Combination of all DIRTY_ flags. */
-	DIRTY_FLAGS			=(DIRTY_TRANSFORM|DIRTY_WORLD),
+  DIRTY_TRANSFORM   =0x1<<0,  /*! Transformation matrix is dirty. */
+  DIRTY_WORLD     =0x1<<1,  /*! World transform is dirty. */
+  /*! Combination of all DIRTY_ flags. */
+  DIRTY_FLAGS     =(DIRTY_TRANSFORM|DIRTY_WORLD),
 
-	ROOT_ENTITY			=0x1<<2,	/*! Entity is a root entity. */
-	
-	ENTITY_DISABLED		=0x1<<3,	/*! Entity is currently disabled. */
-	ENTITY_HIDDEN		=0x1<<4,	/*! Entity is currently hidden. */
+  ROOT_ENTITY     =0x1<<2,  /*! Entity is a root entity. */
+  
+  ENTITY_DISABLED   =0x1<<3,  /*! Entity is currently disabled. */
+  ENTITY_HIDDEN   =0x1<<4,  /*! Entity is currently hidden. */
 } entity_flag_t;
 
 typedef struct s_entity entity_t;
 
 struct s_entity
 {
-	class_t *isa;
+  class_t *isa;
 
-	list_t *components;
+  list_t *components;
 
-	list_t *children;
-	listnode_t *parentnode;
-	entity_t *parent;
+  list_t *children;
+  listnode_t *parentnode;
+  entity_t *parent;
 
-	char *name;
-	
-	/*! internal flags */
-	entity_flag_t prv_iflags;
+  char *name;
+  
+  /*! internal flags */
+  entity_flag_t prv_iflags;
 
-	mat4_t world_transform;
-	mat4_t transform;
-	quat_t rotation;
-	vec3_t position;
-	vec3_t scale;
+  mat4_t world_transform;
+  mat4_t transform;
+  quat_t rotation;
+  vec3_t position;
+  vec3_t scale;
 };
 
 extern const class_t g_entity_class;
@@ -64,8 +64,8 @@ void sys_entity_init(void);
 void sys_entity_shutdown(void);
 
 /*! Allocates a new instance of the given entity class.
-	\returns A new instance of the given entity class, or NULL if the class
-	doesn't inherit from ::entity_class.
+  \returns A new instance of the given entity class, or NULL if the class
+  doesn't inherit from ::entity_class.
 */
 entity_t *entity_new(class_t *cls);
 /*! Initializes the given entity. */

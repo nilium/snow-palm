@@ -1,8 +1,8 @@
 /*
-	Vertex structures
-	Written by Noel Cower
+  Vertex structures
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef VERTEX_H
@@ -17,7 +17,7 @@ extern "C"
 #endif /* __cplusplus */
 
 /*! Static vertex structure, used for objects that are not animated, but can
-	move if need be (normals provided for vertex lighting).
+  move if need be (normals provided for vertex lighting).
 */
 typedef struct s_static_vertex static_vertex_t;
 /*! Animated vertex data - supports two bones.  Only has one set of texcoords. */
@@ -25,29 +25,29 @@ typedef struct s_anim_vertex anim_vertex_t;
 
 struct s_static_vertex
 {
-	float position[3];
-	float normals[3];
-	float texcoord0[2];
-	float texcoord1[2]; // lightmap coordinates
-	union {
-		GLubyte rgba[4];		// RGBA color
-		GLuint color;
-	};
+  float position[3];
+  float normals[3];
+  float texcoord0[2];
+  float texcoord1[2]; // lightmap coordinates
+  union {
+    GLubyte rgba[4];    // RGBA color
+    GLuint color;
+  };
 };
 
 struct s_anim_vertex
 {
-	float position[3];
-	float normals[3];
-	float texcoord0[2];
-	float bones[2];
-	GLushort weights[2];
+  float position[3];
+  float normals[3];
+  float texcoord0[2];
+  float bones[2];
+  GLushort weights[2];
 };
 
 typedef union u_vertex
 {
-	anim_vertex_t anim_vert;
-	static_vertex_t static_vert;
+  anim_vertex_t anim_vert;
+  static_vertex_t static_vert;
 } vertex_t;
 
 #define S_VERTEX_STRIDE sizeof(vertex_t)

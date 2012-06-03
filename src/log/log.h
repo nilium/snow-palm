@@ -1,8 +1,8 @@
 /*
-	Logging routines / macros
-	Written by Noel Cower
+  Logging routines / macros
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef LOG_H_B31TON6M
@@ -36,7 +36,7 @@ extern "C"
 void s_log_fatal_impl(const char *format, int error, ...);
 
 /*! \brief Macro around ::log_fatal_ to pass in additional file, line number,
-	and callee information to the format string.  This is never a no-op.
+  and callee information to the format string.  This is never a no-op.
 */
 #define s_log_fatal(FORMAT, ERROR, args...) log_fatal_impl("Fatal Error [%s:%s:%d]: " FORMAT, (ERROR), __FILE__, __FUNCTION__, __LINE__, ##args)
 
@@ -71,27 +71,27 @@ void s_log_fatal_impl(const char *format, int error, ...);
 #endif
 
 /*! \def log_error(FORMAT, args...)
-	\brief Macro to write an error message with the given format and parameters
-	to stderr.  Includes file, line number, and callee information in the format
-	string automatically.
-	
-	In builds with NDEBUG defined, this will be a no-op.
+  \brief Macro to write an error message with the given format and parameters
+  to stderr.  Includes file, line number, and callee information in the format
+  string automatically.
+  
+  In builds with NDEBUG defined, this will be a no-op.
 */
 
 /*! \def log_warning(FORMAT, args...)
-	\brief Macro to write an warning message with the given format and parameters
-	to stderr.  Includes file, line number, and callee information in the format
-	string automatically.
-	
-	In builds with NDEBUG defined, this will be a no-op.
+  \brief Macro to write an warning message with the given format and parameters
+  to stderr.  Includes file, line number, and callee information in the format
+  string automatically.
+  
+  In builds with NDEBUG defined, this will be a no-op.
 */
 
 /*! \def log_note(FORMAT, args...)
-	\brief Macro to write a general message with the given format and parameters
-	to stderr.  Includes file, line number, and callee information in the format
-	string automatically.
-	
-	In builds with NDEBUG defined, this will be a no-op.
+  \brief Macro to write a general message with the given format and parameters
+  to stderr.  Includes file, line number, and callee information in the format
+  string automatically.
+  
+  In builds with NDEBUG defined, this will be a no-op.
 */
 
 #if defined(__cplusplus)

@@ -1,8 +1,8 @@
 /*
-	Quaternion maths
-	Written by Noel Cower
+  Quaternion maths
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef QUAT_H

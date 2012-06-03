@@ -1,8 +1,8 @@
 /*
-	Linked list object container
-	Written by Noel Cower
+  Linked list object container
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef LIST_H
@@ -23,20 +23,20 @@ typedef struct s_list list_t;
 
 struct s_listnode
 {
-	list_t *list;
-	listnode_t *next;
-	listnode_t *prev;
-	object_t *obj;
+  list_t *list;
+  listnode_t *next;
+  listnode_t *prev;
+  object_t *obj;
 };
 
 struct s_list
 {
-	class_t *isa;
+  class_t *isa;
 
-	listnode_t head;
-	int size;
-	memory_pool_t *pool;
-	bool weak;
+  listnode_t head;
+  int size;
+  memory_pool_t *pool;
+  bool weak;
 };
 
 extern const class_t g_list_class;
@@ -74,11 +74,11 @@ listnode_t *list_node_at(const list_t *list, int index);
 listnode_t *list_node_with_value(const list_t *list, object_t *obj);
 
 /*! Gets the length of the list.
-	\returns The length of the list, [0,N).  Returns -1 if the list is NULL.
+  \returns The length of the list, [0,N).  Returns -1 if the list is NULL.
 */
 int list_count(const list_t *list);
 /*! Determines whether or not the list is empty.
-	\returns 1 if the list is empty, 0 if not.  Returns -1 if the list is NULL.
+  \returns 1 if the list is empty, 0 if not.  Returns -1 if the list is NULL.
 */
 bool list_is_empty(const list_t *list);
 

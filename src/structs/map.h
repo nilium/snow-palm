@@ -1,8 +1,8 @@
 /*
-	Map collection
-	Written by Noel Cower
+  Map collection
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef MAP_H
@@ -25,34 +25,34 @@ typedef void *mapkey_t;
 
 typedef enum
 {
-	BLACK	= 0,
-	RED		= 1
+  BLACK = 0,
+  RED   = 1
 } mapnode_color_t;
 
 struct s_mapnode
 {
-	mapnode_t *left, *right, *parent;
-	void *p;
-	mapkey_t key;
-	mapnode_color_t color;
+  mapnode_t *left, *right, *parent;
+  void *p;
+  mapkey_t key;
+  mapnode_color_t color;
 };
 
 struct s_mapops
 {
-	mapkey_t (*copy_key)(mapkey_t key);
-	void (*destroy_key)(mapkey_t key);
-	int (*compare_key)(mapkey_t left, mapkey_t right);
-	void *(*copy_value)(void *value);
-	void (*destroy_value)(void *value);
+  mapkey_t (*copy_key)(mapkey_t key);
+  void (*destroy_key)(mapkey_t key);
+  int (*compare_key)(mapkey_t left, mapkey_t right);
+  void *(*copy_value)(void *value);
+  void (*destroy_value)(void *value);
 };
 
 struct s_map
 {
-	mapnode_t *root;
-	int size;
-/*	comparator_fn compare; */
-	memory_pool_t *pool;
-	mapops_t ops;
+  mapnode_t *root;
+  int size;
+/*  comparator_fn compare; */
+  memory_pool_t *pool;
+  mapops_t ops;
 };
 
 extern const mapops_t g_mapops_default;

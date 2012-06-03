@@ -1,8 +1,8 @@
 /*
-	Mutex object
-	Written by Noel Cower
+  Mutex object
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef MUTEX_H

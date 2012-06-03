@@ -1,8 +1,8 @@
 /*
-	Memory pool system
-	Written by Noel Cower
+  Memory pool system
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef MEMORY_H_SA7RAUP3
@@ -12,21 +12,21 @@
 #include "../threads/mutex.h"
 
 /*!
-	\file
+  \file
 
-	The API for creating, destroying, and allocating from memory pools.  Memory
-	pools are essentially linked lists that represent chunks of memory in a
-	larger chunk of memory.  The purpose of this is to ensure that, when
-	necessary, memory that ought to be close together is.  There is no solid way
-	to reduce fragmentation, but ::mem_alloc will always attempt to use the next
-	free or most recently freed block of memory for any new allocations.
-	
-	\par Thread Safety
-	The only operations wrapped in a lock are ::mem_destroy_pool,
-	::mem_retain_pool, ::mem_release_pool, ::mem_alloc, and ::mem_free.  Others
-	do not get that treatment.  If you need to lock the pool for another reason,
-	the memory_pool_t::lock member is there, but it's advised that you don't try
-	to ever fiddle with pool internals.
+  The API for creating, destroying, and allocating from memory pools.  Memory
+  pools are essentially linked lists that represent chunks of memory in a
+  larger chunk of memory.  The purpose of this is to ensure that, when
+  necessary, memory that ought to be close together is.  There is no solid way
+  to reduce fragmentation, but ::mem_alloc will always attempt to use the next
+  free or most recently freed block of memory for any new allocations.
+  
+  \par Thread Safety
+  The only operations wrapped in a lock are ::mem_destroy_pool,
+  ::mem_retain_pool, ::mem_release_pool, ::mem_alloc, and ::mem_free.  Others
+  do not get that treatment.  If you need to lock the pool for another reason,
+  the memory_pool_t::lock member is there, but it's advised that you don't try
+  to ever fiddle with pool internals.
 */
 
 #if defined(__cplusplus)
@@ -45,31 +45,31 @@ typedef struct s_memory_pool memory_pool_t;
  */
 struct s_block_head
 {
-	/*! Whether the block is in use.  Zero if not in use, one if a header
-	    block, otherwise a regular block. */
-	int32_t used;
-	/*! Identifying tag for the block.  Zero if unused. */
-	int32_t tag;
-	/*! Size of the memory block. Includes header, memory guard, and
-	    alignment adjustment. */
-	buffersize_t size;
-	/*! Next block in the memory pool. */
-	block_head_t *prev;
-	/*! Previous block in the memory pool. */
-	block_head_t *next;
-	/*! Pointer back to the memory pool the block belongs to. */
-	memory_pool_t *pool;
-	
+  /*! Whether the block is in use.  Zero if not in use, one if a header
+      block, otherwise a regular block. */
+  int32_t used;
+  /*! Identifying tag for the block.  Zero if unused. */
+  int32_t tag;
+  /*! Size of the memory block. Includes header, memory guard, and
+      alignment adjustment. */
+  buffersize_t size;
+  /*! Next block in the memory pool. */
+  block_head_t *prev;
+  /*! Previous block in the memory pool. */
+  block_head_t *next;
+  /*! Pointer back to the memory pool the block belongs to. */
+  memory_pool_t *pool;
+  
 #if !NDEBUG
 
-	/* debugging info for tracking allocations */
-	struct
-	{
-		char *source_file;		/* the source file this block was allocated from */
-		char *function;			/* the function this block was allocated from */
-		int32_t line;			/* the line in the source file that this block was allocated from */
-		buffersize_t requested_size;	/* the size requested (this always differs from the above size) */
-	} debug_info;
+  /* debugging info for tracking allocations */
+  struct
+  {
+    char *source_file;    /* the source file this block was allocated from */
+    char *function;     /* the function this block was allocated from */
+    int32_t line;     /* the line in the source file that this block was allocated from */
+    buffersize_t requested_size;  /* the size requested (this always differs from the above size) */
+  } debug_info;
 
 #endif
 };
@@ -79,20 +79,20 @@ struct s_block_head
  */
 struct s_memory_pool
 {
-	/*! Size of the memory pool.  Includes adjustment for alignment. */
-	buffersize_t size;
-	/*! Reference count. */
-	int32_t refs;
-	/*! Counter for block allocation - can overflow. */
-	int32_t sequence;
-	/*! The memory used by the memory pool. */
-	char *buffer;
-	/*! The next free block of memory. */
-	block_head_t *next_unused;
-	/*! Header block - size is always 0, used is always 1, etc. */
-	block_head_t head;
-	/*! Pool lock */
-	mutex_t lock;
+  /*! Size of the memory pool.  Includes adjustment for alignment. */
+  buffersize_t size;
+  /*! Reference count. */
+  int32_t refs;
+  /*! Counter for block allocation - can overflow. */
+  int32_t sequence;
+  /*! The memory used by the memory pool. */
+  char *buffer;
+  /*! The next free block of memory. */
+  block_head_t *next_unused;
+  /*! Header block - size is always 0, used is always 1, etc. */
+  block_head_t head;
+  /*! Pool lock */
+  mutex_t lock;
 };
 
 extern const int32_t MAIN_POOL_TAG;
@@ -110,8 +110,8 @@ void sys_mem_shutdown(void);
 /*!
  * Initializes a new memory pool.  Newly-initialized pools have a retain-count of 1.
  * 
- * \param[inout]	pool The address of an uninitialized pool to be initialized.
- * \param[in]		size The size of the memory pool to initialize.
+ * \param[inout]  pool The address of an uninitialized pool to be initialized.
+ * \param[in]   size The size of the memory pool to initialize.
  */
 void mem_init_pool(memory_pool_t *pool, buffersize_t size);
 
@@ -141,12 +141,12 @@ void mem_release_pool(memory_pool_t *pool);
 /*! \fn void *mem_alloc(memory_pool_t *pool, buffersize_t size, int32_t tag)
  * Allocates a buffer of the requested size with the given tag.
  *
- * \param[in]	pool	The pool to allocate the memory from.  If NULL, memory
- *	will be allocated from the global memory pool.
- * \param[in]	size	The requested size of the buffer.
- * \param[in]	tag		An identifying tag for the buffer.  Cannot be zero.
- * \returns	A new buffer of the requested size, or NULL if one cannot be
- *	allocated.  In case of an error, a message will be written to stderr.
+ * \param[in] pool  The pool to allocate the memory from.  If NULL, memory
+ *  will be allocated from the global memory pool.
+ * \param[in] size  The requested size of the buffer.
+ * \param[in] tag   An identifying tag for the buffer.  Cannot be zero.
+ * \returns A new buffer of the requested size, or NULL if one cannot be
+ *  allocated.  In case of an error, a message will be written to stderr.
  */
 
 #if !NDEBUG
@@ -169,13 +169,13 @@ void mem_free(void *buffer);
  * to cause explosions.
  *
  * \remark This method will check for the block's memory guard.  If the memory
- *	guard is corrupted, this function will return NULL, as it is no longer
- *	safe to interact with the block.  Assume that something has gone
- *	horribly wrong if this happens.
+ *  guard is corrupted, this function will return NULL, as it is no longer
+ *  safe to interact with the block.  Assume that something has gone
+ *  horribly wrong if this happens.
  *
- * \param[in]	buffer	The buffer to get the block header for.
- * \returns	The address of the buffer's block header, or NULL if the block is
- *	suspected to be corrupt.
+ * \param[in] buffer  The buffer to get the block header for.
+ * \returns The address of the buffer's block header, or NULL if the block is
+ *  suspected to be corrupt.
  */
 const block_head_t *mem_get_block(const void *buffer);
 

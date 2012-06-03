@@ -1,8 +1,8 @@
 /*
-	Configuration macros & project-wide includes
-	Written by Noel Cower
+  Configuration macros & project-wide includes
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef __SNOW_CONFIG_H__
@@ -18,11 +18,11 @@
 
 /* define NULL ifndef */
 #if !defined(NULL)
-#	if defined(__cplusplus)
-#		define NULL 0
-#	else /* defined(__cplusplus) */
-#		define NULL ((void *)0)
-#	endif /* !__cplusplus */
+# if defined(__cplusplus)
+#   define NULL 0
+# else /* defined(__cplusplus) */
+#   define NULL ((void *)0)
+# endif /* !__cplusplus */
 #endif /* !defined(NULL) */
 
 /* Define YES/NO constants to map 1 and 0 respectively.
@@ -32,11 +32,11 @@
    at least mapped similarly.
 */
 #if !defined(YES)
-#	define YES (1)
+# define YES (1)
 #endif
 
 #if !defined(NO)
-#	define NO (0)
+# define NO (0)
 #endif
 
 /* set up some macros for platforms */
@@ -59,7 +59,7 @@
 #define ARCH_PPC        (__powerpc || __powerpc__ || __POWERPC__ || __ppc__ || _M_PPC)
 
 #if (PLATFORM_UNIX || PLATFORM_APPLE) && !defined(__USE_UNIX98)
-#	define __USE_UNIX98 1
+# define __USE_UNIX98 1
 #endif
 
 /* specify the use of pthreads on supported platforms */
@@ -81,7 +81,7 @@ typedef int32_t s_handle_t;
 #if USE_PTHREADS
 # include <pthread.h>
 #else
-#	error "No threading API available"
+# error "No threading API available"
 #endif /* USE_PTHREADS */
 
 #include <log/log.h>

@@ -1,8 +1,8 @@
 /*
-	Threading routines
-	Written by Noel Cower
+  Threading routines
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #include "thread.h"

@@ -1,8 +1,8 @@
 /*
-	Transformation matrix
-	Written by Noel Cower
+  Transformation matrix
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #include "mat4.h"
@@ -15,18 +15,18 @@ extern "C"
 #endif /* __cplusplus */
 
 /* reference:
-	x	y	z	w
-	0	1	2	3
-	4	5	6	7
-	8	9	10	11
-	12	13	14	15
+  x y z w
+  0 1 2 3
+  4 5 6 7
+  8 9 10  11
+  12  13  14  15
 */
 
 const mat4_t g_mat4_identity = {
-	1.0, 0.0, 0.0, 0.0,
-	0.0, 1.0, 0.0, 0.0,
-	0.0, 0.0, 1.0, 0.0,
-	0.0, 0.0, 0.0, 1.0
+  1.0, 0.0, 0.0, 0.0,
+  0.0, 1.0, 0.0, 0.0,
+  0.0, 0.0, 1.0, 0.0,
+  0.0, 0.0, 0.0, 1.0
 };
 
 static inline s_float_t mat4_cofactor(const mat4_t m, int r0, int r1, int r2, int c0, int c1, int c2);
@@ -265,7 +265,7 @@ void mat4_perspective(s_float_t fov_y, s_float_t aspect, s_float_t near, s_float
 
 void mat4_look_at(const vec3_t eye, const vec3_t center, const vec3_t up, mat4_t out)
 {
-	mat4_t r;
+  mat4_t r;
   vec3_t facing_norm, up_norm, s;
   /* facing_norm */
   vec3_subtract(center, eye, facing_norm);

@@ -1,8 +1,8 @@
 /*
-	Transformation matrix
-	Written by Noel Cower
+  Transformation matrix
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef MATRIX_H_3CZ1OZK7
@@ -20,11 +20,11 @@ extern const mat4_t g_mat4_identity;
 void mat4_identity(mat4_t out);
 void mat4_copy(const mat4_t in, mat4_t out);
 void mat4_set(
-	s_float_t m00, s_float_t m01, s_float_t m02, s_float_t m03,
-	s_float_t m04, s_float_t m05, s_float_t m06, s_float_t m07,
-	s_float_t m08, s_float_t m09, s_float_t m10, s_float_t m11,
-	s_float_t m12, s_float_t m13, s_float_t m14, s_float_t m15,
-	mat4_t out);
+  s_float_t m00, s_float_t m01, s_float_t m02, s_float_t m03,
+  s_float_t m04, s_float_t m05, s_float_t m06, s_float_t m07,
+  s_float_t m08, s_float_t m09, s_float_t m10, s_float_t m11,
+  s_float_t m12, s_float_t m13, s_float_t m14, s_float_t m15,
+  mat4_t out);
 
 void mat4_set_axes3(const vec3_t x, const vec3_t y, const vec3_t z, const vec3_t w, mat4_t out);
 void mat4_get_axes3(const mat4_t m, vec3_t x, vec3_t y, vec3_t z, vec3_t w);

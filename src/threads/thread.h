@@ -1,8 +1,8 @@
 /*
-	Threading routines
-	Written by Noel Cower
+  Threading routines
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef THREAD_H
@@ -24,37 +24,37 @@ typedef pthread_t thread_t;
 /*! Initializes a thread. */
 inline void thread_create(thread_t *thread, thread_fn_t fn, void *context)
 {
-	pthread_create(thread, NULL, fn, context);
+  pthread_create(thread, NULL, fn, context);
 }
 
 inline void thread_kill(thread_t thread)
 {
-	pthread_cancel(thread);
+  pthread_cancel(thread);
 }
 
 inline int thread_equals(thread_t left, thread_t right)
 {
-	return pthread_equal(left, right);
+  return pthread_equal(left, right);
 }
 
 inline void thread_detach(thread_t thread)
 {
-	pthread_detach(thread);
+  pthread_detach(thread);
 }
 
 inline void thread_join(thread_t thread, void **return_value)
 {
-	pthread_join(thread, return_value);
+  pthread_join(thread, return_value);
 }
 
 inline void thread_exit(void *return_value)
 {
-	pthread_exit(return_value);
+  pthread_exit(return_value);
 }
 
 inline thread_t thread_current_thread(void)
 {
-	return pthread_self();
+  return pthread_self();
 }
 
 #else /* USE_PTHREADS */

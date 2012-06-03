@@ -1,8 +1,8 @@
 /*
-	Window creation/destruction routines
-	Written by Noel Cower
+  Window creation/destruction routines
+  Written by Noel Cower
 
-	See LICENSE.md for license information
+  See LICENSE.md for license information
 */
 
 #ifndef WINDOW_H
