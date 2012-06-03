@@ -22,7 +22,7 @@ The closing brace _always_ gets its own line.
 
 An exception to this is when the braces follow assignment.  In this case, you should place the opening brace on the same line as the assignment.  For example:
 
-	const class_t _some_class = {
+	const some_type_t some_value = {
 		/* ... */
 	};
 
@@ -61,7 +61,7 @@ For some examples of function names:
 
 For functions that act on objects, they should be prefixed with the class name and an underscore.  For example, `object_store_weak`.
 
-If a class name is lengthy, consider using an abbreviation.  Remember to avoid abbreviations that do not make sense.  As a somewhat extreme example, `component_t` would have a method `com_msg_all_of_kind`.
+If an object's name is lengthy, consider using an abbreviation.  Remember to avoid abbreviations that do not make sense.  As a somewhat extreme example, `component_t` would have a method `comp_msg_all_of_kind` (not `com_` because that's reserved for common functions).
 
 
 ### Structures
@@ -100,19 +100,11 @@ Though not really a structure in the same sense as a `union` or `struct`, the co
 		BUFFER_DEFENESTRATED
 	} buffer_state_t;
 
+However, it's not required to give an enum a typedef.  Use your best judgment.
+
 #### Member Variables
 
 Member variables follow the same convention as general identifiers, with one exception: if the variable is considered very private or internal, its name should be prefixed with `prv_`.
-
-#### Class Names
-
-When defining a new class using `class_t` (or a derivative of that type), you should define a global named `g_<classname>_class` followed by a macro `<classname>_class` for the address of the class.  For example:
-
-	extern const class_t g_list_class;
-	#define list_class (&g_list_class)
-
-The reason for this is mainly ease of use.  `object_new()` takes a `class_t *`, so it is much more useful to treat it as though it's always pointing to the class.
-
 
 ### Macros
 
@@ -128,6 +120,8 @@ Macros that are used as constants are in all uppercase, with words separated by 
 Macros that behave like functions follow the same naming convention as functions.  Macro arguments should be entirely uppercase, however.  For example:
 
 	#define vec3_expand(V) (V)[0], (V)[1], (V)[2]
+
+The exception to this can be variadic macro arguments where you can use lowercase, such as `args...`.
 
 
 ### Variables
@@ -150,15 +144,9 @@ Constants follow the same rules as general identifiers.  They must be prefixed w
 
 ### Semi-Private Functions
 
-If a function needs to be part of the public API, but should not generally be used except in edge cases, it's probably bad design, for one.  However, if it's considered unavoidable, leave a comment by the function prototype in the header stating that the function probably shouldn't be used.
+If a function needs to be part of the public API, but should not generally be used except in edge cases, it's probably bad design, for one.  However, if it's considered unavoidable, leave a comment by the function prototype in the header stating that the function probably shouldn't be used (unless you wish for death by angry bees).
 
 ### Member Access
 
-In general, members should be considered read-only in general code.  There are some small exceptions to this, however:
-
-* `listnode_t.obj` is write-able if the list stores weak references.  If it stores strong references, you should modify the list through the appropriate methods.
-* `mapnode_t.p` (an opaque value associated with the map) can be considered write-able when the `mapops_t` associated with the map is the default.
-	
-	Again, it is better to modify it through the appropriate method (i.e., `map_insert`) rather than something else.
-* `array_t.buffer` is the same buffer accessed via `array_buffer(array_t *)`, so it is not unreasonable to access it directly.  If you need to know the exact size of the buffer, however, it is better to access it via `array_buffer(array_t *)`.
+In general, members should be considered read-only in general code unless somehow specified otherwise (comment or something).
 
