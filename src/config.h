@@ -40,27 +40,34 @@
 #endif
 
 /* set up some macros for platforms */
-#define PLATFORM_UNIX (defined(unix) || defined(__unix) || defined(__unix__))
-#define PLATFORM_APPLE (defined(__APPLE__))
-#define PLATFORM_WINDOWS (defined(_WIN32) || defined(__MINGW32__))
-#define PLATFORM_LINUX (defined(__linux__) || defined(linux) || defined(__linux))
+#define PLATFORM_UNIX     (defined(unix) || defined(__unix) || defined(__unix__))
+#define PLATFORM_APPLE    (defined(__APPLE__))
+#define PLATFORM_WINDOWS  (defined(_WIN32) || defined(__MINGW32__))
+#define PLATFORM_LINUX    (defined(__linux__) || defined(linux) || defined(__linux))
+#define PLATFORM_IOS      (PLATFORM_APPLE && TARGET_OS_IPHONE)
+#define PLATFORM_MAC      (PLATFORM_APPLE && TARGET_OS_MAC)
+#define PLATFORM_IOS_SIM  (PLATFORM_APPLE && TARGET_IPHONE_SIMULATOR)
+#define PLATFORM_QNX      (defined(__QNX__))
+#define PLATFORM_ANDROID  (defined(__ANDROID__))
 
 /* architectures */
-#define ARCH_ARM (__arm__)
-#define ARCH_ARM_NEON (ARCH_ARM && __ARM_NEON__)
-#define ARCH_ARM_7 (ARCH_ARM && __ARM_ARCH_7A__)
-#define ARCH_x86_64 (__x86_64__ || __x86_64 || __amd64__ || __amd64 || _M_X64)
-#define ARCH_x86 (__i386 || __i386__ || i386 || _M_IX86 || _X86_ || __i486__ || __i586 || __i686__)
-#define ARCH_PPC (__powerpc || __powerpc__ || __POWERPC__ || __ppc__ || _M_PPC)
+#define ARCH_ARM        (__arm__)
+#define ARCH_ARM_NEON   (ARCH_ARM && __ARM_NEON__)
+#define ARCH_ARM_7      (ARCH_ARM && __ARM_ARCH_7A__)
+#define ARCH_x86_64     (__x86_64__ || __x86_64 || __amd64__ || __amd64 || _M_X64)
+#define ARCH_x86        (__i386 || __i386__ || i386 || _M_IX86 || _X86_ || __i486__ || __i586 || __i686__)
+#define ARCH_PPC        (__powerpc || __powerpc__ || __POWERPC__ || __ppc__ || _M_PPC)
 
 #if (PLATFORM_UNIX || PLATFORM_APPLE) && !defined(__USE_UNIX98)
-#	define __USE_UNIX98
+#	define __USE_UNIX98 1
 #endif
 
 /* specify the use of pthreads on supported platforms */
-#if !defined(USE_PTHREADS)
-#	define USE_PTHREADS (PLATFORM_UNIX || PLATFORM_APPLE || PLATFORM_LINUX)
-#endif /* !defined(USE_PTHREADS) */
+#if PLATFORM_APPLE || PLATFORM_UNIX || PLATFORM_LINUX || PLATFORM_QNX || PLATFORM_ANDROID
+# define USE_PTHREADS (1)
+#else
+# define USE_PTHREADS (0)
+#endif
 
 #if USE_PTHREADS
 #	include <pthread.h>
@@ -73,6 +80,12 @@
 #if PLATFORM_TOUCHPAD
 #include <PDL.h>
 #endif
+
+#include "src/maths.h"
+#include "src/mat4.h"
+#include "src/quat.h"
+#include "src/vec3.h"
+#include "src/vec4.h"
 
 #endif /* end of include guard: CONFIG_H */
 
