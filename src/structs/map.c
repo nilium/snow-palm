@@ -269,6 +269,9 @@ static mapnode_t *mapnode_find(const map_t *map, mapnode_t *node, mapkey_t key)
 
 void map_init(map_t *map, mapops_t ops, allocator_t *alloc)
 {
+  if (alloc == NULL)
+    alloc = g_default_allocator;
+
   map->root = NIL;
   map->size = 0;
   map->allocator = alloc;

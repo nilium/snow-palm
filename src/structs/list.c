@@ -47,6 +47,9 @@ void list_destroy(list_t *self)
 
 list_t *list_init(list_t *self, size_t object_size, allocator_t *alloc)
 {
+  if (alloc == NULL)
+    alloc = g_default_allocator;
+  
   self->allocator = alloc;
   self->obj_size = object_size;
   self->size = 0;
