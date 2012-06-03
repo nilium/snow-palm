@@ -1,28 +1,11 @@
-#!/usr/bin/env ruby -w
-
-MAKEFILE_TEMPLATE = <<-EOS
-OBJECT_PREFIX:=../obj/$(TARGET)/
-OBJECTS:=$(addprefix $(OBJECT_PREFIX),$(addsuffix .o,$(basename $(SOURCES))))
-OUTPUT_PREFIX:=../bin/
-TARGET_OUTPUT:=$(addprefix $(OUTPUT_PREFIX),$(TARGET_OUTPUT))
-
-all: prepare_build $(TARGET_OUTPUT)
-
-prepare_build:
-	mkdir -p $(OBJECT_PREFIX)
-	mkdir -p $(OUTPUT_PREFIX)
-.PHONY: all prepare_build
-
-$(TARGET_OUTPUT): $(OBJECTS)
-	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) $(LDFLAGS) $(CFLAGS) $^ -o $@
-EOS
+#!/usr/local/bin/ruby -w
 
 COMPILE_STMT = "\t$(TARGET_CC) $(TARGET_CFLAGS) $(CFLAGS) -c -o $@ $<"
 
-INCLUDE_FILE = /^\s*#\s*include\s+"([^"]+)"/
-SOURCE_FILE = /\.c$/
+INCLUDE_FILE = /^\s*#\s*include\s+["<]([^">]+)[">"]/
+SOURCE_FILE = /\.c(c|pp|xx)?$/
 
-def pullPrerequisites(file, checks)
+def pullPrerequisites(file, checks, include_paths=[])
 	if (checks.nil?)
 		checks = [file]
 	else
@@ -30,17 +13,25 @@ def pullPrerequisites(file, checks)
 	end
 	
 	prereqs = []
+	if (!File.exists?(file)) 
+		Process.exit(false)
+	end
+	
 	fileIn = File.new(file)
 	
-	fileIn.each_line {
-		|line|
+	if (not fileIn.nil?)
+		fileIn.each_line {
+			|line|
 		
-		matches = line.match(INCLUDE_FILE)
-		next if (matches.nil?)
+			matches = line.match(INCLUDE_FILE)
+			next if (matches.nil?)
 		
-		found = matches[1]
-		prereqs << found
-	}
+			found = matches[1]
+			prereqs << found
+		}
+	else
+		puts "Error loading file #{file}"
+	end
 	
 	fileIn.close()
 	
@@ -59,6 +50,18 @@ def pullPrerequisites(file, checks)
 	}
 	
 	return prereqs.uniq()
+end
+
+def scan_sources(path, sources, include_paths=[])
+	Dir.entries(path).each(path) {
+		|entry|
+
+		next if (entry =~ SOURCE_FILE).nil?
+		fpath = "#{path}/#{entry}"
+
+		sources[fpath] = pull_prereqs(entry, nil, include_paths)
+	}
+
 end
 
 sources = {}
