@@ -407,10 +407,18 @@
 ** systems, you can leave 'lua_strx2number' undefined and Lua will
 ** provide its own implementation.
 */
+#if defined(LUA_NUMBER_FLOAT)
+#define lua_str2number(s,p) strtof((s), (p))
+#elif defined(LUA_NUMBER_DOUBLE)
 #define lua_str2number(s,p)	strtod((s), (p))
+#endif
 
 #if defined(LUA_USE_STRTODHEX)
+#if defined(LUA_NUMBER_FLOAT)
+#define lua_strx2number(s,p)  strtof((s), (p))
+#elif defined(LUA_NUMBER_DOUBLE)
 #define lua_strx2number(s,p)	strtod((s), (p))
+#endif
 #endif
 
 
