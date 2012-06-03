@@ -33,40 +33,40 @@ extern "C"
  *  @param[in] format The format for the error message.
  *  @param[in] error The error code to exit with.
  */
-void log_fatal_impl(const char *format, int error, ...);
+void s_log_fatal_impl(const char *format, int error, ...);
 
 /*! \brief Macro around ::log_fatal_ to pass in additional file, line number,
 	and callee information to the format string.  This is never a no-op.
 */
-#define log_fatal(FORMAT, ERROR, args...) log_fatal_impl("Fatal Error [%s:%s:%d]: " FORMAT, (ERROR), __FILE__, __FUNCTION__, __LINE__, ##args)
+#define s_log_fatal(FORMAT, ERROR, args...) log_fatal_impl("Fatal Error [%s:%s:%d]: " FORMAT, (ERROR), __FILE__, __FUNCTION__, __LINE__, ##args)
 
 #if PLATFORM_TOUCHPAD
-#define log(STR, args...) PDL_Log((STR), ##args)
+#define s_log(STR, args...) PDL_Log((STR), ##args)
 #else
-#define log(STR, args...) fprintf(stderr, (STR), ##args)
+#define s_log(STR, args...) fprintf(stderr, (STR), ##args)
 #endif
 
 /* if debugging or logging is forcibly enabled, then provide additional logging macros */
 #if !defined(NDEBUG) || FORCE_LOGGING
 #if !defined(log_error)
-#define log_error(FORMAT, args...)   log("Error [%s:%s:%d]: "   FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
+#define s_log_error(FORMAT, args...)   log("Error [%s:%s:%d]: "   FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
 #if !defined(log_warning)
-#define log_warning(FORMAT, args...) log("Warning [%s:%s:%d]: " FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
+#define s_log_warning(FORMAT, args...) log("Warning [%s:%s:%d]: " FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
 #if !defined(log_note)
-#define log_note(FORMAT, args...)    log("Note [%s:%s:%d]: "    FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
+#define s_log_note(FORMAT, args...)    log("Note [%s:%s:%d]: "    FORMAT, __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
 #else
 /* unless previously defined, log macros do nothing in release builds */
 #if !defined(log_error)
-#define log_error(FORMAT, args...) 
+#define s_log_error(FORMAT, args...) 
 #endif
 #if !defined(log_warning)
-#define log_warning(FORMAT, args...) 
+#define s_log_warning(FORMAT, args...) 
 #endif
 #if !defined(log_note)
-#define log_note(FORMAT, args...) 
+#define s_log_note(FORMAT, args...) 
 #endif
 #endif
 
