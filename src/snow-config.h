@@ -84,7 +84,7 @@ typedef int32_t s_handle_t;
 #	error "No threading API available"
 #endif /* USE_PTHREADS */
 
-#include "logging.h"
+#include <log/log.h>
 
 #if PLATFORM_TOUCHPAD
 #include <PDL.h>
