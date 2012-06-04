@@ -7,6 +7,15 @@
 #include <string.h>
 #include <stdlib.h>
 
+/* define NULL ifndef */
+#if !defined(NULL)
+#	if defined(__cplusplus)
+#		define NULL 0
+#	else /* defined(__cplusplus) */
+#		define NULL ((void *)0)
+#	endif /* !__cplusplus */
+#endif /* !defined(NULL) */
+
 #define PLATFORM_UNIX (defined(unix) || defined(__unix) || defined(__unix__))
 #define PLATFORM_APPLE (defined(__APPLE__))
 #define PLATFORM_WINDOWS (defined(_WIN32) || defined(__MINGW32__))
