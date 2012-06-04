@@ -15,7 +15,7 @@ const int MAP_ALLOC_TAG = 0x00773300;
 #define OPP_NODE(NODE, DIR) ((DIR) ? (NODE)->left: (NODE)->right)
 
 static mapnode_t NIL_NODE = {
-	&NIL_NODE, &NIL_NODE, &NIL_NODE, NULL, (key_t)0, BLACK
+	&NIL_NODE, &NIL_NODE, &NIL_NODE, NULL, (mapkey_t)0, BLACK
 };
 static mapnode_t *NIL = &NIL_NODE;
 
@@ -195,7 +195,7 @@ static void mapnode_replace(map_t *map, mapnode_t *node, mapnode_t *with)
 	with->parent = node->parent;
 }
 
-static mapnode_t *mapnode_find(mapnode_t *node, key_t key)
+static mapnode_t *mapnode_find(mapnode_t *node, mapkey_t key)
 {
 	while (node != NIL) {
 		if (node->key == key)
@@ -276,7 +276,7 @@ static int map_test(mapnode_t *node)
 }
 #endif
 
-void map_insert(map_t *map, key_t key, void *p)
+void map_insert(map_t *map, mapkey_t key, void *p)
 {
 	mapnode_t *parent = map->root;
 	mapnode_t **slot = &map->root;
@@ -351,7 +351,7 @@ void map_insert(map_t *map, key_t key, void *p)
 #endif
 }
 
-int map_remove(map_t *map, key_t key)
+int map_remove(map_t *map, mapkey_t key)
 {
 	mapnode_t *node = mapnode_find(map->root, key);
 	
@@ -363,7 +363,7 @@ int map_remove(map_t *map, key_t key)
 	return 0;
 }
 
-int map_get(const map_t *map, key_t key, void **result)
+int map_get(const map_t *map, mapkey_t key, void **result)
 {
 	const mapnode_t *node = mapnode_find(map->root, key);
 
@@ -373,7 +373,7 @@ int map_get(const map_t *map, key_t key, void **result)
 	return (node != NIL);
 }
 
-static void map_getValues_r(const mapnode_t *node, key_t *keys, void **values, int *count, size_t capacity)
+static void map_getValues_r(const mapnode_t *node, mapkey_t *keys, void **values, int *count, size_t capacity)
 {
 	if (capacity <= *count)
 		return;
@@ -391,7 +391,7 @@ static void map_getValues_r(const mapnode_t *node, key_t *keys, void **values, i
 	if (node->right != NIL) map_getValues_r(node->right, keys, values, count, capacity);
 }
 
-int map_getValues(const map_t *map, key_t *keys, void **values, size_t capacity)
+int map_getValues(const map_t *map, mapkey_t *keys, void **values, size_t capacity)
 {
 	int count = 0;
 	map_getValues_r(map->root, keys, values, &count, capacity);
