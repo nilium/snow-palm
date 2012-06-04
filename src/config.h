@@ -45,6 +45,10 @@
 #define ARCH_x86 (__i386 || __i386__ || i386 || _M_IX86 || _X86_ || __i486__ || __i586 || __i686__)
 #define ARCH_PPC (__powerpc || __powerpc__ || __POWERPC__ || __ppc__ || _M_PPC)
 
+#if (PLATFORM_UNIX || PLATFORM_APPLE) && !defined(__USE_UNIX98)
+#define __USE_UNIX98
+#endif
+
 /* specify the use of pthreads on supported platforms */
 #if !defined(USE_PTHREADS)
 #	define USE_PTHREADS (PLATFORM_UNIX || PLATFORM_APPLE || PLATFORM_LINUX)
