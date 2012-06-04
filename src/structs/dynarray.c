@@ -250,7 +250,7 @@ void *array_at_index(array_t *self, size_t index)
     s_fatal_error(1, "Index %zu out of bounds [0..%zu]", index, (self->size - 1));
     return NULL;
   }
-  
+
   return (self->buf + (index * self->obj_size));
 }
 
@@ -283,7 +283,7 @@ bool array_pop(array_t *self, void *result)
 {
   if (self->size == 0)
     return false;
-  
+
   char *addr = self->buf + ((self->size - 1) * self->obj_size);
   memcpy(result, addr, self->obj_size);
   memset(addr, 0, self->obj_size);
