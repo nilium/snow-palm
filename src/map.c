@@ -363,6 +363,11 @@ int map_remove(map_t *map, mapkey_t key)
 	return 0;
 }
 
+int map_size(const map_t *map)
+{
+	return map->size;
+}
+
 int map_get(const map_t *map, mapkey_t key, void **result)
 {
 	const mapnode_t *node = mapnode_find(map->root, key);

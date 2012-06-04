@@ -43,7 +43,7 @@ void map_destroy(map_t *map);
 void map_insert(map_t *map, mapkey_t key, void *p);
 int map_remove(map_t *map, mapkey_t key);
 
-inline int map_size(const map_t *map) { return map->size; }
+int map_size(const map_t *map);
 
 int map_get(const map_t *map, mapkey_t key, void **result);
 int map_getValues(const map_t *map, mapkey_t *keys, void **values, size_t capacity);
