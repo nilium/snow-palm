@@ -16,6 +16,7 @@
 #	endif /* !__cplusplus */
 #endif /* !defined(NULL) */
 
+/* set up some macros for platforms */
 #define PLATFORM_UNIX (defined(unix) || defined(__unix) || defined(__unix__))
 #define PLATFORM_APPLE (defined(__APPLE__))
 #define PLATFORM_WINDOWS (defined(_WIN32) || defined(__MINGW32__))
