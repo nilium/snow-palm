@@ -120,6 +120,12 @@ void mem_shutdown(void);
 void mem_init_pool(memory_pool_t *pool, buffersize_t size, int32_t tag);
 
 /*!
+ * Destroys a memory pool.
+ * @param pool The address of a previously-initialized pool to be destroyed.
+ */
+void mem_destroy_pool(memory_pool_t *pool);
+
+/*!
  * Increases the retain count of a pool.  All retains must be matched by a call
  * to ::mem_release_pool.
  * #112933

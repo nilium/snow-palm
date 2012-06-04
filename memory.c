@@ -64,11 +64,6 @@ static void mem_check_pool(const memory_pool_t *pool);
  */
 static void mem_check_block(const block_head_t *block, int debug_block);
 
-/*!
- * Destroys a memory pool.
- * @param pool The address of a previously-initialized pool to be destroyed.
- */
-static void mem_destroy_pool(memory_pool_t *pool);
 
 
 void mem_init(void)
@@ -129,7 +124,7 @@ void mem_init_pool(memory_pool_t *pool, buffersize_t size, int32_t tag)
 }
 
 
-static void mem_destroy_pool(memory_pool_t *pool)
+void mem_destroy_pool(memory_pool_t *pool)
 {
 #if THREADED && defined(__cplusplus)
 	pool->lock.lock();
