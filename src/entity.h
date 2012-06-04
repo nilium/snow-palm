@@ -10,14 +10,15 @@
 #define ENTITY_H
 
 #include <snow-config.h>
-#include "math3d.h"
-#include "list.h"
-#include "object.h"
+#include <maths/maths.h>
+#include <structs/list.h>
 
 #if defined(__cplusplus)
 extern "C"
 {
 #endif /* __cplusplus */
+
+#define ENTITY_NAME_MAX_LEN (64)
 
 typedef enum
 {
@@ -36,15 +37,10 @@ typedef struct s_entity entity_t;
 
 struct s_entity
 {
-  class_t *isa;
+  list_t children;
 
-  list_t *components;
-
-  list_t *children;
   listnode_t *parentnode;
   entity_t *parent;
-
-  char *name;
   
   /*! internal flags */
   entity_flag_t prv_iflags;
@@ -54,22 +50,25 @@ struct s_entity
   quat_t rotation;
   vec3_t position;
   vec3_t scale;
+
+  char name[ENTITY_NAME_MAX_LEN];
 };
 
-extern const class_t g_entity_class;
-#define entity_class (&g_entity_class)
-
 /** The entity system depends on the object and memory systems. */
-void sys_entity_init(void);
+void sys_entity_init(allocator_t *alloc);
 void sys_entity_shutdown(void);
 
 /*! Allocates a new instance of the given entity class.
+  \param[in] name The entity's name.
+  \param[in] parent The entity's parent.
   \returns A new instance of the given entity class, or NULL if the class
   doesn't inherit from ::entity_class.
 */
-entity_t *entity_new(class_t *cls);
-/*! Initializes the given entity. */
-entity_t *entity_init(entity_t *self, const char *name, entity_t *parent);
+entity_t *entity_new(const char *name, entity_t *parent);
+/*! Destroys and deallocates an entity. This will destroy all child entities
+    as well.
+*/
+void entity_destroy(entity_t *entity);
 
 /*! Adds a child to the entity. */
 void entity_add_child(entity_t *self, entity_t *child);
@@ -84,32 +83,30 @@ void entity_set_name(entity_t *self, const char *name);
 const char *entity_get_name(const entity_t *self);
 
 /*! \brief Sets the position of the entity relative to its parent. */
-void entity_position(entity_t *self, float x, float y, float z);
+void entity_position(entity_t *self, s_float_t x, s_float_t y, s_float_t z);
 /*! \brief Moves the entity relative to its orientation and parent. */
-void entity_move(entity_t *self, float x, float y, float z);
+void entity_move(entity_t *self, s_float_t x, s_float_t y, s_float_t z);
 /*! \brief Translates the entity relative to its parent (ignores orientation). */
-void entity_translate(entity_t *self, float x, float y, float z);
+void entity_translate(entity_t *self, s_float_t x, s_float_t y, s_float_t z);
 
 /*! \brief Sets the rotation of the entity (relative to its parent). */
 void entity_rotate(entity_t *self, quat_t rot);
 /*! \brief Rotates the entity by pitch, yaw, and roll (relative to its parent) - this concatenates rotations. */
 void entity_turn(entity_t *self, quat_t rot);
 
-/*! \brief Sets the scale of the entity.  Has no direct effect on entity behavior,
-    but may modify component behavior.
-*/
-void entity_scale(entity_t *self, float x, float y, float z);
+/*! \brief Sets the scale of the entity. */
+void entity_scale(entity_t *self, s_float_t x, s_float_t y, s_float_t z);
 
 /*! Gets the entity's transformation matrix. */
 void entity_get_transform(entity_t *self, mat4_t out);
 /*! Gets the entity's world transformation matrix. */
 void entity_get_world_transform(entity_t *self, mat4_t out);
 /*! Gets the entity's scale (relative to its parent). */
-void entity_get_scale(entity_t *self, float *x, float *y, float *z);
+void entity_get_scale(const entity_t *self, s_float_t *x, s_float_t *y, s_float_t *z);
 /*! Gets the entity's rotation (relative to its parent). */
-void entity_get_rotation(entity_t *self, quat_t out);
+void entity_get_rotation(const entity_t *self, quat_t out);
 /*! Gets the entity's position (relative to its parent). */
-void entity_get_position(entity_t *self, float *x, float *y, float *z);
+void entity_get_position(const entity_t *self, s_float_t *x, s_float_t *y, s_float_t *z);
 
 #if defined(__cplusplus)
 }
