@@ -3,7 +3,9 @@
 
 static void *sn_malloc(size_t min_size, void *ctx) {
   (void)ctx;
-  return malloc(min_size);
+  void *p = malloc(min_size);
+  if (p) memset(p, 0, min_size);
+  return p;
 }
 
 static void sn_free(void *p, void *ctx) {
