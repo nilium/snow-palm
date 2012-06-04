@@ -30,12 +30,13 @@ array_t *array_init(array_t *self, size_t object_size, size_t capacity, allocato
   if (alloc == NULL)
     alloc = g_default_allocator;
 
-  if (!(alloc->malloc && alloc->free)) {
+  if (object_size == 0) {
+    s_fatal_error(1, "Invalid object size for array: 0");
+    return NULL;
+  } else if (!(alloc->malloc && alloc->free)) {
     s_fatal_error(1, "malloc & free pointers are NULL");
     return NULL;
-  }
-
-  if (NULL == self) {
+  } else if (NULL == self) {
     s_fatal_error(1, "Failed to allocate array");
     return NULL;
   }
