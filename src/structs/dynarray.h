@@ -45,6 +45,11 @@ bool array_copy(const array_t *src, array_t *dst);
 bool array_resize(array_t *self, size_t size);
 bool array_reserve(array_t *self, size_t capacity);
 
+inline bool array_clear(array_t *self)
+{
+  return array_resize(self, 0);
+}
+
 size_t array_size(const array_t *self);
 size_t array_capacity(const array_t *self);
 
