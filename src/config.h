@@ -56,6 +56,8 @@
 
 #if USE_PTHREADS
 #	include <pthread.h>
+#else
+#error "No threading API available"
 #endif /* USE_PTHREADS */
 
 #include "logging.h"
