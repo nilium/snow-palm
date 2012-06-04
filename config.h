@@ -22,6 +22,14 @@
 #define PLATFORM_WINDOWS (defined(_WIN32) || defined(__MINGW32__))
 #define PLATFORM_LINUX (defined(__linux__) || defined(linux) || defined(__linux))
 
+/* architectures */
+#define ARCH_ARM (__arm__)
+#define ARCH_ARM_NEON (ARCH_ARM && __ARM_NEON__)
+#define ARCH_ARM_7 (ARCH_ARM && __ARM_ARCH_7A__)
+#define ARCH_x86_64 (__x86_64__ || __x86_64 || __amd64__ || __amd64 || _M_X64)
+#define ARCH_x86 (__i386 || __i386__ || i386 || _M_IX86 || _X86_ || __i486__ || __i586 || __i686__)
+#define ARCH_PPC (__powerpc || __powerpc__ || __POWERPC__ || __ppc__ || _M_PPC)
+
 #if !defined(USE_PTHREADS)
 #define USE_PTHREADS (PLATFORM_UNIX || PLATFORM_APPLE || PLATFORM_LINUX)
 #endif /* !defined(USE_PTHREADS) */
