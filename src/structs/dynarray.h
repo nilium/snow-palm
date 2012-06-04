@@ -53,6 +53,11 @@ inline bool array_clear(array_t *self)
 size_t array_size(const array_t *self);
 size_t array_capacity(const array_t *self);
 
+inline bool array_empty(array_t *self)
+{
+  return !array_size(self);
+}
+
 bool array_sort(array_t *self, int (*comparator)(const void *left, const void *right));
 
 bool array_get(array_t *self, size_t index, void *dst);
