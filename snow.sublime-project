@@ -7,6 +7,16 @@
 	],
 
   "settings": {
-    "include_guard_prefix": "SNOW_"
+    "include_guard_prefix": "SNOW_",
+    "sublimeclang_options":
+    [
+      "-W",
+      "-Wall",
+      "-I/Users/noel/snow-c/src/",
+      "-I/usr/lib/clang/3.1/include",
+      "-framework Cocoa",
+      "-framework OpenGL",
+      "-I/usr/include/GL"
+    ]
   }
 }
