@@ -12,6 +12,7 @@
 #include <snow-config.h>
 #include <maths/maths.h>
 #include <structs/list.h>
+#include <memory/allocator.h>
 
 #if defined(__cplusplus)
 extern "C"
