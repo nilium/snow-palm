@@ -8,7 +8,7 @@
 #include "window.h"
 #include <SDL/SDL.h>
 
-#if PLATFORM_TOUCHPAD
+#if S_PLATFORM_TOUCHPAD
 #include <PDL.h>
 #endif
 

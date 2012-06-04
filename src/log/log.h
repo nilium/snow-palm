@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 
-#if PLATFORM_TOUCHPAD
+#if S_PLATFORM_TOUCHPAD
 #include <PDL.h>
 #endif
 
@@ -52,7 +52,7 @@ void s_fatal_error_impl(const char *format, int error, ...);
 #define s_fatal_error(ERROR, FORMAT, args...) s_fatal_error_impl("Fatal Error [%s:%s:%d]: " FORMAT "\n", (ERROR), __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
 
-#if PLATFORM_TOUCHPAD
+#if S_PLATFORM_TOUCHPAD
 #define s_log(STR, args...) PDL_Log((STR), ##args)
 #else
 #define s_log(STR, args...) fprintf(stderr, (STR), ##args)
