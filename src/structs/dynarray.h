@@ -37,10 +37,10 @@ struct s_array
   allocator_t *allocator;
 };
 
-array_t *array_new(size_t object_size, size_t capacity, allocator_t *alloc);
+array_t *array_init(array_t *self, size_t object_size, size_t capacity, allocator_t *alloc);
 
 void array_destroy(array_t *self);
-array_t *array_copy(const array_t *src);
+bool array_copy(const array_t *src, array_t *dst);
 
 bool array_resize(array_t *self, size_t size);
 bool array_reserve(array_t *self, size_t capacity);

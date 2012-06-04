@@ -22,10 +22,10 @@ void array_destroy(array_t *self)
   if (self->buf != NULL)
     com_free(alloc, self->buf);
 
-  com_free(alloc, self);
+  memset(self, 0, sizeof(*self));
 }
 
-array_t *array_new(size_t object_size, size_t capacity, allocator_t *alloc)
+array_t *array_init(array_t *self, size_t object_size, size_t capacity, allocator_t *alloc)
 {
   if (alloc == NULL)
     alloc = g_default_allocator;
@@ -35,7 +35,6 @@ array_t *array_new(size_t object_size, size_t capacity, allocator_t *alloc)
     return NULL;
   }
 
-  array_t *self = (array_t *)com_malloc(alloc, sizeof(*self));
   if (NULL == self) {
     s_fatal_error(1, "Failed to allocate array");
     return NULL;
@@ -46,7 +45,7 @@ array_t *array_new(size_t object_size, size_t capacity, allocator_t *alloc)
   self->size = 0;
   self->capacity = 0;
   self->buf = NULL;
-  
+
   if (!array_reserve(self, capacity)) {
     array_destroy(self);
     s_fatal_error(1, "Failed to create array with capacity %zu", capacity);
@@ -56,27 +55,48 @@ array_t *array_new(size_t object_size, size_t capacity, allocator_t *alloc)
   return self;
 }
 
-array_t *array_copy(const array_t *src)
+bool array_copy(const array_t *src, array_t *dst)
 {
-  if (src == NULL) {
+  if (src == NULL || dst == NULL) {
     s_fatal_error(1, "Cannot copy NULL array");
-    return NULL;
+    return false;
   }
 
-  array_t *copy = array_new(src->obj_size, src->capacity, src->allocator);
-  if (NULL == copy) {
-    s_fatal_error(1, "Failed to allocate array");
-    return NULL;
-  } else if (!array_resize(copy, src->size)) {
-    array_destroy(copy);
-    s_fatal_error(1, "Failed to copy array");
-    return NULL;
-  }
-  
-  if (src->size > 0 && src->buf && copy->buf && copy->size == src->size)
-    memcpy(copy->buf, src->buf, copy->size * copy->obj_size);
+  array_t copy = *dst;
+  const size_t src_buffer_size = (src->size * src->obj_size);
+  const size_t dst_buffer_size = (copy.capacity * copy.obj_size);
 
-  return copy;
+  if (copy.buf) {
+    memset(copy.buf, 0, dst_buffer_size);
+
+    if (dst_buffer_size < src_buffer_size) {
+      // release the buffer since it can't hold the source buffer
+      dst->buf = NULL;
+      com_free(copy.allocator, copy.buf);
+      copy.buf = NULL;
+      copy.capacity = 0;
+    } else {
+      // reuse the buffer
+      copy.capacity = dst_buffer_size / src->obj_size;
+    }
+  }
+
+  copy.size = 0;
+  copy.obj_size = src->obj_size;
+
+  if (src->buf) {
+    if (!array_resize(&copy, src->size)) {
+      s_fatal_error(1, "Failed to copy array");
+      return false;
+    }
+
+    if (src->size > 0 && copy.size == src->size)
+      memcpy(copy.buf, src->buf, src_buffer_size);
+  }
+
+  *dst = copy;
+
+  return true;
 }
 
 bool array_resize(array_t *self, size_t size)
