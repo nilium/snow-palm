@@ -33,5 +33,9 @@ void mutex_lock(mutex_t *lock);
 bool mutex_trylock(mutex_t *lock);
 void mutex_unlock(mutex_t *lock);
 
+#if defined(__cplusplus)
+}
+#endif
+
 #endif /* end of include guard: MUTEX_H */
 
