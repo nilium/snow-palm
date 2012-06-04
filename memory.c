@@ -129,8 +129,12 @@ void mem_destroy_pool(memory_pool_t *pool)
 #if THREADED && defined(__cplusplus)
 	pool->lock.lock();
 #endif
-	
+
 	if (pool->head.used) {
+		if (pool->refs != 0) {
+			log_warning("[%X] Destroying memory pool with non-zero reference count (%d)\n", pool->tag, pool->refs);
+		}
+
 		int32_t tag = pool->tag;
 		mem_check_pool(pool);
 	
