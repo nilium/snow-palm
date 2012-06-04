@@ -51,7 +51,7 @@ typedef enum e_touch_phase {
   TOUCH_ENDED = 1 << 3,
   TOUCH_CANCELLED = 1 << 4,
   TOUCH_TOUCHING=TOUCH_BEGAN|TOUCH_MOVED|TOUCH_STATIONARY,
-  TOUCH_ANY = (int)-1
+  TOUCH_ANY = 0xFFFF
 #endif
 } touch_phase_t;
 
