@@ -384,7 +384,7 @@
 @@ LUAI_UACNUMBER is the result of an 'usual argument conversion'
 @* over a number.
 */
-#define LUAI_UACNUMBER	s_float_t
+#define LUAI_UACNUMBER	double
 
 
 /*
