@@ -112,7 +112,6 @@ struct event_t {
   void *sender;
   s_time_t time;
   event_kind_t kind;
-  bool propagate;
 
   union {
     key_event_t key;
