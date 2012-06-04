@@ -4,13 +4,13 @@
 
 static void main_shutdown(void)
 {
-	mem_shutdown();
 //	sys_entity_shutdown();
+	sys_mem_shutdown();
 }
 
 int main(int argc, const char *argv[])
 {
-	mem_init();
+	sys_mem_init();
 //	sys_entity_init();
 	atexit(main_shutdown);
 	
