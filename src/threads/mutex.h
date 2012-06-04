@@ -16,7 +16,7 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-#if USE_PTHREADS
+#if S_USE_PTHREADS
 
 typedef pthread_mutex_t mutex_t;
 
