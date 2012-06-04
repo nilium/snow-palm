@@ -15,7 +15,7 @@
 	<key>CFBundleIconFile</key>
 	<string>icon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.cower.Snow</string>
+	<string>net.spifftastic.Snow</string>
 	<key>CFBundleName</key>
 	<string>Snow</string>
 	<key>CFBundlePackageType</key>
