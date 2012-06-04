@@ -80,35 +80,35 @@ typedef enum {
   MOUSE_MIDDLE = 3
 } mouse_button_t;
 
-struct key_event_t {
+typedef struct s_key_event {
   uint16_t modifiers;
   uint16_t key;
   uint16_t character;
   uint8_t pressed;
   uint8_t is_a_repeat;
-};
+} key_event_t;
 
-struct mouse_button_event_t {
+typedef struct s_mouse_button_event {
   vec2_t position;
   uint8_t button;
   uint8_t pressed;
-};
+} mouse_button_event_t;
 
-struct mouse_motion_event_t {
+typedef struct s_mouse_motion_event {
   vec2_t position;
-};
+} mouse_motion_event_t;
 
-struct touch_t {
+typedef struct s_touch {
   vec2_t position;
   touch_phase_t phase;
-};
+} touch_t;
 
-struct touch_event_t {
+typedef struct s_touch_event {
   touch_t touches[S_MAX_TOUCHES];
   uint8_t num_touches;
-};
+} touch_event_t;
 
-struct event_t {
+typedef struct s_event {
   void *sender;
   s_time_t time;
   event_kind_t kind;
@@ -119,7 +119,7 @@ struct event_t {
     mouse_motion_event_t motion;
     touch_event_t touch;
   };
-};
+} event_t;
 
 
 typedef bool (*event_handler_fn_t)(event_t *event, void *context);
