@@ -108,8 +108,14 @@ bool array_resize(array_t *self, size_t size)
   }
 
   if (array_reserve(self, size)) {
-    if (size < self->size && self->buf) {
-      memset(self->buf + (size * self->obj_size), 0, (self->size - size) * self->obj_size);
+    if (self->buf) {
+      if (size == 0 && self->size != 0) {
+        // simply zero the used portion of the array
+        memset(self->buf, 0, self->size * self->obj_size);
+      } else if (size < self->size) {
+        // zero the portion of the array cut off
+        memset(self->buf + (size * self->obj_size), 0, (self->size - size) * self->obj_size);
+      }
     }
     self->size = size;
 
