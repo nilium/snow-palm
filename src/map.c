@@ -378,6 +378,16 @@ int map_get(const map_t *map, mapkey_t key, void **result)
 	return (node != NIL);
 }
 
+int map_getAddr(map_t *map, mapkey_t key, void ***result)
+{
+	mapnode_t *node = mapnode_find(map->root, key);
+
+	if (node != NIL && result)
+		*result = &node->p;
+
+	return (node != NIL);
+}
+
 static void map_getValues_r(const mapnode_t *node, mapkey_t *keys, void **values, int *count, size_t capacity)
 {
 	if (capacity <= *count)

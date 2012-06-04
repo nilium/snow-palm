@@ -46,6 +46,8 @@ int map_remove(map_t *map, mapkey_t key);
 int map_size(const map_t *map);
 
 int map_get(const map_t *map, mapkey_t key, void **result);
+/* ho-ho, now we're cooking with evil */
+int map_getAddr(map_t *map, mapkey_t key, void ***result);
 int map_getValues(const map_t *map, mapkey_t *keys, void **values, size_t capacity);
 
 #if defined(__cplusplus)
