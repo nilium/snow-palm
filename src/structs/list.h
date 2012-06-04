@@ -59,6 +59,8 @@ struct s_list
 list_t *list_init(list_t *list, allocator_t *alloc);
 void list_destroy(list_t *self);
 
+bool list_insert_node_before(listnode_t *succ, listnode_t *pred);
+bool list_insert_node_after(listnode_t *pred, listnode_t *succ);
 listnode_t *list_insert_before(listnode_t *node, void *value);
 listnode_t *list_insert_after(listnode_t *node, void *value);
 

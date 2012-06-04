@@ -47,6 +47,40 @@ list_t *list_init(list_t *self, allocator_t *alloc)
   return self;
 }
 
+bool list_insert_node_before(listnode_t *succ, listnode_t *pred)
+{
+  if (!(succ && pred))
+    return false;
+
+  pred->next = succ;
+  pred->prev = succ->prev;
+
+  succ->prev->next = pred;
+  succ->prev = pred;
+
+  pred->list = pred->list;
+  succ->list->size += 1;
+
+  return true;
+}
+
+bool list_insert_node_after(listnode_t *pred, listnode_t *succ)
+{
+  if (!(succ && pred))
+    return false;
+
+  succ->prev = pred;
+  succ->next = pred->next;
+
+  pred->next->prev = succ;
+  pred->next = succ;
+
+  succ->list = pred->list;
+  pred->list->size += 1;
+
+  return true;
+}
+
 listnode_t *list_insert_before(listnode_t *node, void *pointer)
 {
   list_t *list = node->list;
