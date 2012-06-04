@@ -142,8 +142,8 @@ void com_process_event_queue(void);
 // the event).
 void com_send_event(event_t event);
 
-void com_add_event_handler(event_handler_fn_t *handler, void *context, int priority);
-void com_remove_event_handler(event_handler_fn_t *handler, void *context);
+void com_add_event_handler(event_handler_fn_t handler, void *context, int priority);
+void com_remove_event_handler(event_handler_fn_t handler, void *context);
 void com_clear_event_handlers(void);
 
 #ifdef __cplusplus
