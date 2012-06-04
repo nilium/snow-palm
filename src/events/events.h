@@ -14,6 +14,10 @@
   #endif
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 /*
   max touches is two.  Rationale: four touches or more sets off iOS's
   multitasking gestures.  five touches is the maximum for most other devices.
@@ -117,6 +121,8 @@ struct event_t {
   };
 };
 
+#ifdef __cplusplus
 }
+#endif // __cplusplus
 
 #endif /* end __SNOW_EVENT_H__ include guard */
