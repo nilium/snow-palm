@@ -8,7 +8,7 @@
 #ifdef __APPLE__
   #ifdef TARGET_OS_MAC
     #import <Cocoa/Cocoa.h>
-  #elif defined(TARGET_OS_IPHONE)
+  #elif TARGET_OS_IPHONE
     #import <CocoaTouch/CocoaTouch.h>
   #else
     #error "Undefined Apple operating system"
@@ -31,9 +31,7 @@ extern "C" {
 #endif // !S_MAX_TOUCHES
 
 typedef enum e_touch_phase {
-#if S_PLATFORM_APPLE
-  #if S_PLATFORM_IOS || S_PLATFORM_IOS_SIM
-  #elif S_PLATFORM_MAC
+#if S_PLATFORM_MAC
   TOUCH_BEGAN = NSTouchPhaseBegan,
   TOUCH_MOVED = NSTouchPhaseMoved,
   TOUCH_STATIONARY = NSTouchPhaseStationary,
@@ -41,9 +39,8 @@ typedef enum e_touch_phase {
   TOUCH_CANCELLED = NSTouchPhaseCancelled,
   TOUCH_TOUCHING = NSTouchPhaseTouching,
   TOUCH_ANY = NSTouchPhaseAny
-  #else
-    #error "Undefined Apple operating system"
-  #endif
+#elif (S_PLATFORM_IOS) || (S_PLATFORM_IOS_SIM)
+# error "iOS currently unsupported"
 #else
   TOUCH_BEGAN = 1,
   TOUCH_MOVED = 1 << 1,
