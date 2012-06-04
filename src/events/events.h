@@ -3,6 +3,7 @@
 
 #include <snow-config.h>
 #include <maths/maths.h>
+#include <memory/allocator.h>
 
 #ifdef __APPLE__
   #ifdef TARGET_OS_MAC
@@ -120,6 +121,31 @@ struct event_t {
     touch_event_t touch;
   };
 };
+
+
+typedef bool (*event_handler_fn_t)(event_t *event, void *context);
+
+
+/******************************************************************************
+** Event API
+******************************************************************************/
+
+// Pass to com_remove_event_handler to ignore a handler's context when removing
+// it from the registered event handlers.
+#define IGNORE_HANDLER_CONTEXT ((void *)-1)
+
+void sys_init_events(allocator_t *alloc);
+
+// Stores an event in the event queue.
+void com_queue_event(event_t event);
+void com_process_event_queue(void);
+// Emits an event (causes all event handlers to process it until one handles
+// the event).
+void com_send_event(event_t event);
+
+void com_add_event_handler(event_handler_fn_t *handler, void *context, int priority);
+void com_remove_event_handler(event_handler_fn_t *handler, void *context);
+void com_clear_event_handlers(void);
 
 #ifdef __cplusplus
 }
