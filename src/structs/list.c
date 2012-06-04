@@ -12,20 +12,10 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-static bool list_equals_default(size_t size, const void *left, const void *right) {
-  return (memcmp(left, right, size) == 0);
-}
-
-static listnode_t *list_alloc_node(list_t *list, const void *value) {
-  const size_t sz = list->obj_size;
-  
-  listnode_t *node = (listnode_t *)com_malloc(list->allocator, sizeof(*node) + sz);
+static listnode_t *list_alloc_node(list_t *list, void *ptr) {
+  listnode_t *node = (listnode_t *)com_malloc(list->allocator, sizeof(*node));
   node->list = list;
-  
-  if (value)
-    memcpy(node->value, value, sz);
-  else
-    memset(node->value, 0, sz);
+  node->pointer = ptr;
 
   return node;
 }
@@ -45,23 +35,22 @@ void list_destroy(list_t *self)
   memset(self, 0, sizeof(*self));
 }
 
-list_t *list_init(list_t *self, size_t object_size, allocator_t *alloc)
+list_t *list_init(list_t *self, allocator_t *alloc)
 {
   if (alloc == NULL)
     alloc = g_default_allocator;
   
   self->allocator = alloc;
-  self->obj_size = object_size;
   self->size = 0;
   self->head.next = self->head.prev = &self->head;
   self->head.list = self;
   return self;
 }
 
-listnode_t *list_insert_before(listnode_t *node, void *value)
+listnode_t *list_insert_before(listnode_t *node, void *pointer)
 {
   list_t *list = node->list;
-  listnode_t *self = list_alloc_node(node->list, value);
+  listnode_t *self = list_alloc_node(node->list, pointer);
   list->size += 1;
   
   self->next = node;
@@ -73,10 +62,10 @@ listnode_t *list_insert_before(listnode_t *node, void *value)
   return self;
 }
 
-listnode_t *list_insert_after(listnode_t *node, void *value)
+listnode_t *list_insert_after(listnode_t *node, void *pointer)
 {
   list_t *list = node->list;
-  listnode_t *self = list_alloc_node(list, value);
+  listnode_t *self = list_alloc_node(list, pointer);
   list->size += 1;
   
   self->prev = node;
@@ -88,38 +77,37 @@ listnode_t *list_insert_after(listnode_t *node, void *value)
   return self;
 }
 
-listnode_t *list_append(list_t *list, void *value)
+listnode_t *list_append(list_t *list, void *pointer)
 {
-  return list_insert_after(list->head.prev, value);
+  return list_insert_after(list->head.prev, pointer);
 }
 
-listnode_t *list_prepend(list_t *list, void *value)
+listnode_t *list_prepend(list_t *list, void *pointer)
 {
-  return list_insert_before(list->head.next, value);
+  return list_insert_before(list->head.next, pointer);
 }
 
-void *list_at(const list_t *list, int index)
+void *list_at(const list_t *list, size_t index)
 {
-  if (list->size <= (index < 0 ? (list->size + index) : index)) {
-    s_log_error("Attempt to access contents of node at index %d beyond list bounds", index);
+  if (list->size <= index) {
+    s_log_error("Attempt to access contents of node at index %zu beyond list bounds", index);
     return NULL;
   }
 
   listnode_t *node = list_node_at(list, index);
-  return node->value;
+  return node->pointer;
 }
 
-listnode_t *list_node_at(const list_t *list, int index)
+listnode_t *list_node_at(const list_t *list, size_t index)
 {
-  int abs_index = index;
-  if (index < 0) abs_index = list->size + index;
+  size_t abs_index = index;
   if (list->size <= abs_index) {
-    s_log_error("Attempt to access node at index %d beyond list bounds", index);
+    s_log_error("Attempt to access node at index %zu beyond list bounds", index);
     return NULL;
   }
 
   listnode_t *node;
-  if (index < list->size / 2) {
+  if (index < (list->size / 2)) {
     node = list->head.next;
     while (abs_index-- && (node = node->next));
   } else {
@@ -132,16 +120,17 @@ listnode_t *list_node_at(const list_t *list, int index)
   return node;
 }
 
-listnode_t *list_node_with_value(const list_t *list, void *value, is_equal_fn_t equals)
+listnode_t *list_node_with_value(const list_t *list, const void *pointer, is_equal_fn_t equals)
 {
-  listnode_t *node = list->head.next;
-  const size_t sz = list->obj_size;
+  listnode_t *node;
 
   if (equals == NULL)
-    equals = list_equals_default;
+    return list_node_with_pointer(list, pointer);
+
+  node = list->head.next;
 
   while (node != &list->head) {
-    if (equals(sz, value, node->value))
+    if (equals(pointer, node->pointer))
       return node;
     node = node->next;
   }
@@ -149,14 +138,27 @@ listnode_t *list_node_with_value(const list_t *list, void *value, is_equal_fn_t 
   return NULL;
 }
 
-int list_count(const list_t *list)
+listnode_t *list_node_with_pointer(const list_t *list, const void *pointer)
 {
-  return (list ? list->size : -1);
+  listnode_t *node = list->head.next;
+
+  while (node != &list->head) {
+    if (pointer == node->pointer)
+      return node;
+    node = node->next;
+  }
+
+  return NULL;
+}
+
+size_t list_count(const list_t *list)
+{
+  return (list ? list->size : 0);
 }
 
 bool list_is_empty(const list_t *list)
 {
-  return (list ? (list->size == 0) : -1);
+  return (list && list->size == 0);
 }
 
 void list_clear(list_t *list)
@@ -185,27 +187,54 @@ void list_remove(listnode_t *node)
   com_free(node->list->allocator, node);
 }
 
-bool list_remove_value(list_t *list, void *value, is_equal_fn_t equals)
+bool list_remove_pointer(list_t *list, const void *pointer)
 {
-  listnode_t *node = list_node_with_value(list, value, equals);
+  listnode_t *node = list_node_with_pointer(list, pointer);
   if (node) list_remove(node);
   return !!node;
 }
 
-size_t list_remove_all_of_value(list_t *list, void *value, is_equal_fn_t equals)
+size_t list_remove_all_of_pointer(list_t *list, const void *pointer)
 {
   size_t n_removed = 0;
-  const size_t sz = list->obj_size;
   listnode_t *head = &list->head;
   listnode_t *node = head->next;
-
-  if (equals == NULL)
-    equals = list_equals_default;
 
   while (node && node != head) {
     listnode_t *next = node->next;
 
-    if (equals(sz, value, node->value))
+    if (pointer == node->pointer)
+      list_remove(node);
+
+    node = next;
+  }
+
+  return n_removed;
+}
+
+bool list_remove_value(list_t *list, const void *pointer, is_equal_fn_t equals)
+{
+  listnode_t *node = list_node_with_value(list, pointer, equals);
+  if (node) list_remove(node);
+  return !!node;
+}
+
+size_t list_remove_all_of_value(list_t *list, const void *pointer, is_equal_fn_t equals)
+{
+  size_t n_removed = 0;
+  listnode_t *head;
+  listnode_t *node;
+
+  if (equals == NULL)
+    return list_remove_all_of_pointer(list, pointer);
+
+  head = &list->head;
+  node = head->next;
+
+  while (node && node != head) {
+    listnode_t *next = node->next;
+
+    if (equals(pointer, node->pointer))
       list_remove(node);
 
     node = next;
@@ -234,6 +263,23 @@ listnode_t *listnode_next(listnode_t *node)
 listnode_t *listnode_previous(listnode_t *node)
 {
   return node->prev != &node->list->head ? node->prev : NULL;
+}
+
+void list_each(list_t *list, list_iter_fn_t iter, void *context)
+{
+  if (list == NULL) {
+    return;
+  }
+  if (iter == NULL) {
+    return;
+  }
+  bool stop = false;
+  listnode_t *node = list->head.next;
+  listnode_t *term = &list->head;
+  while (!stop && node != term) {
+    iter(node->pointer, context, &stop);
+    node = node->next;
+  }
 }
 
 #if defined(__cplusplus)

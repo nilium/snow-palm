@@ -19,21 +19,21 @@ extern "C"
 
 typedef struct s_listnode listnode_t;
 typedef struct s_list list_t;
-typedef bool (*is_equal_fn_t)(size_t size, const void *left, const void *right);
+typedef bool (*is_equal_fn_t)(const void *left, const void *right);
+typedef void (*list_iter_fn_t)(const void *ptr, void *context, bool *stop);
 
 struct s_listnode
 {
   list_t *list;
   listnode_t *next;
   listnode_t *prev;
-  char value[0];
+  void *pointer;
 };
 
 struct s_list
 {
   listnode_t head;
   size_t size;
-  size_t obj_size;
   bool release;
   allocator_t *allocator;
 };
@@ -55,9 +55,8 @@ struct s_list
 
 /*! \brief Allocates and initializes a linked list.
  *  \param[in] list The list to be initialized.
- *  \param[in] object_size The size of objects contained in the list.
  */
-list_t *list_init(list_t *list, size_t object_size, allocator_t *alloc);
+list_t *list_init(list_t *list, allocator_t *alloc);
 void list_destroy(list_t *self);
 
 listnode_t *list_insert_before(listnode_t *node, void *value);
@@ -66,14 +65,15 @@ listnode_t *list_insert_after(listnode_t *node, void *value);
 listnode_t *list_append(list_t *list, void *value);
 listnode_t *list_prepend(list_t *list, void *value);
 
-void *list_at(const list_t *list, int index);
-listnode_t *list_node_at(const list_t *list, int index);
-listnode_t *list_node_with_value(const list_t *list, void *value, is_equal_fn_t equals);
+void *list_at(const list_t *list, size_t index);
+listnode_t *list_node_at(const list_t *list, size_t index);
+listnode_t *list_node_with_pointer(const list_t *list, const void *ptr);
+listnode_t *list_node_with_value(const list_t *list, const void *ptr, is_equal_fn_t equals);
 
 /*! Gets the length of the list.
   \returns The length of the list, [0,N).  Returns -1 if the list is NULL.
 */
-int list_count(const list_t *list);
+size_t list_count(const list_t *list);
 /*! Determines whether or not the list is empty.
   \returns 1 if the list is empty, 0 if not.  Returns -1 if the list is NULL.
 */
@@ -81,13 +81,21 @@ bool list_is_empty(const list_t *list);
 
 void list_clear(list_t *list);
 void list_remove(listnode_t *node);
-bool list_remove_value(list_t *list, void *value, is_equal_fn_t equals);
-size_t list_remove_all_of_value(list_t *list, void *value, is_equal_fn_t equals);
+bool list_remove_pointer(list_t *list, const void *ptr);
+size_t list_remove_all_of_pointer(list_t *list, const void *ptr);
+bool list_remove_value(list_t *list, const void *ptr, is_equal_fn_t equals);
+size_t list_remove_all_of_value(list_t *list, const void *ptr, is_equal_fn_t equals);
 
 listnode_t *list_first_node(list_t *list);
 listnode_t *list_last_node(list_t *list);
 
 listnode_t *listnode_next(listnode_t *node);
 listnode_t *listnode_previous(listnode_t *node);
+
+void list_each(list_t *list, list_iter_fn_t iter, void *context);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* end of include guard: LIST_H */
