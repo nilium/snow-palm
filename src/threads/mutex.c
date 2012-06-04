@@ -137,7 +137,7 @@ bool mutex_trylock(mutex_t *lock)
   int error = pthread_mutex_trylock((pthread_mutex_t *)lock);
   
   /* though EBUSY is an error code, in this case, it's not a bad error code */
-  if (error != EBUSY) {
+  if (error != EBUSY && error) {
     const char *reason = c_mutex_err_unknown;
     switch (error) {
     case EINVAL: reason = c_mutex_err_invalid_mutex; break;
