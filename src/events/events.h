@@ -26,10 +26,9 @@
 #endif // !S_MAX_TOUCHES
 
 typedef enum e_touch_phase {
-#ifdef __APPLE__
-  #if defined(TARGET_OS_IPHONE) || defined(TARGET_IPHONE_SIMULATOR)
-
-  #elif defined(TARGET_OS_MAC)
+#if S_PLATFORM_APPLE
+  #if S_PLATFORM_IOS || S_PLATFORM_IOS_SIM
+  #elif S_PLATFORM_MAC
   TOUCH_BEGAN = NSTouchPhaseBegan,
   TOUCH_MOVED = NSTouchPhaseMoved,
   TOUCH_STATIONARY = NSTouchPhaseStationary,
