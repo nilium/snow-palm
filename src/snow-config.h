@@ -9,6 +9,10 @@
 
 #define __SNOW_CONFIG_H__
 
+#if defined(__APPLE__)
+# include <TargetConditionals.h>
+#endif
+
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -44,9 +48,9 @@
 #define S_PLATFORM_APPLE    (defined(__APPLE__))
 #define S_PLATFORM_WINDOWS  (defined(_WIN32) || defined(__MINGW32__))
 #define S_PLATFORM_LINUX    (defined(__linux__) || defined(linux) || defined(__linux))
-#define S_PLATFORM_IOS      (S_PLATFORM_APPLE && defined(TARGET_OS_IPHONE))
-#define S_PLATFORM_MAC      (S_PLATFORM_APPLE && defined(TARGET_OS_MAC))
-#define S_PLATFORM_IOS_SIM  (S_PLATFORM_APPLE && defined(TARGET_IPHONE_SIMULATOR))
+#define S_PLATFORM_IOS      (S_PLATFORM_APPLE && TARGET_OS_IPHONE)
+#define S_PLATFORM_MAC      (S_PLATFORM_APPLE && TARGET_OS_MAC)
+#define S_PLATFORM_IOS_SIM  (S_PLATFORM_APPLE && TARGET_IPHONE_SIMULATOR)
 #define S_PLATFORM_QNX      (defined(__QNX__))
 #define S_PLATFORM_ANDROID  (defined(__ANDROID__))
 
