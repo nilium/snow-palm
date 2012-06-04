@@ -25,10 +25,12 @@ bool window_create(void)
 {
   /* init SDL and PDL */
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE);
+  #if S_PLATFORM_TOUCHPAD
   PDL_Init(0);
   
   /* prep for OpenGL ES 2 */
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+  #endif
   
   g_wnd.surface = SDL_SetVideoMode(0, 0, 0, SDL_OPENGL);
 
@@ -37,7 +39,9 @@ bool window_create(void)
 
 void window_destroy(void)
 {
+  #if S_PLATFORM_TOUCHPAD
   PDL_Quit();
+  #endif
   SDL_Quit();
 }
 
