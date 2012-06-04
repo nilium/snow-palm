@@ -5,11 +5,13 @@
   See LICENSE.md for license information
 */
 
+// TODO: Move to allocator model
+
 #ifndef MEMORY_H_SA7RAUP3
 #define MEMORY_H_SA7RAUP3
 
 #include <snow-config.h>
-#include "../threads/mutex.h"
+#include <threads/mutex.h>
 
 /*!
   \file
@@ -100,7 +102,7 @@ extern const int32_t MAIN_POOL_TAG;
 /*!
  * Initializes the global memory pool.
  */
-void sys_mem_init(void);
+void sys_mem_init();
 
 /*!
  * Destroys the global memory pool.  This will not destroy any other pools.
