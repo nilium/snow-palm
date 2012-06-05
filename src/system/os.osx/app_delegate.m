@@ -1,4 +1,5 @@
 #import "app_delegate.h"
+#import "../system.h"
 #import <log/log.h>
 
 @implementation SnowAppDelegate
