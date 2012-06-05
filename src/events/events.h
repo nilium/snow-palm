@@ -4,6 +4,7 @@
 #include <snow-config.h>
 #include <maths/maths.h>
 #include <memory/allocator.h>
+#include <time/time.h>
 
 #ifdef __APPLE__
   #ifdef TARGET_OS_MAC

@@ -1,6 +1,9 @@
 #ifndef __SNOW_SYSTEM_H__
 #define __SNOW_SYSTEM_H__ 1
 
+#include <snow-config.h>
+#include <time/time.h>
+
 void sys_main(int argc, const char *argv[]);
 
 // routine that initializes the game/app

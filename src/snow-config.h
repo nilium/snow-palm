@@ -76,8 +76,6 @@
 
 // Types
 
-// Time measured in seconds
-typedef float s_time_t;
 // Handle type
 typedef int32_t s_handle_t;
 

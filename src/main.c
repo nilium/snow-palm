@@ -13,6 +13,7 @@
 
 #include <SDL/SDL.h>
 #include <OpenGL/gl3.h>
+#include <time/time.h>
 
 static void main_shutdown(void)
 {
@@ -25,6 +26,7 @@ static void main_shutdown(void)
 
 int main(int argc, char **argv)
 {
+  sys_time_init();
   sys_mem_init(g_default_allocator);
   sys_tls_init(g_default_allocator);
 

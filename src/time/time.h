@@ -4,6 +4,8 @@
 #include <snow-config.h>
 #include <maths/maths.h>
 
+typedef double s_time_t;
+
 // Initialize timing
 void sys_time_init(void);
 
