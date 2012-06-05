@@ -44,6 +44,21 @@ void sys_events_init(allocator_t *alloc)
   mutex_init(&g_handler_lock, false);
 }
 
+void sys_events_shutdown(void)
+{
+  mutex_lock(&g_events_lock);
+  mutex_lock(&g_handler_lock);
+
+  array_destroy(&g_event_array);
+  list_destroy(&g_handler_list);
+
+  mutex_unlock(&g_events_lock);
+  mutex_unlock(&g_handler_lock);
+
+  mutex_destroy(&g_events_lock);
+  mutex_destroy(&g_handler_lock);
+}
+
 void com_queue_event(event_t event)
 {
   mutex_lock(&g_events_lock);
