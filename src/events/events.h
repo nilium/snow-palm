@@ -131,7 +131,7 @@ typedef bool (*event_handler_fn_t)(event_t *event, void *context);
 // it from the registered event handlers.
 #define IGNORE_HANDLER_CONTEXT ((void *)-1)
 
-void sys_init_events(allocator_t *alloc);
+void sys_events_init(allocator_t *alloc);
 
 // Stores an event in the event queue.
 void com_queue_event(event_t event);

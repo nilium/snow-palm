@@ -31,7 +31,7 @@ static void com_dispatch_event(event_t *event)
   }
 }
 
-void sys_init_events(allocator_t *alloc)
+void sys_events_init(allocator_t *alloc)
 {
   if (alloc == NULL)
     alloc = g_default_allocator;
