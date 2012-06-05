@@ -58,7 +58,7 @@ bool list_insert_node_before(listnode_t *succ, listnode_t *pred)
   succ->prev->next = pred;
   succ->prev = pred;
 
-  pred->list = pred->list;
+  pred->list = succ->list;
   succ->list->size += 1;
 
   return true;
