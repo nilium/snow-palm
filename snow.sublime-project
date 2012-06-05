@@ -1,22 +1,27 @@
 {
-	"folders":
-	[
-		{
-			"path": "/Users/noel/snow-c"
-		}
-	],
-
-  "settings": {
-    "include_guard_prefix": "SNOW_",
-    "sublimeclang_options":
-    [
-      "-W",
-      "-Wall",
-      "-I/Users/noel/snow-c/src/",
-      "-I/usr/lib/clang/3.1/include",
-      "-framework Cocoa",
-      "-framework OpenGL",
-      "-I/usr/include/GL"
-    ]
+ "folders": [
+  {
+   "path": "/Users/noel/snow-c",
+   "file_exclude_patterns": [
+    ".tm_properties",
+    "*.png",
+    "*.ipk",
+    "*.o",
+    "*.sources",
+    "*.sublime-workspace"
+   ]
   }
+ ],
+ "settings": {
+  "include_guard_prefix": "SNOW_",
+  "sublimeclang_options": [
+   "-W",
+   "-Wall",
+   "-I/Users/noel/snow-c/src/",
+   "-I/usr/lib/clang/3.1/include",
+   "-framework Cocoa",
+   "-framework OpenGL",
+   "-I/usr/include/GL"
+  ]
+ }
 }
