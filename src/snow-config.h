@@ -9,6 +9,8 @@
 
 #define __SNOW_CONFIG_H__
 
+#define APP_TITLE "Snow"
+
 #if defined(__APPLE__)
 # include <TargetConditionals.h>
 #endif
