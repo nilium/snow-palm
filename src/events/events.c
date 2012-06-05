@@ -78,13 +78,13 @@ void com_process_event_queue(void)
 
     length = array_size(&g_event_array);
     events = array_buffer(&g_event_array, NULL);
-    
+
     while (length) {
       com_dispatch_event(events);
       ++events;
       --length;
     }
-    
+
     array_clear(&g_event_array);
 
     mutex_unlock(&g_handler_lock);
@@ -111,7 +111,7 @@ void com_add_event_handler(event_handler_fn_t handler, void *context, int priori
     return;
 
   mutex_lock(&g_handler_lock);
-  
+
   node = com_malloc(g_event_alloc, sizeof(*node));
   node->node.list = NULL;
   node->node.next = node->node.prev = NULL;
@@ -172,12 +172,12 @@ void com_clear_event_handlers(void)
   mutex_lock(&g_handler_lock);
   node = g_handler_list.head.next;
   term = &g_handler_list.head;
-  
+
   if (node != term) {
     // detach nodes
     node->prev = NULL;
     term->prev->next = NULL;
-  
+
     // reset list to zero size
     g_handler_list.head.next = g_handler_list.head.prev = term;
     g_handler_list.size = 0;
