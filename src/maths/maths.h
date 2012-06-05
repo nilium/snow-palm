@@ -86,6 +86,8 @@ typedef s_float_t quat_t[4];
 #define S_DEG2RAD (0.01745329)
 #define S_RAD2DEG (57.2957795)
 
+#if !defined(NO_INLINE_FLOAT_OPS)
+
 inline int float_is_zero(const s_float_t x) {
   return (fabs(x) < S_FLOAT_EPSILON);
 }
@@ -93,6 +95,14 @@ inline int float_is_zero(const s_float_t x) {
 inline int float_equals(const s_float_t x, const s_float_t y) {
   return (fabs(x - y) < S_FLOAT_EPSILON);
 }
+
+#else
+
+int float_is_zero(const s_float_t x);
+int float_equals(const s_float_t x, const s_float_t y);
+
+#endif
+
 
 #if defined(__cplusplus)
 }
