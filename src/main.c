@@ -21,7 +21,7 @@ static void main_shutdown(void)
   sys_mem_shutdown();
 }
 
-int main(int argc, char *argv[])
+int main(int argc, const char *argv[])
 {
   sys_time_init();
   sys_mem_init(g_default_allocator);
