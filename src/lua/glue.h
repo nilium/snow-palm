@@ -89,7 +89,7 @@
 
 ///// ARGUMENTS
 
-#define sn__lua_glue_args_0 
+#define sn__lua_glue_args_0
 
 #define sn__lua_glue_args_1\
   sn__lua_arg(1)
@@ -206,7 +206,7 @@
   const sn__lua_glue_type(TYPE) sn__lua_arg(POS) = sn__lua_glue_arg_value(POS, TYPE);
 
 // VOID
-#define sn_lua_glue_arg_handle_void(POS) 
+#define sn_lua_glue_arg_handle_void(POS)
 
 // POINTER ARGUMENTS
 #define sn_lua_glue_arg_handle_voidptr(POS)\
@@ -260,7 +260,7 @@
 ///// ARGUMENT VALUES
 
 // VOID
-#define sn_lua_glue_arg_value_void(POS) 
+#define sn_lua_glue_arg_value_void(POS)
 
 // POINTER TYPES
 #define sn__lua_glue_arg_value_voidptr(POS)\
@@ -308,7 +308,7 @@
 ///// ARGUMENT DECLARATION
 // currently does nothing
 
-#define sn__lua_glue_decl_arg(POS, TYPE) 
+#define sn__lua_glue_decl_arg(POS, TYPE)
 
 
 
