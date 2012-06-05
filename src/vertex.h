@@ -9,7 +9,7 @@
 
 #define VERTEX_H
 
-#include <GLES2/gl2.h>
+#include <system/sgl.h>
 
 #if defined(__cplusplus)
 extern "C"
