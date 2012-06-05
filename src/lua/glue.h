@@ -1,6 +1,8 @@
 #ifndef __LUAGLUE_H__
 #define __LUAGLUE_H__ 1
 
+#include "lua.h"
+
 // ARGUMENT IDENTIFIER
 #define sn__lua_arg(POS) sn__lua_arg_##POS
 // OPTIONAL ARGUMENT STUFF
