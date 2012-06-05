@@ -174,6 +174,11 @@ reserve_capacity:
   return true;
 }
 
+bool array_clear(array_t *self)
+{
+  return array_resize(self, 0);
+}
+
 size_t array_size(const array_t *self)
 {
   if (self == NULL) {
@@ -190,6 +195,11 @@ size_t array_capacity(const array_t *self)
     return 0;
   }
   return self->capacity;
+}
+
+bool array_empty(const array_t *self)
+{
+  return !array_size(self);
 }
 
 bool array_sort(array_t *self, int (*comparator)(const void *left, const void *right))
