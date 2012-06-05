@@ -49,7 +49,7 @@ void s_fatal_error_impl(const char *format, int error, ...);
 /*! \brief Macro around ::log_fatal_ to pass in additional file, line number,
   and callee information to the format string.  This is never a no-op.
 */
-#define s_fatal_error(ERROR, FORMAT, args...) s_fatal_error_impl("Fatal Error [%s:%s:%d]: " FORMAT "\n", (ERROR), __FILE__, __FUNCTION__, __LINE__, ##args)
+#define s_fatal_error(ERROR, FORMAT, args...) s_fatal_error_impl("Fatal Error [%s:%s:%d]:\n    " FORMAT "\n", (ERROR), __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
 
 #if S_PLATFORM_TOUCHPAD
@@ -61,13 +61,13 @@ void s_fatal_error_impl(const char *format, int error, ...);
 /* if debugging or logging is forcibly enabled, then provide additional logging macros */
 #if !defined(NDEBUG) || FORCE_LOGGING
 #if !defined(s_log_error) && SNOW_LOGGING_LEVEL >= SNOW_LOG_ERRORS
-#define s_log_error(FORMAT, args...)   s_log("Error [%s:%s:%d]: "   FORMAT "\n", __FILE__, __FUNCTION__, __LINE__, ##args)
+#define s_log_error(FORMAT, args...)   s_log("Error [%s:%s:%d]\n    "   FORMAT "\n", __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
 #if !defined(s_log_warning) && SNOW_LOGGING_LEVEL >= SNOW_LOG_WARNINGS_ERRORS
-#define s_log_warning(FORMAT, args...) s_log("Warning [%s:%s:%d]: " FORMAT "\n", __FILE__, __FUNCTION__, __LINE__, ##args)
+#define s_log_warning(FORMAT, args...) s_log("Warning [%s:%s:%d]\n    " FORMAT "\n", __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
 #if !defined(s_log_note) && SNOW_LOGGING_LEVEL >= SNOW_LOG_EVERYTHING
-#define s_log_note(FORMAT, args...)    s_log("Note [%s:%s:%d]: "    FORMAT "\n", __FILE__, __FUNCTION__, __LINE__, ##args)
+#define s_log_note(FORMAT, args...)    s_log("Note [%s:%s:%d]\n    "    FORMAT "\n", __FILE__, __FUNCTION__, __LINE__, ##args)
 #endif
 #endif
 
