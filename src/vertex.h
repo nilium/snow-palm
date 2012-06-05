@@ -25,10 +25,10 @@ typedef struct s_anim_vertex anim_vertex_t;
 
 struct s_static_vertex
 {
-  float position[3];
-  float normals[3];
-  float texcoord0[2];
-  float texcoord1[2]; // lightmap coordinates
+  GLfloat position[3];
+  GLfloat normals[3];
+  GLfloat texcoord0[2];
+  GLfloat texcoord1[2]; // lightmap coordinates
   union {
     GLubyte rgba[4];    // RGBA color
     GLuint color;
@@ -37,10 +37,10 @@ struct s_static_vertex
 
 struct s_anim_vertex
 {
-  float position[3];
-  float normals[3];
-  float texcoord0[2];
-  float bones[2];
+  GLfloat position[3];
+  GLfloat normals[3];
+  GLfloat texcoord0[2];
+  GLfloat bones[2];
   GLushort weights[2];
 };
 
