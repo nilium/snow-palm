@@ -291,12 +291,22 @@ listnode_t *list_last_node(list_t *list)
 
 listnode_t *listnode_next(listnode_t *node)
 {
-  return node->next != &node->list->head ? node->next : NULL;
+  listnode_t *next = node->next;
+  listnode_t *head = &(node->list->head);
+  if (next == head)
+    return NULL;
+  else
+    return next;
 }
 
 listnode_t *listnode_previous(listnode_t *node)
 {
-  return node->prev != &node->list->head ? node->prev : NULL;
+  listnode_t *prev = node->prev;
+  listnode_t *head = &(node->list->head);
+  if (prev == head)
+    return NULL;
+  else
+    return prev;
 }
 
 void list_each(list_t *list, list_iter_fn_t iter, void *context)
