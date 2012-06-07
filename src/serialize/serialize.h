@@ -60,8 +60,8 @@ typedef enum {
 
 typedef struct s_sz_context sz_context_t;
 
-typedef int (sz_compound_writer_t)(sz_context_t *ctx, void *p, void *writer_ctx);
-typedef int (sz_compound_reader_t)(sz_context_t *ctx, void **p, void *reader_ctx);
+typedef void (sz_compound_writer_t)(sz_context_t *ctx, void *p, void *writer_ctx);
+typedef void (sz_compound_reader_t)(sz_context_t *ctx, void **p, void *reader_ctx);
 
 struct s_sz_context {
   allocator_t *alloc;
