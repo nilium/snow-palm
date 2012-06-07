@@ -26,12 +26,6 @@ sz_to_endianness(uint32_t u, int src, int dst) {
 }
 
 
-static inline sz_read_header(sz_context_t *ctx, void *p)
-{
-
-}
-
-
 static inline buffer_t *
 sz_new_compound(sz_context_t *ctx, void *p)
 {
