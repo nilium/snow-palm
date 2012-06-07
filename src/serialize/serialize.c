@@ -259,7 +259,7 @@ sz_set_file(sz_context_t *ctx, FILE *file)
 
   if (file == NULL) {
     ctx->error = "File is NULL";
-    return SZ_ERROR_INVALID_OPERATION;
+    return SZ_ERROR_INVALID_FILE;
   }
 
   ctx->file = file;
