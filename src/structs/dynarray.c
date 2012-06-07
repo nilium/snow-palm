@@ -271,7 +271,7 @@ bool array_push(array_t *self, const void *value)
     return false;
   } else if (value == NULL) {
     size_t new_size = self->size + 1;
-    if (!array_resize(self, new_size))
+    if (array_resize(self, new_size))
       return true;
 
     s_fatal_error(1, "Failed to pushed value into array.");
