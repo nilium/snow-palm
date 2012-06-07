@@ -361,14 +361,13 @@ sz_get_compound(sz_context_t *ctx, uint32_t idx,
   pkg = array_at_index(&ctx->compounds, idx);
 
   if (pkg->value == NULL) {
-    void *ptr = NULL;
-
     sz_push_stack(ctx);
-    fsetpos(ctx->file, &pkg->position);
-    reader(ctx, &ptr, reader_ctx);
-    sz_pop_stack(ctx);
 
-    pkg->value = ptr;
+    fsetpos(ctx->file, &pkg->position);
+
+    reader(ctx, &pkg->value, reader_ctx);
+
+    sz_pop_stack(ctx);
   }
 
   return pkg->value;
