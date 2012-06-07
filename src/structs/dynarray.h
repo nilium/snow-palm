@@ -63,6 +63,8 @@ void *array_buffer(array_t *self, size_t *byte_length);
 
 void array_each(array_t *self, iterator_fn_t iter, void *context);
 
+void *array_last(array_t *self);
+
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */

@@ -348,6 +348,19 @@ void array_each(array_t *self, iterator_fn_t iter, void *context)
     iter(buf, index, context, &stop);
 }
 
+void *array_last(array_t *self)
+{
+  if (!self) {
+    s_fatal_error(1, "Cannot access NULL array.");
+    return NULL;
+  }
+
+  if (self->buf == NULL)
+    return NULL;
+
+  return (self->buf + (self->size - 1));
+}
+
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
