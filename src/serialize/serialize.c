@@ -5,6 +5,10 @@ extern "C" {
 #endif // __cplusplus
 
 
+// There shouldn't be object trees deeper than this
+#define SZ_MAX_STACK_SIZE (384)
+
+
 typedef struct {
   // the position of the item in the file
   fpos_t position;
@@ -43,6 +47,11 @@ sz_new_compound(sz_context_t *ctx, void *p)
 static inline void
 sz_push_stack(sz_context_t *ctx)
 {
+  if (array_size(&ctx->stack) > SZ_MAX_STACK_SIZE) {
+    s_fatal_error(1, "Stack overflow in serializer");
+    return;
+  }
+
   if (ctx->mode == SZ_READER) {
     fpos_t pos;
     fgetpos(ctx->file, &pos);
@@ -57,6 +66,11 @@ sz_push_stack(sz_context_t *ctx)
 static inline void
 sz_pop_stack(sz_context_t *ctx)
 {
+  if (array_empty(&ctx->stack)) {
+    s_fatal_error(1, "Stack underflow in serializer");
+    return;
+  }
+
   if (ctx->mode == SZ_READER) {
     fpos_t pos;
     array_pop(&ctx->stack, &pos);
