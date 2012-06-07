@@ -282,13 +282,6 @@ sz_get_error(sz_context_t *ctx)
 }
 
 
-static void
-sz_write_compound_ref(sz_context_t *ctx, sz_compound_ref_t ref)
-{
-
-}
-
-
 static uint32_t
 sz_store_compound(sz_context_t *ctx, void *p,
                   sz_compound_writer_t writer, void *writer_ctx)
