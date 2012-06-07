@@ -72,7 +72,28 @@ sz_pop_stack(sz_context_t *ctx)
   } else {
     array_pop(&ctx->stack, &ctx->active);
   }
-  return ctx->active;
+}
+
+
+static sz_response_t
+sz_write_null_pointer(sz_context_t *ctx, uint32_t name)
+{
+  if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
+
+  if (ctx->mode == SZ_READER) {
+    ctx->error = "Cannot perform write operation on read-serializer.";
+    return SZ_ERROR_INVALID_OPERATION;
+  }
+
+  sz_header_t chunk = {
+    .kind = SZ_NULL_POINTER_CHUNK,
+    .name = name,
+    .size = (uint32_t)sizeof(chunk)
+  };
+
+  buffer_write(ctx->active, &chunk, sizeof(chunk));
+
+  return SZ_SUCCESS;
 }
 
 
@@ -320,11 +341,37 @@ sz_write_compound(sz_context_t *ctx, uint32_t name, void *p,
     return SZ_ERROR_INVALID_OPERATION;
   }
 
+  if (p == NULL)
+    return sz_write_null_pointer(ctx, name);
+
   ref.index = sz_store_compound(ctx, p, writer, ctx);
 
   buffer_write(ctx->active, &ref, sizeof(ref));
 
   return SZ_SUCCESS;
+}
+
+
+static void *
+sz_get_compound(sz_context_t *ctx, uint32_t idx,
+                sz_compound_reader_t reader, void *reader_ctx)
+{
+  sz_unpacked_compound_t *pkg;
+
+  pkg = array_at_index(&ctx->compounds, idx);
+
+  if (pkg->value == NULL) {
+    void *ptr = NULL;
+
+    sz_push_stack(ctx);
+    fsetpos(ctx->file, &pkg->position);
+    reader(ctx, &ptr, reader_ctx);
+    sz_pop_stack(ctx);
+
+    pkg->value = ptr;
+  }
+
+  return pkg->value;
 }
 
 
@@ -338,6 +385,32 @@ sz_read_compound(sz_context_t *ctx, uint32_t name, void **p,
     ctx->error = "Cannot perform read operation on write-serializer.";
     return SZ_ERROR_INVALID_OPERATION;
   }
+
+  fpos_t pos;
+  sz_header_t chunk;
+  fgetpos(ctx->file, &pos);
+
+  fread(&chunk, sizeof(chunk), 1, ctx->file);
+  if (chunk.kind == SZ_NULL_POINTER_CHUNK && chunk.name == name) {
+    *p = NULL;
+  } else if (chunk.kind == SZ_COMPOUND_REF_CHUNK && chunk.name == name) {
+    uint32_t index;
+    void *ptr = NULL;
+    fread(&index, sizeof(uint32_t), 1, ctx->file);
+
+    ptr = sz_get_compound(ctx, index, reader, reader_ctx);
+
+    if (p) *p = ptr;
+
+    if (ptr == NULL) {
+      ctx->error = "Failed to deserialize compound object with reader.";
+      return SZ_ERROR_INVALID_OPERATION;
+    }
+  } else {
+    fsetpos(ctx->file, &pos);
+    return chunk.kind != SZ_FLOAT_CHUNK ? SZ_ERROR_WRONG_KIND : SZ_ERROR_BAD_NAME;
+  }
+
   return SZ_SUCCESS;
 }
 
@@ -393,6 +466,9 @@ sz_write_bytes(sz_context_t *ctx, uint32_t name, const uint8_t *values, uint32_t
     return SZ_ERROR_INVALID_OPERATION;
   }
 
+  if (values == NULL)
+    return sz_write_null_pointer(ctx, name);
+
   sz_header_t chunk = {
     .kind = SZ_BYTES_CHUNK,
     .name = name,
@@ -421,13 +497,16 @@ sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, uint32_t *length)
   fgetpos(ctx->file, &pos);
 
   fread(&chunk, sizeof(chunk), 1, ctx->file);
-  if (chunk.kind == SZ_BYTES_CHUNK && chunk.name == name) {
-    size_t size;
+  if (chunk.kind == SZ_NULL_POINTER_CHUNK && chunk.name == name) {
+    *out = NULL;
+    *length = 0;
+  } else if (chunk.kind == SZ_BYTES_CHUNK && chunk.name == name) {
+    uint32_t size;
 
-    size = (size_t)chunk.size - sizeof(chunk);
+    size = chunk.size - (uint32_t)sizeof(chunk);
 
     if (out) {
-      uint8_t bytes = (uint8_t *)com_malloc(ctx->alloc, size);
+      uint8_t *bytes = (uint8_t *)com_malloc(ctx->alloc, size);
 
       fread(bytes, 1, size, ctx->file);
 
@@ -483,6 +562,9 @@ sz_write_floats(sz_context_t *ctx, uint32_t name, float *values, uint32_t length
     return SZ_ERROR_INVALID_OPERATION;
   }
 
+  if (values == NULL)
+    return sz_write_null_pointer(ctx, name);
+
   sz_array_t chunk = {
     .header = {
       .kind = SZ_ARRAY_CHUNK,
@@ -516,7 +598,7 @@ sz_read_float(sz_context_t *ctx, uint32_t name, float *out)
   fgetpos(ctx->file, &pos);
 
   fread(&chunk, sizeof(chunk), 1, ctx->file);
-  if (chunk.kind == SZ_UINT32_CHUNK && chunk.name == name) {
+  if (chunk.kind == SZ_FLOAT_CHUNK && chunk.name == name) {
     fread(out, sizeof(float), 1, ctx->file);
   } else {
     fsetpos(ctx->file, &pos);
@@ -536,6 +618,44 @@ sz_read_floats(sz_context_t *ctx, uint32_t name, float **out, uint32_t *length)
     ctx->error = "Cannot perform read operation on write-serializer.";
     return SZ_ERROR_INVALID_OPERATION;
   }
+
+  sz_array_t chunk;
+  fpos_t pos;
+  fgetpos(ctx->file, &pos);
+
+  fread(&chunk.header, sizeof(chunk.header), 1, ctx->file);
+  if (chunk.header.kind == SZ_NULL_POINTER_CHUNK && chunk.header.name == name) {
+    *out = NULL;
+    *length = 0;
+  } else if (chunk.header.kind == SZ_ARRAY_CHUNK && chunk.header.name == name) {
+    fread(&chunk.type, sizeof(uint32_t), 2, ctx->file);
+
+    if (chunk.type == SZ_FLOAT_CHUNK) {
+      if (out) {
+        float *buf;
+
+        buf = (float *)com_malloc(ctx->alloc, sizeof(float) * chunk.length);
+
+        fread(buf, sizeof(float), chunk.length, ctx->file);
+
+        *out = buf;
+      } else {
+        fseek(ctx->file, sizeof(float) * chunk.length, SEEK_CUR);
+      }
+
+      if (length)
+        *length = chunk.length;
+
+      return SZ_SUCCESS;
+    } else {
+      fsetpos(ctx->file, &pos);
+      return SZ_ERROR_WRONG_KIND;
+    }
+  } else {
+    fsetpos(ctx->file, &pos);
+    return chunk.header.kind != SZ_UINT32_CHUNK ? SZ_ERROR_WRONG_KIND : SZ_ERROR_BAD_NAME;
+  }
+
   return SZ_SUCCESS;
 }
 
@@ -574,6 +694,9 @@ sz_write_ints(sz_context_t *ctx, uint32_t name, int32_t *values, uint32_t length
     ctx->error = "Cannot perform write operation on read-serializer.";
     return SZ_ERROR_INVALID_OPERATION;
   }
+
+  if (values == NULL)
+    return sz_write_null_pointer(ctx, name);
 
   sz_array_t chunk = {
     .header = {
@@ -629,6 +752,43 @@ sz_read_ints(sz_context_t *ctx, uint32_t name, int32_t **out, uint32_t *length)
     return SZ_ERROR_INVALID_OPERATION;
   }
 
+  sz_array_t chunk;
+  fpos_t pos;
+  fgetpos(ctx->file, &pos);
+
+  fread(&chunk.header, sizeof(chunk.header), 1, ctx->file);
+  if (chunk.header.kind == SZ_NULL_POINTER_CHUNK && chunk.header.name == name) {
+    *out = NULL;
+    *length = 0;
+  } else if (chunk.header.kind == SZ_ARRAY_CHUNK && chunk.header.name == name) {
+    fread(&chunk.type, sizeof(uint32_t), 2, ctx->file);
+
+    if (chunk.type == SZ_SINT32_CHUNK) {
+      if (out) {
+        int32_t *buf;
+
+        buf = (int32_t *)com_malloc(ctx->alloc, sizeof(int32_t) * chunk.length);
+
+        fread(buf, sizeof(int32_t), chunk.length, ctx->file);
+
+        *out = buf;
+      } else {
+        fseek(ctx->file, sizeof(int32_t) * chunk.length, SEEK_CUR);
+      }
+
+      if (length)
+        *length = chunk.length;
+
+      return SZ_SUCCESS;
+    } else {
+      fsetpos(ctx->file, &pos);
+      return SZ_ERROR_WRONG_KIND;
+    }
+  } else {
+    fsetpos(ctx->file, &pos);
+    return chunk.header.kind != SZ_UINT32_CHUNK ? SZ_ERROR_WRONG_KIND : SZ_ERROR_BAD_NAME;
+  }
+
   return SZ_SUCCESS;
 }
 
@@ -667,6 +827,9 @@ sz_write_unsigned_ints(sz_context_t *ctx, uint32_t name, uint32_t *values, uint3
     ctx->error = "Cannot perform write operation on read-serializer.";
     return SZ_ERROR_INVALID_OPERATION;
   }
+
+  if (values == NULL)
+    return sz_write_null_pointer(ctx, name);
 
   sz_array_t chunk = {
     .header = {
@@ -721,6 +884,44 @@ sz_read_unsigned_ints(sz_context_t *ctx, uint32_t name, uint32_t **out, uint32_t
     ctx->error = "Cannot perform read operation on write-serializer.";
     return SZ_ERROR_INVALID_OPERATION;
   }
+
+  sz_array_t chunk;
+  fpos_t pos;
+  fgetpos(ctx->file, &pos);
+
+  fread(&chunk.header, sizeof(chunk.header), 1, ctx->file);
+  if (chunk.header.kind == SZ_NULL_POINTER_CHUNK && chunk.header.name == name) {
+    *out = NULL;
+    *length = 0;
+  } else if (chunk.header.kind == SZ_ARRAY_CHUNK && chunk.header.name == name) {
+    fread(&chunk.type, sizeof(uint32_t), 2, ctx->file);
+
+    if (chunk.type == SZ_UINT32_CHUNK) {
+      if (out) {
+        uint32_t *buf;
+
+        buf = (uint32_t *)com_malloc(ctx->alloc, sizeof(uint32_t) * chunk.length);
+
+        fread(buf, sizeof(uint32_t), chunk.length, ctx->file);
+
+        *out = buf;
+      } else {
+        fseek(ctx->file, sizeof(uint32_t) * chunk.length, SEEK_CUR);
+      }
+
+      if (length)
+        *length = chunk.length;
+
+      return SZ_SUCCESS;
+    } else {
+      fsetpos(ctx->file, &pos);
+      return SZ_ERROR_WRONG_KIND;
+    }
+  } else {
+    fsetpos(ctx->file, &pos);
+    return chunk.header.kind != SZ_UINT32_CHUNK ? SZ_ERROR_WRONG_KIND : SZ_ERROR_BAD_NAME;
+  }
+
   return SZ_SUCCESS;
 }
 

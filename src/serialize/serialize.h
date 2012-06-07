@@ -20,6 +20,8 @@ extern "C" {
 #define SZ_SINT32_CHUNK (5)
 #define SZ_ARRAY_CHUNK (6)
 #define SZ_BYTES_CHUNK (7)
+// The null pointer chunk may substitute any compound, array, or bytes chunk
+#define SZ_NULL_POINTER_CHUNK (8)
 
 // Responses
 typedef enum {
