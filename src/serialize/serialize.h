@@ -27,6 +27,8 @@ extern "C" {
 typedef enum {
   SZ_SUCCESS = 0,
   SZ_ERROR_NONE = SZ_SUCCESS,
+  // Root is invalid, typically meaning it's not actually a serializable file.
+  SZ_INVALID_ROOT,
   // Error when attempting to write an empty array (length == 0).
   SZ_ERROR_EMPTY_ARRAY,
   // A pointer is NULL.  For input operations, this means a required input
@@ -122,8 +124,11 @@ typedef struct s_sz_root {
   uint32_t size;
   // offsets are from the root
   uint32_t num_compounds;
+  // Always immediately follows the root, so = sizeof(root)
   uint32_t mappings_offset;
+  // Follows mappings
   uint32_t compounds_offset;
+  // Follows compounds
   uint32_t data_offset;
 
   // mappings

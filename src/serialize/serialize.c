@@ -147,9 +147,46 @@ sz_destroy_context(sz_context_t *ctx)
 static sz_response_t
 sz_reader_begin(sz_context_t *ctx)
 {
-  array_init(&ctx->stack, sizeof(fpos_t), 32, ctx->alloc);
-  array_init(&ctx->compounds, sizeof(sz_unpacked_compound_t), 32, ctx->alloc);
+  sz_root_t root;
 
+  sz_push_stack(ctx);
+
+  fread(&root, sizeof(root), 1, ctx->file);
+  if (root.magic != SZ_MAGIC) {
+    ctx->error = "Invalid magic number for root.";
+    return SZ_INVALID_ROOT;
+  }
+
+  array_init(&ctx->stack, sizeof(fpos_t), 32, ctx->alloc);
+  array_init(&ctx->compounds, sizeof(sz_unpacked_compound_t), 0, ctx->alloc);
+  array_resize(&ctx->compounds, (size_t)root.num_compounds + 8);
+
+  size_t index = 0;
+  size_t len = root.num_compounds;
+
+  sz_unpacked_compound_t *packs = array_buffer(&ctx->compounds, NULL);
+  if (packs == NULL && len != 0)
+    s_fatal_error(1, "Failed to create unpacked compounds array");
+
+  uint32_t *offsets = com_malloc(ctx->alloc, sizeof(uint32_t) * len);
+  fread(offsets, sizeof(uint32_t), len, ctx->file);
+
+  sz_pop_stack(ctx);
+
+  for (; index < len; ++index) {
+    off_t offset = (off_t)offsets[index];
+
+    sz_push_stack(ctx);
+
+    fseeko(ctx->file, offset, SEEK_CUR);
+    fgetpos(ctx->file, &packs[index].position);
+
+    sz_pop_stack(ctx);
+  }
+
+  com_free(ctx->alloc, offsets);
+
+  fseeko(ctx->file, (off_t)root.data_offset, SEEK_CUR);
 
   return SZ_SUCCESS;
 }
@@ -184,16 +221,20 @@ sz_writer_flush(sz_context_t *ctx)
   buffer_t *data = &ctx->buffer;
   size_t data_sz = buffer_size(data);
   void *data_ptr = buffer_pointer(data);
+  buffer_t *comp_buf;
 
   fwrite(&root, sizeof(root), 1, file);
 
+  // write mappigns
   relative_off = (uint32_t)(sizeof(root) + (root.num_compounds * sizeof(uint32_t)));
   for (index = 0, len = root.num_compounds; index < len; ++index) {
+    comp_buf = array_at_index(&ctx->compounds, index);
     fwrite(&relative_off, sizeof(uint32_t), 1, file);
+    relative_off += buffer_size(comp_buf);
   }
 
   for (index = 0; index < len; ++index) {
-    buffer_t *comp_buf = array_at_index(&ctx->compounds, index);
+    comp_buf = array_at_index(&ctx->compounds, index);
     fwrite(buffer_pointer(comp_buf), buffer_size(comp_buf), 1, file);
   }
 
