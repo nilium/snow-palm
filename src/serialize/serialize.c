@@ -127,7 +127,7 @@ static sz_response_t
 sz_reader_begin(sz_context_t *ctx)
 {
   array_init(&ctx->stack, sizeof(fpos_t), 32, ctx->alloc);
-  array_init(&ctx->compounds, sizeof(fpos_t), 32, ctx->alloc);
+  array_init(&ctx->compounds, sizeof(sz_unpacked_compound_t), 32, ctx->alloc);
 
 
   return SZ_SUCCESS;
