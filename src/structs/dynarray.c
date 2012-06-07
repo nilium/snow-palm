@@ -31,13 +31,13 @@ array_t *array_init(array_t *self, size_t object_size, size_t capacity, allocato
     alloc = g_default_allocator;
 
   if (object_size == 0) {
-    s_fatal_error(1, "Invalid object size for array: 0");
+    s_fatal_error(1, "Invalid object size for array: 0.");
     return NULL;
   } else if (!(alloc->malloc && alloc->free)) {
-    s_fatal_error(1, "malloc & free pointers are NULL");
+    s_fatal_error(1, "malloc & free pointers are NULL.");
     return NULL;
   } else if (NULL == self) {
-    s_fatal_error(1, "Failed to allocate array");
+    s_fatal_error(1, "Failed to allocate array.");
     return NULL;
   }
 
@@ -59,7 +59,7 @@ array_t *array_init(array_t *self, size_t object_size, size_t capacity, allocato
 bool array_copy(const array_t *src, array_t *dst)
 {
   if (src == NULL || dst == NULL) {
-    s_fatal_error(1, "Cannot copy NULL array");
+    s_fatal_error(1, "Cannot copy NULL array.");
     return false;
   }
 
@@ -87,7 +87,7 @@ bool array_copy(const array_t *src, array_t *dst)
 
   if (src->buf) {
     if (!array_resize(&copy, src->size)) {
-      s_fatal_error(1, "Failed to copy array");
+      s_fatal_error(1, "Failed to copy array.");
       return false;
     }
 
@@ -252,7 +252,7 @@ bool array_store(array_t *self, size_t index, const void *src) {
 void *array_at_index(array_t *self, size_t index)
 {
   if (!self) {
-    s_fatal_error(1, "Cannot access NULL array");
+    s_fatal_error(1, "Cannot access NULL array.");
     return NULL;
   }
 
@@ -291,11 +291,23 @@ bool array_push(array_t *self, const void *value)
 
 bool array_pop(array_t *self, void *result)
 {
-  if (self->size == 0)
-    return false;
+  char *addr;
 
-  char *addr = self->buf + ((self->size - 1) * self->obj_size);
-  memcpy(result, addr, self->obj_size);
+  if (!self) {
+    s_fatal_error(1, "Cannot access NULL array.");
+    return NULL;
+  }
+
+  if (self->size == 0) {
+    s_fatal_error(1, "Array underflow: attempt to pop from empty array.");
+    return false;
+  }
+
+  addr = self->buf + ((self->size - 1) * self->obj_size);
+
+  if (result)
+    memcpy(result, addr, self->obj_size);
+
   memset(addr, 0, self->obj_size);
   self->size -= 1;
 
@@ -304,6 +316,14 @@ bool array_pop(array_t *self, void *result)
 
 void *array_buffer(array_t *self, size_t *byte_length)
 {
+  if (!self) {
+    s_fatal_error(1, "Cannot access NULL array.");
+    return NULL;
+  }
+
+  if (self->buf == NULL)
+    return NULL;
+
   if (byte_length)
     *byte_length = self->size * self->obj_size;
   return self->buf;
@@ -311,6 +331,14 @@ void *array_buffer(array_t *self, size_t *byte_length)
 
 void array_each(array_t *self, iterator_fn_t iter, void *context)
 {
+  if (!self) {
+    s_fatal_error(1, "Cannot access NULL array.");
+    return;
+  } else if (!iter) {
+    s_fatal_error(1, "Iterator function is NULL.");
+    return;
+  }
+
   char *buf;
   size_t index;
   const size_t end = self->size;
