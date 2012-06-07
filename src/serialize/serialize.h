@@ -20,8 +20,6 @@ extern "C" {
 #define SZ_SINT32_CHUNK (5)
 #define SZ_ARRAY_CHUNK (6)
 #define SZ_BYTES_CHUNK (7)
-#define SZ_COMPOUNDS_LIST_CHUNK (8)
-#define SZ_COMPOUNDS_OFFSETS_CHUNK (9)
 
 // Responses
 typedef enum {
