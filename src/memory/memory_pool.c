@@ -378,12 +378,22 @@ static inline void dbg_print_block(const block_head_t *block)
 
 static void mem_check_pool(const memory_pool_t *pool)
 {
+  if (pool == NULL) {
+    s_fatal_error(1, "Attempt to check NULL pool.");
+    return;
+  }
+
   const block_head_t *block = pool->head.next;
   for (; block != &pool->head; block = block->next) {
-    if (block->used) {
-      s_log_note("Used memory block located\n");
+    if (block) {
+      if (block->used) {
+        s_log_note("Used memory block located");
+      }
+      mem_check_block(block, block->used);
+    } else {
+      s_fatal_error(1, "Memory pool links are corrupted.");
+      return;
     }
-    mem_check_block(block, block->used);
   };
 }
 
