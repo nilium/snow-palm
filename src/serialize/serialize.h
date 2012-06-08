@@ -180,12 +180,6 @@ typedef struct s_sz_array {
 } sz_array_t;
 
 
-// Releases the memory returned by a given function using the context's
-// allocator.  Same as using sz_get_allocator() and calling com_free() to
-// release the memory.
-sz_response_t
-sz_free(sz_context_t *ctx, void *p);
-
 sz_context_t *
 sz_init_context(sz_context_t *ctx, sz_mode_t mode, allocator_t *alloc);
 sz_response_t
@@ -227,14 +221,15 @@ sz_read_compound(sz_context_t *ctx, uint32_t name, void **p,
 
 sz_response_t
 sz_write_compounds(sz_context_t *ctx, uint32_t name,
-                   void **p, uint32_t length,
+                   void **out, uint32_t length,
                    sz_compound_writer_t writer, void *writer_ctx);
 // Returns an array of pointers to the read compounds.
 // The memory must be freed by the caller.
 sz_response_t
 sz_read_compounds(sz_context_t *ctx, uint32_t name,
-                  void **p, uint32_t length,
-                  sz_compound_reader_t writer, void *writer_ctx);
+                  void ***p, uint32_t *length,
+                  sz_compound_reader_t reader, void *reader_ctx,
+                  allocator_t *buf_alloc);
 
 // Writes an array of bytes with the given length.
 sz_response_t
@@ -244,7 +239,8 @@ sz_write_bytes(sz_context_t *ctx, uint32_t name,
 // The memory must be freed by the caller.
 sz_response_t
 sz_read_bytes(sz_context_t *ctx, uint32_t name,
-              uint8_t **out, uint32_t *length);
+              uint8_t **out, uint32_t *length,
+              allocator_t *buf_alloc);
 
 sz_response_t
 sz_write_float(sz_context_t *ctx, uint32_t name, float value);
@@ -259,7 +255,8 @@ sz_read_float(sz_context_t *ctx, uint32_t name, float *out);
 // The memory must be freed by the caller.
 sz_response_t
 sz_read_floats(sz_context_t *ctx, uint32_t name,
-               float **out, uint32_t *length);
+               float **out, uint32_t *length,
+               allocator_t *buf_alloc);
 
 sz_response_t
 sz_write_int(sz_context_t *ctx, uint32_t name, int32_t value);
@@ -274,7 +271,8 @@ sz_read_int(sz_context_t *ctx, uint32_t name, int32_t *out);
 // The memory must be freed by the caller.
 sz_response_t
 sz_read_ints(sz_context_t *ctx, uint32_t name,
-             int32_t **out, uint32_t *length);
+             int32_t **out, uint32_t *length,
+             allocator_t *buf_alloc);
 
 sz_response_t
 sz_write_unsigned_int(sz_context_t *ctx, uint32_t name, uint32_t value);
@@ -289,7 +287,8 @@ sz_read_unsigned_int(sz_context_t *ctx, uint32_t name, uint32_t *out);
 // The memory must be freed by the caller.
 sz_response_t
 sz_read_unsigned_ints(sz_context_t *ctx, uint32_t name,
-                      uint32_t **out, uint32_t *length);
+                      uint32_t **out, uint32_t *length,
+                      allocator_t *buf_alloc);
 
 #ifdef __cplusplus
 }

@@ -26,15 +26,16 @@ sz_to_endianness(uint32_t u, int src, int dst) {
 }
 
 
-static inline buffer_t *
+static inline uint32_t
 sz_new_compound(sz_context_t *ctx, void *p)
 {
-  uint32_t id = (uint32_t)array_size(&ctx->compounds) + 1;
+  uint32_t idx;
   buffer_t *buffer = (buffer_t *)com_malloc(ctx->alloc, sizeof(*buffer));
   buffer_init(buffer, 32, ctx->alloc);
   array_push(&ctx->compounds, &buffer);
-  map_insert(&ctx->compound_ptrs, p, (void *)id);
-  return buffer;
+  idx = (uint32_t)array_size(&ctx->compounds);
+  map_insert(&ctx->compound_ptrs, p, (void *)idx);
+  return idx;
 }
 
 
@@ -93,17 +94,6 @@ sz_write_null_pointer(sz_context_t *ctx, uint32_t name)
   };
 
   buffer_write(ctx->active, &chunk, sizeof(chunk));
-
-  return SZ_SUCCESS;
-}
-
-
-sz_response_t
-sz_free(sz_context_t *ctx, void *p)
-{
-  if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
-
-  com_free(ctx->alloc, p);
 
   return SZ_SUCCESS;
 }
@@ -366,11 +356,15 @@ static uint32_t
 sz_store_compound(sz_context_t *ctx, void *p,
                   sz_compound_writer_t writer, void *writer_ctx)
 {
-  uint32_t idx = (uint32_t)map_get(&ctx->compound_ptrs, p);
-  if (idx != 0) return (idx - 1);
+  uint32_t idx;
 
-  idx = array_size(&ctx->compounds);
-  sz_new_compound(ctx, p);
+  if (p == NULL)
+    return 0;
+
+  idx = (uint32_t)map_get(&ctx->compound_ptrs, p);
+  if (idx != 0) return idx;
+
+  idx = sz_new_compound(ctx, p);
   sz_push_stack(ctx);
 
   writer(ctx, p, writer_ctx);
@@ -403,7 +397,7 @@ sz_write_compound(sz_context_t *ctx, uint32_t name, void *p,
   if (p == NULL)
     return sz_write_null_pointer(ctx, name);
 
-  ref.index = sz_store_compound(ctx, p, writer, ctx);
+  ref.index = sz_store_compound(ctx, p, writer, writer_ctx);
 
   buffer_write(ctx->active, &ref, sizeof(ref));
 
@@ -417,7 +411,10 @@ sz_get_compound(sz_context_t *ctx, uint32_t idx,
 {
   sz_unpacked_compound_t *pkg;
 
-  pkg = array_at_index(&ctx->compounds, idx);
+  if (idx == 0)
+    return NULL;
+
+  pkg = array_at_index(&ctx->compounds, idx - 1);
 
   if (pkg->value == NULL) {
     sz_push_stack(ctx);
@@ -477,6 +474,8 @@ sz_response_t
 sz_write_compounds(sz_context_t *ctx, uint32_t name, void **p, uint32_t length,
                        sz_compound_writer_t writer, void *writer_ctx)
 {
+  uint32_t index, ref;
+
   if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
 
   if (ctx->mode == SZ_READER) {
@@ -494,15 +493,26 @@ sz_write_compounds(sz_context_t *ctx, uint32_t name, void **p, uint32_t length,
     .length = length
   };
 
+  if (p == NULL) {
+    sz_write_null_pointer(ctx, name);
+    return SZ_SUCCESS;
+  }
 
+  buffer_write(ctx->active, &chunk, sizeof(chunk));
+
+  for (index = 0; index < length; ++index) {
+    ref = sz_store_compound(ctx, p[index], writer, writer_ctx);
+    buffer_write(ctx->active, &ref, sizeof(uint32_t));
+  }
 
   return SZ_SUCCESS;
 }
 
 
 sz_response_t
-sz_read_compounds(sz_context_t *ctx, uint32_t name, void **p, uint32_t length,
-                      sz_compound_reader_t writer, void *writer_ctx)
+sz_read_compounds(sz_context_t *ctx, uint32_t name, void ***out, uint32_t *length,
+                      sz_compound_reader_t reader, void *reader_ctx,
+                      allocator_t *buf_alloc)
 {
   if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
 
@@ -510,6 +520,52 @@ sz_read_compounds(sz_context_t *ctx, uint32_t name, void **p, uint32_t length,
     ctx->error = "Cannot perform read operation on write-serializer.";
     return SZ_ERROR_INVALID_OPERATION;
   }
+
+  if (buf_alloc == NULL)
+    buf_alloc = g_default_allocator;
+
+  sz_array_t chunk;
+  fpos_t pos;
+  fgetpos(ctx->file, &pos);
+
+  fread(&chunk.header, sizeof(chunk.header), 1, ctx->file);
+  if (chunk.header.kind == SZ_NULL_POINTER_CHUNK && chunk.header.name == name) {
+    *out = NULL;
+    *length = 0;
+  } else if (chunk.header.kind == SZ_ARRAY_CHUNK && chunk.header.name == name) {
+    fread(&chunk.type, sizeof(uint32_t), 2, ctx->file);
+
+    if (chunk.type == SZ_COMPOUND_REF_CHUNK) {
+      if (out) {
+        void **buf;
+        uint32_t index;
+        uint32_t ref;
+
+        buf = (void **)com_malloc(buf_alloc, sizeof(void *) * chunk.length);
+
+        for (index = 0; index < chunk.length; ++index) {
+          fread(&ref, sizeof(uint32_t), 1, ctx->file);
+          buf[index] = sz_get_compound(ctx, ref, reader, reader_ctx);
+        }
+
+        *out = buf;
+      } else {
+        fseek(ctx->file, sizeof(uint32_t) * chunk.length, SEEK_CUR);
+      }
+
+      if (length)
+        *length = chunk.length;
+
+      return SZ_SUCCESS;
+    } else {
+      fsetpos(ctx->file, &pos);
+      return SZ_ERROR_WRONG_KIND;
+    }
+  } else {
+    fsetpos(ctx->file, &pos);
+    return chunk.header.kind != SZ_UINT32_CHUNK ? SZ_ERROR_WRONG_KIND : SZ_ERROR_BAD_NAME;
+  }
+
   return SZ_SUCCESS;
 }
 
@@ -541,7 +597,7 @@ sz_write_bytes(sz_context_t *ctx, uint32_t name, const uint8_t *values, uint32_t
 
 
 sz_response_t
-sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, uint32_t *length)
+sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, uint32_t *length, allocator_t *buf_alloc)
 {
   if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
 
@@ -549,6 +605,9 @@ sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, uint32_t *length)
     ctx->error = "Cannot perform read operation on write-serializer.";
     return SZ_ERROR_INVALID_OPERATION;
   }
+
+  if (buf_alloc == NULL)
+    buf_alloc = g_default_allocator;
 
   sz_header_t chunk;
   fpos_t pos;
@@ -564,7 +623,7 @@ sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, uint32_t *length)
     size = chunk.size - (uint32_t)sizeof(chunk);
 
     if (out) {
-      uint8_t *bytes = (uint8_t *)com_malloc(ctx->alloc, size);
+      uint8_t *bytes = (uint8_t *)com_malloc(buf_alloc, size);
 
       fread(bytes, 1, size, ctx->file);
 
@@ -668,7 +727,7 @@ sz_read_float(sz_context_t *ctx, uint32_t name, float *out)
 
 
 sz_response_t
-sz_read_floats(sz_context_t *ctx, uint32_t name, float **out, uint32_t *length)
+sz_read_floats(sz_context_t *ctx, uint32_t name, float **out, uint32_t *length, allocator_t *buf_alloc)
 {
   if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
 
@@ -676,6 +735,9 @@ sz_read_floats(sz_context_t *ctx, uint32_t name, float **out, uint32_t *length)
     ctx->error = "Cannot perform read operation on write-serializer.";
     return SZ_ERROR_INVALID_OPERATION;
   }
+
+  if (buf_alloc == NULL)
+    buf_alloc = g_default_allocator;
 
   sz_array_t chunk;
   fpos_t pos;
@@ -692,7 +754,7 @@ sz_read_floats(sz_context_t *ctx, uint32_t name, float **out, uint32_t *length)
       if (out) {
         float *buf;
 
-        buf = (float *)com_malloc(ctx->alloc, sizeof(float) * chunk.length);
+        buf = (float *)com_malloc(buf_alloc, sizeof(float) * chunk.length);
 
         fread(buf, sizeof(float), chunk.length, ctx->file);
 
@@ -801,7 +863,7 @@ sz_read_int(sz_context_t *ctx, uint32_t name, int32_t *out)
 
 
 sz_response_t
-sz_read_ints(sz_context_t *ctx, uint32_t name, int32_t **out, uint32_t *length)
+sz_read_ints(sz_context_t *ctx, uint32_t name, int32_t **out, uint32_t *length, allocator_t *buf_alloc)
 {
   if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
 
@@ -809,6 +871,9 @@ sz_read_ints(sz_context_t *ctx, uint32_t name, int32_t **out, uint32_t *length)
     ctx->error = "Cannot perform read operation on write-serializer.";
     return SZ_ERROR_INVALID_OPERATION;
   }
+
+  if (buf_alloc == NULL)
+    buf_alloc = g_default_allocator;
 
   sz_array_t chunk;
   fpos_t pos;
@@ -825,7 +890,7 @@ sz_read_ints(sz_context_t *ctx, uint32_t name, int32_t **out, uint32_t *length)
       if (out) {
         int32_t *buf;
 
-        buf = (int32_t *)com_malloc(ctx->alloc, sizeof(int32_t) * chunk.length);
+        buf = (int32_t *)com_malloc(buf_alloc, sizeof(int32_t) * chunk.length);
 
         fread(buf, sizeof(int32_t), chunk.length, ctx->file);
 
@@ -934,7 +999,7 @@ sz_read_unsigned_int(sz_context_t *ctx, uint32_t name, uint32_t *out)
 
 
 sz_response_t
-sz_read_unsigned_ints(sz_context_t *ctx, uint32_t name, uint32_t **out, uint32_t *length)
+sz_read_unsigned_ints(sz_context_t *ctx, uint32_t name, uint32_t **out, uint32_t *length, allocator_t *buf_alloc)
 {
   if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
 
@@ -942,6 +1007,9 @@ sz_read_unsigned_ints(sz_context_t *ctx, uint32_t name, uint32_t **out, uint32_t
     ctx->error = "Cannot perform read operation on write-serializer.";
     return SZ_ERROR_INVALID_OPERATION;
   }
+
+  if (buf_alloc == NULL)
+    buf_alloc = g_default_allocator;
 
   sz_array_t chunk;
   fpos_t pos;
@@ -958,7 +1026,7 @@ sz_read_unsigned_ints(sz_context_t *ctx, uint32_t name, uint32_t **out, uint32_t
       if (out) {
         uint32_t *buf;
 
-        buf = (uint32_t *)com_malloc(ctx->alloc, sizeof(uint32_t) * chunk.length);
+        buf = (uint32_t *)com_malloc(buf_alloc, sizeof(uint32_t) * chunk.length);
 
         fread(buf, sizeof(uint32_t), chunk.length, ctx->file);
 
