@@ -14,8 +14,10 @@ extern "C"
 
 void array_destroy(array_t *self)
 {
-  if (self == NULL)
+  if (self == NULL) {
     s_fatal_error(1, "Cannot destroy NULL array.");
+    return;
+  }
 
   allocator_t *alloc = self->allocator;
 
