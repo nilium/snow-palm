@@ -90,8 +90,8 @@ void mat4_set_axes3(const vec3_t x, const vec3_t y, const vec3_t z, const vec3_t
   out[3] = w[0];
   out[7] = w[1];
   out[11] = w[2];
-  
-  out[3] = out[7] = out[12] = 0.0;
+
+  out[12] = out[13] = out[14] = 0.0;
   out[15] = 1.0;
 }
 
@@ -379,15 +379,15 @@ int mat4_equals(const mat4_t left, const mat4_t right)
     fabsf(left[0] - right[0]) < S_FLOAT_EPSILON &&
     fabsf(left[1] - right[1]) < S_FLOAT_EPSILON &&
     fabsf(left[2] - right[2]) < S_FLOAT_EPSILON &&
-                                
+
     fabsf(left[4] - right[4]) < S_FLOAT_EPSILON &&
     fabsf(left[5] - right[5]) < S_FLOAT_EPSILON &&
     fabsf(left[6] - right[6]) < S_FLOAT_EPSILON &&
-                                
+
     fabsf(left[8] - right[8]) < S_FLOAT_EPSILON &&
     fabsf(left[9] - right[9]) < S_FLOAT_EPSILON &&
     fabsf(left[10] - right[10]) < S_FLOAT_EPSILON &&
-                                  
+
     fabsf(left[12] - right[12]) < S_FLOAT_EPSILON &&
     fabsf(left[13] - right[13]) < S_FLOAT_EPSILON &&
     fabsf(left[14] - right[14]) < S_FLOAT_EPSILON &&
@@ -608,7 +608,7 @@ void mat4_translation(s_float_t x, s_float_t y, s_float_t z, mat4_t out) {
   s_float_t m15 = 1;
 
   mat4_copy(g_mat4_identity, out);
-  
+
   out[12] = m12;
   out[13] = m13;
   out[14] = m14;
@@ -627,10 +627,10 @@ void mat4_multiply(const mat4_t left, const mat4_t right, mat4_t out)
     cz = left[index + 8];
     cw = left[index + 12];
 
-    temp[index     ] = (cx * right[0 ]) + (cy * right[1 ]) + (cz * right[2 ]) + (cz * right[3 ]);
-    temp[index + 4 ] = (cx * right[4 ]) + (cy * right[5 ]) + (cz * right[6 ]) + (cz * right[7 ]);
-    temp[index + 8 ] = (cx * right[8 ]) + (cy * right[9 ]) + (cz * right[10]) + (cz * right[11]);
-    temp[index + 12] = (cx * right[12]) + (cy * right[13]) + (cz * right[14]) + (cz * right[15]);
+    temp[index     ] = (cx * right[0 ]) + (cy * right[1 ]) + (cz * right[2 ]) + (cw * right[3 ]);
+    temp[index + 4 ] = (cx * right[4 ]) + (cy * right[5 ]) + (cz * right[6 ]) + (cw * right[7 ]);
+    temp[index + 8 ] = (cx * right[8 ]) + (cy * right[9 ]) + (cz * right[10]) + (cw * right[11]);
+    temp[index + 12] = (cx * right[12]) + (cy * right[13]) + (cz * right[14]) + (cw * right[15]);
   }
 
   mat4_copy(temp, out);
