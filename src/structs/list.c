@@ -39,7 +39,7 @@ list_t *list_init(list_t *self, allocator_t *alloc)
 {
   if (alloc == NULL)
     alloc = g_default_allocator;
-  
+
   self->allocator = alloc;
   self->size = 0;
   self->head.next = self->head.prev = &self->head;
@@ -86,7 +86,7 @@ listnode_t *list_insert_before(listnode_t *node, void *pointer)
   list_t *list = node->list;
   listnode_t *self = list_alloc_node(node->list, pointer);
   list->size += 1;
-  
+
   self->next = node;
   self->prev = node->prev;
 
@@ -101,7 +101,7 @@ listnode_t *list_insert_after(listnode_t *node, void *pointer)
   list_t *list = node->list;
   listnode_t *self = list_alloc_node(list, pointer);
   list->size += 1;
-  
+
   self->prev = node;
   self->next = node->next;
 
