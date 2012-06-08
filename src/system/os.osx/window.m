@@ -14,7 +14,7 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event);
   case NSKeyDown:
   case NSKeyUp:
     return;
-    
+
   default:
     break;
   }
@@ -49,7 +49,7 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event) {
   msg.time = current_time();
 
   switch (event.type) {
-    
+
   case NSKeyDown:
     msg.kind = EVENT_KEYBOARD;
     msg.key.pressed = 1;
