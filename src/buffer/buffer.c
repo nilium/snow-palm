@@ -10,8 +10,11 @@ buffer_t *buffer_init(buffer_t *buffer, size_t capacity, allocator_t *alloc)
   if (alloc == NULL)
     alloc = g_default_allocator;
 
-  memset(buffer, 0, sizeof(*buffer));
   buffer->alloc = alloc;
+  buffer->size = 0;
+  buffer->capacity = 0;
+  buffer->fixed = false;
+  buffer->start = buffer->offset = NULL;
   buffer_reserve(buffer, capacity);
 
   return buffer;
@@ -19,14 +22,17 @@ buffer_t *buffer_init(buffer_t *buffer, size_t capacity, allocator_t *alloc)
 
 buffer_t *buffer_init_with_pointer(buffer_t *buffer, size_t size, void *p, allocator_t *alloc)
 {
-  if (alloc == NULL)
-    alloc = g_default_allocator;
+  if (buffer) {
+    if (alloc == NULL)
+      alloc = g_default_allocator;
 
-  memset(buffer, 0, sizeof(*buffer));
-  buffer->size = size;
-  buffer->capacity = size;
-  buffer->fixed = true;
-  buffer->start = buffer->offset = (char *)p;
+    memset(buffer, 0, sizeof(*buffer));
+    buffer->alloc = alloc;
+    buffer->size = size;
+    buffer->capacity = size;
+    buffer->fixed = true;
+    buffer->start = buffer->offset = (char *)p;
+  }
 
   return buffer;
 }
