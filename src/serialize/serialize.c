@@ -30,30 +30,29 @@ static inline buffer_t *
 sz_new_compound(sz_context_t *ctx, void *p)
 {
   uint32_t id = (uint32_t)array_size(&ctx->compounds) + 1;
-  array_push(&ctx->compounds, NULL);
-  buffer_t *buf = array_last(&ctx->compounds);
-  buffer_init(buf, 32, ctx->alloc);
+  buffer_t *buffer = (buffer_t *)com_malloc(ctx->alloc, sizeof(*buffer));
+  buffer_init(buffer, 32, ctx->alloc);
+  array_push(&ctx->compounds, &buffer);
   map_insert(&ctx->compound_ptrs, p, (void *)id);
-  return buf;
+  return buffer;
 }
 
 
 static inline void
 sz_push_stack(sz_context_t *ctx)
 {
-  if (array_size(&ctx->stack) > SZ_MAX_STACK_SIZE) {
+  if (array_size(&ctx->stack) >= SZ_MAX_STACK_SIZE) {
     s_fatal_error(1, "Stack overflow in serializer");
     return;
   }
 
   if (ctx->mode == SZ_READER) {
-    fpos_t pos;
-    fgetpos(ctx->file, &pos);
-    array_push(&ctx->stack, &pos);
+    array_push(&ctx->stack, NULL);
+    fgetpos(ctx->file, array_last(&ctx->stack));
   } else {
     buffer_t *buffer = ctx->active;
     array_push(&ctx->stack, &buffer);
-    ctx->active = array_last(&ctx->compounds);
+    ctx->active = *(buffer_t **)array_last(&ctx->compounds);
   }
 }
 
@@ -70,7 +69,9 @@ sz_pop_stack(sz_context_t *ctx)
     array_pop(&ctx->stack, &pos);
     fsetpos(ctx->file, &pos);
   } else {
-    array_pop(&ctx->stack, &ctx->active);
+    buffer_t *step = NULL;
+    array_pop(&ctx->stack, &step);
+    ctx->active = step;
   }
 }
 
@@ -149,6 +150,9 @@ sz_reader_begin(sz_context_t *ctx)
 {
   sz_root_t root;
 
+  array_init(&ctx->stack, sizeof(fpos_t), 32, ctx->alloc);
+  array_init(&ctx->compounds, sizeof(sz_unpacked_compound_t), 0, ctx->alloc);
+
   sz_push_stack(ctx);
 
   fread(&root, sizeof(root), 1, ctx->file);
@@ -157,8 +161,6 @@ sz_reader_begin(sz_context_t *ctx)
     return SZ_INVALID_ROOT;
   }
 
-  array_init(&ctx->stack, sizeof(fpos_t), 32, ctx->alloc);
-  array_init(&ctx->compounds, sizeof(sz_unpacked_compound_t), 0, ctx->alloc);
   array_resize(&ctx->compounds, (size_t)root.num_compounds + 8);
 
   size_t index = 0;
@@ -195,8 +197,12 @@ sz_reader_begin(sz_context_t *ctx)
 static sz_response_t
 sz_writer_begin(sz_context_t *ctx)
 {
+  buffer_init(&ctx->buffer, 32, ctx->alloc);
   array_init(&ctx->stack, sizeof(buffer_t *), 32, ctx->alloc);
-  array_init(&ctx->compounds, sizeof(buffer_t), 32, ctx->alloc);
+  array_init(&ctx->compounds, sizeof(buffer_t *), 32, ctx->alloc);
+
+  ctx->active = &ctx->buffer;
+
   return SZ_SUCCESS;
 }
 
@@ -212,30 +218,43 @@ sz_writer_flush(sz_context_t *ctx)
     .magic = SZ_MAGIC,
     .size = 0,
     .num_compounds = array_size(&ctx->compounds),
-    .mappings_offset = 0,
-    .compounds_offset = 0,
-    .data_offset = (uint32_t)sizeof(root)
+    .mappings_offset = sizeof(root),
+    .compounds_offset = (uint32_t)-1,
+    .data_offset = (uint32_t)-1
   };
 
   uint32_t relative_off;
   buffer_t *data = &ctx->buffer;
   size_t data_sz = buffer_size(data);
   void *data_ptr = buffer_pointer(data);
+  buffer_t **comp_buffers = array_buffer(&ctx->compounds, NULL);
   buffer_t *comp_buf;
+
+  uint32_t mappings_size = (uint32_t)sizeof(uint32_t) * root.num_compounds;
+  uint32_t compounds_size = 0;
+
+  for (index = 0, len = root.num_compounds; index < len; ++index)
+    compounds_size += (uint32_t)buffer_size(comp_buffers[index]);
+
+  root.compounds_offset = root.mappings_offset + mappings_size;
+  root.data_offset = root.compounds_offset + compounds_size;
+  root.size = root.data_offset + (uint32_t)buffer_size(&ctx->buffer);
 
   fwrite(&root, sizeof(root), 1, file);
 
   // write mappings
-  relative_off = (uint32_t)(sizeof(root) + (root.num_compounds * sizeof(uint32_t)));
-  for (index = 0, len = root.num_compounds; index < len; ++index) {
-    comp_buf = array_at_index(&ctx->compounds, index);
+  relative_off = (uint32_t)(sizeof(root) + mappings_size);
+  for (index = 0; index < len; ++index) {
+    comp_buf = comp_buffers[index];
     fwrite(&relative_off, sizeof(uint32_t), 1, file);
-    relative_off += buffer_size(comp_buf);
+    size_t sz = buffer_size(comp_buf);
+    relative_off += sz;
   }
 
   for (index = 0; index < len; ++index) {
-    comp_buf = array_at_index(&ctx->compounds, index);
+    comp_buf = comp_buffers[index];
     fwrite(buffer_pointer(comp_buf), buffer_size(comp_buf), 1, file);
+    buffer_destroy(comp_buf);
   }
 
   if (data_ptr)
@@ -253,7 +272,6 @@ sz_open(sz_context_t *ctx)
   if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
 
   ctx->open = 1;
-  ctx->active = &ctx->buffer;
 
   if (ctx->mode == SZ_READER)
     return sz_reader_begin(ctx);
