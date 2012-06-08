@@ -8,7 +8,7 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event);
 @implementation SnowWindow
 
 - (void)sendEvent:(NSEvent *)event {
-  snow_osx_handle_event((__bridge void *)(self), event);
+  snow_osx_handle_event(self, event);
 
   switch (event.type) {
   case NSKeyDown:
