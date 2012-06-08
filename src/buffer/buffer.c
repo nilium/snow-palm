@@ -39,6 +39,11 @@ buffer_t *buffer_init_with_pointer(buffer_t *buffer, size_t size, void *p, alloc
 
 void buffer_destroy(buffer_t *buffer)
 {
+  if (!buffer) {
+    errno = EBADF;
+    return;
+  }
+
   if (buffer->start && ! buffer->fixed)
     com_free(buffer->alloc, buffer->start);
   memset(buffer, 0, sizeof(*buffer));
