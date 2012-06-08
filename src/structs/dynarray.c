@@ -209,7 +209,7 @@ size_t array_capacity(const array_t *self)
 
 bool array_empty(const array_t *self)
 {
-  return !array_size(self);
+  return array_size(self) == 0;
 }
 
 bool array_sort(array_t *self, int (*comparator)(const void *left, const void *right))
