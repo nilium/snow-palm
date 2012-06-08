@@ -22,6 +22,16 @@
 #include <stdbool.h>
 #include <math.h>
 
+#ifndef S_BREAKPOINT
+# if NDEBUG
+#   define S_BREAKPOINT s_log_note("Breakpoint in non-debug code");
+# else
+#   define S_BREAKPOINT
+# endif
+#endif
+
+S_BREAKPOINT
+
 /* define NULL ifndef */
 #if !defined(NULL)
 # if defined(__cplusplus)
