@@ -26,7 +26,6 @@
 
 - (void)dealloc {
   s_log_note("Deallocating delegate");
-  [super dealloc];
 }
 
 @end
