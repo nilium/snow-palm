@@ -379,15 +379,15 @@ int mat4_equals(const mat4_t left, const mat4_t right)
     fabsf(left[0] - right[0]) < S_FLOAT_EPSILON &&
     fabsf(left[1] - right[1]) < S_FLOAT_EPSILON &&
     fabsf(left[2] - right[2]) < S_FLOAT_EPSILON &&
-                                
+
     fabsf(left[4] - right[4]) < S_FLOAT_EPSILON &&
     fabsf(left[5] - right[5]) < S_FLOAT_EPSILON &&
     fabsf(left[6] - right[6]) < S_FLOAT_EPSILON &&
-                                
+
     fabsf(left[8] - right[8]) < S_FLOAT_EPSILON &&
     fabsf(left[9] - right[9]) < S_FLOAT_EPSILON &&
     fabsf(left[10] - right[10]) < S_FLOAT_EPSILON &&
-                                  
+
     fabsf(left[12] - right[12]) < S_FLOAT_EPSILON &&
     fabsf(left[13] - right[13]) < S_FLOAT_EPSILON &&
     fabsf(left[14] - right[14]) < S_FLOAT_EPSILON &&
@@ -608,7 +608,7 @@ void mat4_translation(s_float_t x, s_float_t y, s_float_t z, mat4_t out) {
   s_float_t m15 = 1;
 
   mat4_copy(g_mat4_identity, out);
-  
+
   out[12] = m12;
   out[13] = m13;
   out[14] = m14;
