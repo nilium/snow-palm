@@ -71,7 +71,7 @@ static void mem_check_block(const block_head_t *block, int debug_block);
 void sys_mem_init(void)
 {
   if (g_main_pool.head.used) return;
-  
+
   mem_init_pool(&g_main_pool, MAIN_POOL_SIZE);
   g_main_pool.refs = 0;
 }
@@ -80,7 +80,7 @@ void sys_mem_init(void)
 void sys_mem_shutdown(void)
 {
   if (!g_main_pool.head.used) return;
-  
+
   mem_destroy_pool(&g_main_pool);
 }
 
@@ -91,7 +91,7 @@ void mem_init_pool(memory_pool_t *pool, buffersize_t size)
     if (size < MIN_POOL_SIZE) {
       size = MIN_POOL_SIZE;
     }
-    s_log_note("Initializing memory pool (%p) with size %zu\n", (const void *)pool, size);
+    s_log_note("Initializing memory pool (%p) with size %zu", (const void *)pool, size);
 
     mutex_init(&pool->lock, false);
     mutex_lock(&pool->lock);
@@ -120,7 +120,7 @@ void mem_init_pool(memory_pool_t *pool, buffersize_t size)
     pool->refs = 1;
     mutex_unlock(&pool->lock);
   } else {
-    s_log_error("Attempt to initialize already-initialized memory pool (%p) with new\n", (const void *)pool);
+    s_log_error("Attempt to initialize already-initialized memory pool (%p) with new", (const void *)pool);
   }
 }
 
@@ -131,11 +131,11 @@ void mem_destroy_pool(memory_pool_t *pool)
     mutex_lock(&pool->lock);
 
     if (pool->refs != 0) {
-      s_log_warning("Destroying memory pool with non-zero reference count (%d)\n", pool->refs);
+      s_log_warning("Destroying memory pool with non-zero reference count (%d)", pool->refs);
     }
 
     mem_check_pool(pool);
-  
+
     free(pool->buffer);
     pool->buffer = NULL;
     pool->head.next = NULL;
@@ -144,13 +144,13 @@ void mem_destroy_pool(memory_pool_t *pool)
     pool->head.used = 0;
     pool->sequence = 0;
     pool->refs = 0;
-  
+
     mutex_unlock(&pool->lock);
     mutex_destroy(&pool->lock);
 
-    s_log_note("Destroyed pool (%p)\n", (const void *)pool);
+    s_log_note("Destroyed pool (%p)", (const void *)pool);
   } else {
-    s_log_error("Attempt to destroy already-destroyed memory pool (%p)\n", (const void *)pool);
+    s_log_error("Attempt to destroy already-destroyed memory pool (%p)", (const void *)pool);
   }
 }
 
@@ -185,46 +185,46 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
 {
   if (pool == NULL)
     pool = &g_main_pool;
-  
+
   mutex_lock(&pool->lock);
-  
+
   if (tag == 0) {
-    s_log_error("Allocation failed - invalid tag %X\n", tag);
+    s_log_error("Allocation failed - invalid tag %X", tag);
     goto alloc_unlock_and_exit;
   }
-  
+
   if (!pool->head.used) {
-    s_log_error("Allocation failed - pool is not initialized or corrupt\n");
+    s_log_error("Allocation failed - pool is not initialized or corrupt");
     goto alloc_unlock_and_exit;
   }
-  
+
   buffersize_t block_size = BLOCK_SIZE(size);
   if (block_size < MIN_BLOCK_SIZE) {
     block_size = MIN_BLOCK_SIZE;
-    s_log_warning("Allocation of %zu is too small, allocating minimum size of %zu instead\n", size, MIN_ALLOC_SIZE);
+    s_log_warning("Allocation of %zu is too small, allocating minimum size of %zu instead", size, MIN_ALLOC_SIZE);
   }
-  
+
   if (block_size > pool->size) {
-    s_log_error("Allocation failed - requested size %zu exceeds pool capacity (%zu)\n", size, pool->size);
+    s_log_error("Allocation failed - requested size %zu exceeds pool capacity (%zu)", size, pool->size);
     goto alloc_unlock_and_exit;
   }
-  
-  
+
+
   block_head_t *block = pool->next_unused;
   block_head_t *const terminator = pool->next_unused->prev;
   for (; block != terminator; block = block->next) {
     /* skip used blocks and blocks that're too small */
     if (block->used) continue;
-    
+
     if (block->size < block_size) continue;
-    
+
     /* if the free block is large enough to be split into two blocks, do that */
     if ((block->size - block_size) > MIN_BLOCK_SIZE) {
       block_head_t *unused = (block_head_t *)((char *)block + block_size);
-      
+
       unused->size = block->size - block_size;
       block->size = block_size;
-      
+
       unused->used = 0;
       unused->tag = 0;
       unused->pool = pool;
@@ -234,11 +234,11 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
       unused->prev = block;
       unused->next->prev = unused;
       block->next = unused;
-      
-      /*s_log_note("new unused block created:\n");*/
+
+      /*s_log_note("new unused block created:");*/
       /*dbg_print_block(unused);*/
     }
-    
+
     if (pool->sequence == 0) pool->sequence = 1; /* in case of overflow */
     block->used = ++pool->sequence;
     block->tag = tag;
@@ -246,7 +246,7 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
     ((uint32_t *)((char *)block + block_size))[-1] = MEMORY_GUARD;
 #endif
     pool->next_unused = block->next;
-    
+
 #if !NDEBUG
     /* store source file, function, line, and requested size in debugging struct */
 
@@ -256,27 +256,27 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
     char *file_copy = (char *)malloc((file_length + fn_length) * sizeof(char));
     strncpy(file_copy, file, file_length + 1);
     block->debug_info.source_file = file_copy;
-    
+
     /* copy function as well */
     char *fn_copy = file_copy + file_length;
     strncpy(fn_copy, function, fn_length);
     block->debug_info.function = fn_copy;
-    
+
     block->debug_info.line = line;
     block->debug_info.requested_size = size;
 #endif /* !NDEBUG */
-    
+
     mutex_unlock(&pool->lock);
-    
+
     return block + 1;
   }
-  
+
   /* out of memory */
-  s_log_error("Failed to allocate %zu bytes - pool is out of memory\n", size);
-  
+  s_log_error("Failed to allocate %zu bytes - pool is out of memory", size);
+
 alloc_unlock_and_exit:
   mutex_unlock(&pool->lock);
-  
+
   return NULL;
 }
 
@@ -284,61 +284,61 @@ alloc_unlock_and_exit:
 void mem_free(void *buffer)
 {
   if (!buffer) {
-    s_log_error("Free on NULL\n");
+    s_log_error("Free on NULL");
     return;
   }
-  
+
   block_head_t *block = (block_head_t *)buffer - 1;
   memory_pool_t *pool = block->pool;
-  
-  /*s_log_note("freeing block:\n");*/
+
+  /*s_log_note("freeing block:");*/
   /*dbg_print_block(block);*/
-  
+
   if (!pool) {
-    s_log_error("Attempt to free block without an associated pool\n");
+    s_log_error("Attempt to free block without an associated pool");
     goto free_unlock_and_exit;
   }
-  
+
   mutex_lock(&pool->lock);
-  
+
   if (block == &block->pool->head) {
-    s_log_error("Free on header block of pool\n");
+    s_log_error("Free on header block of pool");
     goto free_unlock_and_exit;
   }
-  
+
   if (block->size < MIN_BLOCK_SIZE) {
-    s_log_error("Invalid block, too small (%zu) - may be corrupted\n", block->size);
+    s_log_error("Invalid block, too small (%zu) - may be corrupted", block->size);
     goto free_unlock_and_exit;
   }
-  
+
 #if USE_MEMORY_GUARD
   uint32_t guard = ((uint32_t *)((char *)block + block->size))[-1];
   if (guard != MEMORY_GUARD) {
-    s_log_error("Block memory guard corrupted - reads %X\n", guard);
+    s_log_error("Block memory guard corrupted - reads %X", guard);
   }
 #endif
-  
+
   if (!block->used) {
-    s_log_error("Double-free on block\n");
+    s_log_error("Double-free on block");
     goto free_unlock_and_exit;
   }
-  
+
   /*block->tag = DEFAULT_BLOCK_TAG_UNUSED;*/
   block->used = 0;
-  
+
   if (!block->next->used) {
     block->size += block->next->size;
     block->next = block->next->next;
     block->next->prev = block;
   }
-  
+
   if (!block->prev->used) {
     block = block->prev;
     block->size += block->next->size;
     block->next = block->next->next;
     block->next->prev = block;
   }
-  
+
 #if !NDEBUG
 
   /* clear debug info */
@@ -349,9 +349,9 @@ void mem_free(void *buffer)
   block->debug_info.requested_size = 0;
 
 #endif /* !NDEBUG */
-  
+
   pool->next_unused = block;
-  
+
 free_unlock_and_exit:
   mutex_unlock(&pool->lock);
 }
@@ -401,33 +401,33 @@ static void mem_check_pool(const memory_pool_t *pool)
 static void mem_check_block(const block_head_t *block, int debug_block)
 {
   if (block->pool && block == &block->pool->head) {
-    s_log_error("Cannot check pool header block\n");
+    s_log_error("Cannot check pool header block");
     return;
   }
-  
+
   int spew_block = debug_block;
-  
+
   if (block->size < MIN_BLOCK_SIZE) {
-    s_log_error("Block smaller than minimum required size (%zu) - may be corrupt\n", MIN_BLOCK_SIZE);
+    s_log_error("Block smaller than minimum required size (%zu) - may be corrupt", MIN_BLOCK_SIZE);
   }
-  
+
   if (block->next == NULL || block->prev == NULL) {
-    s_log_error("Block detached from block list\n");
+    s_log_error("Block detached from block list");
   }
-  
+
 #if USE_MEMORY_GUARD
   if (block->used) {
     uint32_t guard = ((const uint32_t *)((const char *)block + block->size))[-1];
     if (guard != MEMORY_GUARD) {
-      s_log_error("Memory guard corrupted\n");
+      s_log_error("Memory guard corrupted");
     }
   }
 #endif
-  
+
   if (!block->pool) {
-    s_log_error("Block detached from memory pool\n");
+    s_log_error("Block detached from memory pool");
   }
-  
+
   if (spew_block) {
     dbg_print_block(block);
   }
@@ -437,16 +437,16 @@ static void mem_check_block(const block_head_t *block, int debug_block)
 const block_head_t *mem_get_block(const void *buffer)
 {
   const block_head_t *block = (const block_head_t *)buffer - 1;
-  
+
 #if USE_MEMORY_GUARD
   uint32_t guard = ((uint32_t *)((const char *)buffer + block->size))[-1];
   if (guard != MEMORY_GUARD) {
-    s_log_error("Memory guard corrupted\n");
+    s_log_error("Memory guard corrupted");
     dbg_print_block(block);
     return NULL;
   }
 #endif
-  
+
   return block;
 }
 
