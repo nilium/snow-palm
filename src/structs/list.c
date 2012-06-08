@@ -129,7 +129,10 @@ void *list_at(const list_t *list, size_t index)
   }
 
   listnode_t *node = list_node_at(list, index);
-  return node->pointer;
+  if (node)
+    return node->pointer;
+
+  return NULL;
 }
 
 listnode_t *list_node_at(const list_t *list, size_t index)
