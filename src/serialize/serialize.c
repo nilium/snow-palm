@@ -225,7 +225,7 @@ sz_writer_flush(sz_context_t *ctx)
 
   fwrite(&root, sizeof(root), 1, file);
 
-  // write mappigns
+  // write mappings
   relative_off = (uint32_t)(sizeof(root) + (root.num_compounds * sizeof(uint32_t)));
   for (index = 0, len = root.num_compounds; index < len; ++index) {
     comp_buf = array_at_index(&ctx->compounds, index);
