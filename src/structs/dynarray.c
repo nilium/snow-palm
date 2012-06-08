@@ -228,7 +228,14 @@ bool array_sort(array_t *self, int (*comparator)(const void *left, const void *r
 }
 
 bool array_get(array_t *self, size_t index, void *dst) {
-  const void *src = array_at_index(self, index);
+  const void *src;
+
+  if (self == NULL) {
+    s_fatal_error(1, "Cannot access NULL array.");
+    return false;
+  }
+
+  src = array_at_index(self, index);
 
   if (src == NULL) {
     s_fatal_error(1, "Index %zu out of range [0..%zu]", index, (self->size - 1));
@@ -244,7 +251,14 @@ bool array_get(array_t *self, size_t index, void *dst) {
 }
 
 bool array_store(array_t *self, size_t index, const void *src) {
-  void *dst = array_at_index(self, index);
+  void *dst;
+
+  if (self == NULL) {
+    s_fatal_error(1, "Cannot access NULL array.");
+    return false;
+  }
+
+  dst = array_at_index(self, index);
   if (dst == NULL) {
     s_fatal_error(1, "Index %zu out of range [0..%zu]", index, (self->size - 1));
     return false;
