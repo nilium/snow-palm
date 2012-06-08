@@ -90,8 +90,8 @@ void mat4_set_axes3(const vec3_t x, const vec3_t y, const vec3_t z, const vec3_t
   out[3] = w[0];
   out[7] = w[1];
   out[11] = w[2];
-  
-  out[3] = out[7] = out[12] = 0.0;
+
+  out[12] = out[13] = out[14] = 0.0;
   out[15] = 1.0;
 }
 
