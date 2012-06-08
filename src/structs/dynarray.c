@@ -293,24 +293,17 @@ bool array_push(array_t *self, const void *value)
   if (self == NULL) {
     s_fatal_error(1, "Cannot push to NULL array.");
     return false;
-  } else if (value == NULL) {
-    size_t new_size = self->size + 1;
-    if (array_resize(self, new_size))
-      return true;
-
-    s_fatal_error(1, "Failed to pushed value into array.");
-    return false;
   }
 
-  if (array_reserve(self, self->size + 1)) {
-    memcpy(self->buf + (self->size * self->obj_size), value, self->obj_size);
-    self->size += 1;
-    return true;
-  } else {
+  size_t sz = self->size;
+  if (!array_resize(self, sz + 1)) {
     s_fatal_error(1, "Failed to reserve space for array_push.");
   }
 
-  return false;
+  if (value != NULL)
+    memcpy(self->buf + (sz * self->obj_size), value, self->obj_size);
+
+  return true;
 }
 
 bool array_pop(array_t *self, void *result)
