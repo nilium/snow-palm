@@ -627,10 +627,10 @@ void mat4_multiply(const mat4_t left, const mat4_t right, mat4_t out)
     cz = left[index + 8];
     cw = left[index + 12];
 
-    temp[index     ] = (cx * right[0 ]) + (cy * right[1 ]) + (cz * right[2 ]) + (cz * right[3 ]);
-    temp[index + 4 ] = (cx * right[4 ]) + (cy * right[5 ]) + (cz * right[6 ]) + (cz * right[7 ]);
-    temp[index + 8 ] = (cx * right[8 ]) + (cy * right[9 ]) + (cz * right[10]) + (cz * right[11]);
-    temp[index + 12] = (cx * right[12]) + (cy * right[13]) + (cz * right[14]) + (cz * right[15]);
+    temp[index     ] = (cx * right[0 ]) + (cy * right[1 ]) + (cz * right[2 ]) + (cw * right[3 ]);
+    temp[index + 4 ] = (cx * right[4 ]) + (cy * right[5 ]) + (cz * right[6 ]) + (cw * right[7 ]);
+    temp[index + 8 ] = (cx * right[8 ]) + (cy * right[9 ]) + (cz * right[10]) + (cw * right[11]);
+    temp[index + 12] = (cx * right[12]) + (cy * right[13]) + (cz * right[14]) + (cw * right[15]);
   }
 
   mat4_copy(temp, out);
