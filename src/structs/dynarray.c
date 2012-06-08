@@ -87,6 +87,14 @@ bool array_copy(const array_t *src, array_t *dst)
   copy.size = 0;
   copy.obj_size = src->obj_size;
 
+  if (!array_resize(&copy, src->size)) {
+    s_fatal_error(1, "Failed to resize destination array.");
+    return false;
+  } else if (!copy.buf) {
+    s_fatal_error(1, "Destination array buffer NULL.");
+    return false;
+  }
+
   if (src->buf) {
     if (!array_resize(&copy, src->size)) {
       s_fatal_error(1, "Failed to copy array.");
