@@ -49,7 +49,8 @@ static void init_mutex_attr(void)
   
   error = pthread_mutexattr_init(&g_normal_attr);
   success = success && !error;
-  if (error) s_log_error("Non-recursive mutex attribute could not be initialized: %s", c_mutex_err_no_memory_attr);
+  if (error)
+    s_log_error("Non-recursive mutex attribute could not be initialized: %s", c_mutex_err_no_memory_attr);
   
   /* init normal mutex attr */
   #if defined(NDEBUG)
@@ -63,16 +64,19 @@ static void init_mutex_attr(void)
   #endif
   success = success && !error;
 
-  if (error) s_log_error("Non-recursive mutex attribute type could not be set: %s", c_mutex_err_attr_settype);
+  if (error)
+    s_log_error("Non-recursive mutex attribute type could not be set: %s", c_mutex_err_attr_settype);
   
   /* init recursive mutex attr */
   error = pthread_mutexattr_init(&g_recursive_attr);
   success = success && !error;
-  if (error) s_log_error("Recursive mutex attribute could not be initialized: %s", c_mutex_err_no_memory_attr);
+  if (error)
+    s_log_error("Recursive mutex attribute could not be initialized: %s", c_mutex_err_no_memory_attr);
   
   error = pthread_mutexattr_settype(&g_recursive_attr, PTHREAD_MUTEX_RECURSIVE);
   success = success && !error;
-  if (error) s_log_error("Recursive mutex attribute type could not be set: %s", c_mutex_err_attr_settype);
+  if (error)
+    s_log_error("Recursive mutex attribute type could not be set: %s", c_mutex_err_attr_settype);
 
   if (success)
     s_log_note("Mutex attributes initialized");
