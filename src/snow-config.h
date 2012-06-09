@@ -30,8 +30,6 @@
 # endif
 #endif
 
-S_BREAKPOINT
-
 /* define NULL ifndef */
 #if !defined(NULL)
 # if defined(__cplusplus)
