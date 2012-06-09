@@ -10,7 +10,7 @@
 extern "C" {
 #endif // __cplusplus
 
-#define SZ_MAGIC (0x535A5346)
+#define SZ_MAGIC (0x31305A53)
 
 // Chunk types
 #define SZ_COMPOUND_CHUNK (1)
@@ -22,6 +22,7 @@ extern "C" {
 #define SZ_BYTES_CHUNK (7)
 // The null pointer chunk may substitute any compound, array, or bytes chunk
 #define SZ_NULL_POINTER_CHUNK (8)
+#define SZ_DOUBLE_CHUNK (9)
 
 // Responses
 typedef enum {
@@ -48,7 +49,11 @@ typedef enum {
   // Attempted to read the wrong kind of data from the serializer.
   SZ_ERROR_WRONG_KIND,
   // File is incorrect
-  SZ_ERROR_INVALID_FILE
+  SZ_ERROR_INVALID_FILE,
+  // Could not or cannot read from the file.
+  SZ_ERROR_CANNOT_READ,
+  // Reached EOF prematurely
+  SZ_ERROR_EOF
 } sz_response_t;
 
 // Endianness
@@ -137,36 +142,10 @@ typedef struct s_sz_root {
 } sz_root_t;
 
 typedef struct s_sz_header {
-  uint32_t kind;  // chunk type
+  uint8_t kind;  // chunk type
   uint32_t name;  // chunk name
   uint32_t size;  // length including this header
 } sz_header_t;
-
-typedef struct s_sz_unsigned_int {
-  sz_header_t header;
-  uint32_t value;
-} sz_unsigned_int_t;
-
-typedef struct s_sz_int {
-  sz_header_t header;
-  int32_t value;
-} sz_int_t;
-
-typedef struct s_sz_float {
-  sz_header_t header;
-  float value;
-} sz_float_t;
-
-typedef struct s_sz_double {
-  sz_header_t header;
-  double value;
-} sz_double_t;
-
-typedef struct s_sz_compounds_list {
-  sz_header_t header;
-  uint32_t compounds_offset;
-  uint32_t num_compounds;
-} sz_compounds_list_t;
 
 typedef struct s_sz_compound_ref {
   sz_header_t header;
@@ -175,8 +154,8 @@ typedef struct s_sz_compound_ref {
 
 typedef struct s_sz_array {
   sz_header_t header;
-  uint32_t type;
   uint32_t length;
+  uint8_t type;
 } sz_array_t;
 
 
@@ -199,8 +178,6 @@ sz_close(sz_context_t *ctx);
 sz_response_t
 sz_set_file(sz_context_t *ctx, FILE *file);
 
-allocator_t *sz_get_allocator(sz_context_t *ctx);
-
 sz_response_t
 sz_set_endianness(sz_context_t *ctx, sz_endianness_t endianness);
 
@@ -221,32 +198,32 @@ sz_read_compound(sz_context_t *ctx, uint32_t name, void **p,
 
 sz_response_t
 sz_write_compounds(sz_context_t *ctx, uint32_t name,
-                   void **out, uint32_t length,
+                   void **out, size_t length,
                    sz_compound_writer_t writer, void *writer_ctx);
 // Returns an array of pointers to the read compounds.
 // The memory must be freed by the caller.
 sz_response_t
 sz_read_compounds(sz_context_t *ctx, uint32_t name,
-                  void ***p, uint32_t *length,
+                  void ***p, size_t *length,
                   sz_compound_reader_t reader, void *reader_ctx,
                   allocator_t *buf_alloc);
 
 // Writes an array of bytes with the given length.
 sz_response_t
 sz_write_bytes(sz_context_t *ctx, uint32_t name,
-               const uint8_t *values, uint32_t length);
+               const uint8_t *values, size_t length);
 // Reads an array of bytes and returns it via `out`.
 // The memory must be freed by the caller.
 sz_response_t
 sz_read_bytes(sz_context_t *ctx, uint32_t name,
-              uint8_t **out, uint32_t *length,
+              uint8_t **out, size_t *length,
               allocator_t *buf_alloc);
 
 sz_response_t
 sz_write_float(sz_context_t *ctx, uint32_t name, float value);
 sz_response_t
 sz_write_floats(sz_context_t *ctx, uint32_t name,
-                float *values, uint32_t length);
+                float *values, size_t length);
 
 // Reads a single float and writes it to `out`.
 sz_response_t
@@ -255,14 +232,14 @@ sz_read_float(sz_context_t *ctx, uint32_t name, float *out);
 // The memory must be freed by the caller.
 sz_response_t
 sz_read_floats(sz_context_t *ctx, uint32_t name,
-               float **out, uint32_t *length,
+               float **out, size_t *length,
                allocator_t *buf_alloc);
 
 sz_response_t
 sz_write_int(sz_context_t *ctx, uint32_t name, int32_t value);
 sz_response_t
 sz_write_ints(sz_context_t *ctx, uint32_t name,
-              int32_t *values, uint32_t length);
+              int32_t *values, size_t length);
 
 // Reads a single int32_t and writes it to `out`.
 sz_response_t
@@ -271,14 +248,14 @@ sz_read_int(sz_context_t *ctx, uint32_t name, int32_t *out);
 // The memory must be freed by the caller.
 sz_response_t
 sz_read_ints(sz_context_t *ctx, uint32_t name,
-             int32_t **out, uint32_t *length,
+             int32_t **out, size_t *length,
              allocator_t *buf_alloc);
 
 sz_response_t
 sz_write_unsigned_int(sz_context_t *ctx, uint32_t name, uint32_t value);
 sz_response_t
 sz_write_unsigned_ints(sz_context_t *ctx, uint32_t name,
-                       uint32_t *values, uint32_t length);
+                       uint32_t *values, size_t length);
 
 // Reads a single uint32_t and writes it to `out`.
 sz_response_t
@@ -287,7 +264,7 @@ sz_read_unsigned_int(sz_context_t *ctx, uint32_t name, uint32_t *out);
 // The memory must be freed by the caller.
 sz_response_t
 sz_read_unsigned_ints(sz_context_t *ctx, uint32_t name,
-                      uint32_t **out, uint32_t *length,
+                      uint32_t **out, size_t *length,
                       allocator_t *buf_alloc);
 
 #ifdef __cplusplus
