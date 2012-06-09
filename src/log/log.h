@@ -73,20 +73,20 @@ void s_fatal_error_impl(const char *format, int error, ...);
 
 /* unless previously defined, log macros do nothing in release builds */
 #if !defined(s_log_error)
-#define s_log_error(FORMAT, args...) 
+#define s_log_error(FORMAT, args...)
 #endif
 #if !defined(s_log_warning)
-#define s_log_warning(FORMAT, args...) 
+#define s_log_warning(FORMAT, args...)
 #endif
 #if !defined(s_log_note)
-#define s_log_note(FORMAT, args...) 
+#define s_log_note(FORMAT, args...)
 #endif
 
 /*! \def log_error(FORMAT, args...)
   \brief Macro to write an error message with the given format and parameters
   to stderr.  Includes file, line number, and callee information in the format
   string automatically.
-  
+
   In builds with NDEBUG defined, this will be a no-op.
 */
 
@@ -94,7 +94,7 @@ void s_fatal_error_impl(const char *format, int error, ...);
   \brief Macro to write an warning message with the given format and parameters
   to stderr.  Includes file, line number, and callee information in the format
   string automatically.
-  
+
   In builds with NDEBUG defined, this will be a no-op.
 */
 
@@ -102,7 +102,7 @@ void s_fatal_error_impl(const char *format, int error, ...);
   \brief Macro to write a general message with the given format and parameters
   to stderr.  Includes file, line number, and callee information in the format
   string automatically.
-  
+
   In builds with NDEBUG defined, this will be a no-op.
 */
 
