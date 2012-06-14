@@ -128,14 +128,6 @@ static inline mapnode_t *node_sibling(mapnode_t *node)
   return IS_LEFT(node) ? node->parent->right : node->parent->left;
 }
 
-static mapnode_t *node_uncle(mapnode_t *node)
-{
-  if (node != NIL && node->parent != NIL) {
-    return (node->parent->left == node) ? node->parent->right : node->parent->left;
-  }
-  return NIL;
-}
-
 static inline mapnode_t *node_grandparent(mapnode_t *node)
 {
   if (node != NIL) {
@@ -156,7 +148,7 @@ static void mapnode_remove(map_t *map, mapnode_t *node)
 {
   allocator_t *alloc = map->allocator;
   mapnode_t *destroyed, *y, *z;
-  
+
   if (node->left == NIL) {
     destroyed = node;
     y = node->right;
@@ -181,7 +173,7 @@ static void mapnode_remove(map_t *map, mapnode_t *node)
     map->root = y;
     goto finish_removal;
   }
-  
+
   if (destroyed == z->left) {
     z->left = y;
   } else {
@@ -224,7 +216,7 @@ static void mapnode_remove(map_t *map, mapnode_t *node)
     y->color = BLACK;
 
   }
-  
+
 finish_removal:
   com_free(alloc, destroyed);
   map->size -= 1;
@@ -232,22 +224,6 @@ finish_removal:
 #if !defined(NDEBUG)
   map_test(map->root);
 #endif
-}
-
-static void mapnode_replace(map_t *map, mapnode_t *node, mapnode_t *with)
-{
-  if (node == NIL)
-    return;
-
-  if (node->parent == NIL) {
-    map->root = with;
-  } else {
-    if (IS_LEFT(node))
-      node->parent->left = with;
-    else
-      node->parent->right = with;
-  }
-  with->parent = node->parent;
 }
 
 static mapnode_t *mapnode_find(const map_t *map, mapnode_t *node, mapkey_t key)
@@ -387,7 +363,7 @@ void map_insert(map_t *map, mapkey_t key, void *p)
   insert->parent = parent;
 
   *slot = insert;
-  
+
   while (IS_RED(insert->parent) && node_grandparent(insert) != NIL) {
     mapnode_t *uncle = node_sibling(insert->parent);
     if (IS_RED(uncle)) {
@@ -427,12 +403,12 @@ void map_insert(map_t *map, mapkey_t key, void *p)
 bool map_remove(map_t *map, mapkey_t key)
 {
   mapnode_t *node = mapnode_find(map, map->root, key);
-  
+
   if (node != NIL) {
     allocator_t *alloc = map->allocator;
     void *p = node->p;
     key = node->key;
-    
+
     mapnode_remove(map, node);
 
     map->ops.destroy_key(key, alloc);
@@ -473,10 +449,10 @@ static void map_get_values_r(const mapnode_t *node, mapkey_t *keys, void **value
 {
   if (capacity <= *count)
     return;
-  
+
   if (node == NIL)
     return;
-  
+
   if (node->left != NIL) map_get_values_r(node->left, keys, values, count, capacity);
 
   if (keys) keys[*count] = node->key;

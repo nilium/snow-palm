@@ -5,111 +5,68 @@
 extern "C" {
 #endif // __cplusplus
 
-buffer_t *buffer_init(buffer_t *buffer, size_t capacity, allocator_t *alloc)
-{
-  if (alloc == NULL)
-    alloc = g_default_allocator;
+//////// BUFFER
 
-  buffer->alloc = alloc;
-  buffer->size = 0;
-  buffer->capacity = 0;
-  buffer->fixed = false;
-  buffer->start = buffer->offset = NULL;
-  buffer_reserve(buffer, capacity);
+buffer_t *buffer_init(buffer_t *buffer, size_t size, allocator_t *alloc)
+{
+  if (buffer) {
+    if (alloc == NULL)
+      alloc = g_default_allocator;
+
+    buffer->alloc = alloc;
+    buffer->ptr = NULL;
+    buffer->size = 0;
+    buffer->capacity = 0;
+    buffer->outside = false;
+
+    buffer_resize(buffer, size);
+  } else if (! buffer) {
+    s_log_error("Attempt to initialize a NULL buffer.");
+  }
 
   return buffer;
 }
 
 buffer_t *buffer_init_with_pointer(buffer_t *buffer, size_t size, void *p, allocator_t *alloc)
 {
-  if (buffer) {
+  if (buffer && p) {
     if (alloc == NULL)
       alloc = g_default_allocator;
 
-    memset(buffer, 0, sizeof(*buffer));
     buffer->alloc = alloc;
+    buffer->ptr = (char *)p;
     buffer->size = size;
     buffer->capacity = size;
-    buffer->fixed = true;
-    buffer->start = buffer->offset = (char *)p;
+    buffer->outside = true;
+  } else if (! p) {
+    s_log_error("Cannot initialize a buffer with a NULL pointer.");
+  } else if (! buffer) {
+    s_log_error("Attempt to initialize a NULL buffer.");
   }
 
   return buffer;
 }
 
-void buffer_destroy(buffer_t *buffer)
+int buffer_destroy(buffer_t *buffer)
 {
   if (!buffer) {
     errno = EBADF;
-    return;
+    s_log_error("Attempt to destroy a NULL buffer.");
+    return -1;
   }
 
-  if (buffer->start && ! buffer->fixed)
-    com_free(buffer->alloc, buffer->start);
+  if (buffer->ptr && ! buffer->outside)
+    com_free(buffer->alloc, buffer->ptr);
+
   memset(buffer, 0, sizeof(*buffer));
-}
 
-int buffer_eof(buffer_t *buf)
-{
-  if (! buf) {
-    errno = EBADF;
-    return -1;
-  }
-
-  return (buf->offset == (buf->start + buf->size));
-}
-
-size_t buffer_write(buffer_t *buf, const void *p, size_t len)
-{
-  size_t abs_size;
-
-  if (! buf) {
-    errno = EBADF;
-    return 0;
-  }
-
-  if (! p) {
-    errno = EINVAL;
-    return 0;
-  }
-
-  if (len == 0)
-    return 0;
-
-  abs_size = (size_t)buffer_tell(buf) + len;
-  if (abs_size > buf->size && buffer_resize(buf, abs_size) == -1)
-    return -1;
-
-  memcpy(buf->offset, p, len);
-  buf->offset += len;
-
-  return len;
-}
-
-size_t buffer_read(buffer_t *buf, void *p, size_t len)
-{
-  if (! buf) {
-    errno = EBADF;
-    return 0;
-  }
-
-  if (! p)
-    return buffer_seek(buf, len, SEEK_CUR);
-
-  if (buf->offset + len >= buf->start + buf->size)
-    len = ((buf->start + buf->size) - buf->offset);
-
-  if (len > 0) {
-    memcpy(p, buf->offset, len);
-    buf->offset += len;
-  }
-
-  return len;
+  return 0;
 }
 
 size_t buffer_size(const buffer_t *buf)
 {
   if (! buf) {
+    s_log_error("Attempt to get the size of a NULL buffer.");
     errno = EBADF;
     return 0;
   }
@@ -120,6 +77,7 @@ size_t buffer_size(const buffer_t *buf)
 size_t buffer_capacity(const buffer_t *buf)
 {
   if (! buf) {
+    s_log_error("Attempt to get the capacity of a NULL buffer.");
     errno = EBADF;
     return 0;
   }
@@ -130,7 +88,14 @@ size_t buffer_capacity(const buffer_t *buf)
 int buffer_resize(buffer_t *buf, size_t size)
 {
   if (! buf) {
+    s_log_error("Attempt to resize a NULL buffer.");
     errno = EBADF;
+    return -1;
+  }
+
+  if (buf->outside) {
+    s_log_error("Attempt to resize a fixed-size buffer.");
+    errno = EINVAL;
     return -1;
   }
 
@@ -138,11 +103,6 @@ int buffer_resize(buffer_t *buf, size_t size)
     return -1;
 
   buf->size = size;
-  off_t offset = buffer_tell(buf);
-  if (offset == -1)
-    return -1;
-  else if (offset > size)
-    buf->offset = buf->start + size;
 
   return 0;
 }
@@ -154,14 +114,13 @@ int buffer_reserve(buffer_t *buf, size_t capacity)
   void *new_buf;
 
   if (!buf) {
+    s_log_error("Attempt to reserve memory for a NULL buffer.");
     errno = EBADF;
     return -1;
-  }
-
-  if (capacity <= buf->capacity)
+  } else if (capacity <= buf->capacity) {
     return 0;
-
-  if (buf->fixed) {
+  } else if (buf->outside) {
+    s_log_error("Attempt to reserve memory for a fixed-size buffer.");
     errno = EINVAL;
     return -1;
   }
@@ -170,97 +129,39 @@ int buffer_reserve(buffer_t *buf, size_t capacity)
   if (new_capacity < capacity)
     new_capacity = capacity;
 
-  new_buf = com_realloc(buf->alloc, buf->start, new_capacity);
+  new_buf = com_realloc(buf->alloc, buf->ptr, new_capacity);
   if (! new_buf) {
+    s_log_error("Failed to reallocate memory for a buffer.");
     errno = ENOMEM;
     return -1;
   }
 
-  off = buf->offset - buf->start;
-
-  buf->start = new_buf;
-  buf->offset = new_buf + off;
+  buf->ptr = new_buf;
   buf->capacity = new_capacity;
 
   return 0;
 }
 
-off_t buffer_tell(const buffer_t *buf)
-{
+const void *buffer_pointer_const(const buffer_t *buf) {
   if (! buf) {
+    s_log_error("Attempt to get the raw pointer of a NULL buffer.");
     errno = EBADF;
-    return -1;
+    return NULL;
   }
 
-  return (size_t)(buf->offset - buf->start);
-}
-
-int buffer_seek(buffer_t *buf, off_t pos, int whence)
-{
-  ptrdiff_t abs_pos;
-  char *new_offset;
-
-  if (! buf) {
-    errno = EBADF;
-    return -1;
-  }
-
-  switch (whence) {
-    case SEEK_SET:
-      new_offset = buf->start + pos;
-      break;
-
-    case SEEK_CUR:
-      new_offset = buf->offset + pos;
-      break;
-
-    case SEEK_END:
-      new_offset = (buf->start + buf->size) + pos;
-      break;
-
-    default:
-      errno = EINVAL;
-      return -1;
-  }
-
-  abs_pos = new_offset - buf->start;
-  if (buf->start == NULL || buf->size <= abs_pos || abs_pos < 0) {
-    errno = EOVERFLOW;
-    return -1;
-  }
-
-  return 0;
-}
-
-int buffer_rewind(buffer_t *buf)
-{
-  if (! buf) {
-    errno = EBADF;
-    return -1;
-  }
-  buf->offset = buf->start;
+  return buf->ptr;
 }
 
 void *buffer_pointer(buffer_t *buf)
 {
   if (! buf) {
+    s_log_error("Attempt to get the raw pointer of a NULL buffer.");
     errno = EBADF;
     return NULL;
   }
 
-  return buf->start;
+  return buf->ptr;
 }
-
-void *buffer_offset_pointer(buffer_t *buf)
-{
-  if (! buf) {
-    errno = EBADF;
-    return NULL;
-  }
-
-  return buf->offset;
-}
-
 
 #ifdef __cplusplus
 }

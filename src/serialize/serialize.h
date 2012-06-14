@@ -5,6 +5,7 @@
 #include <buffer/buffer.h>
 #include <structs/dynarray.h>
 #include <structs/map.h>
+#include <stream/stream.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +50,7 @@ typedef enum {
   // Attempted to read the wrong kind of data from the serializer.
   SZ_ERROR_WRONG_KIND,
   // File is incorrect
-  SZ_ERROR_INVALID_FILE,
+  SZ_ERROR_INVALID_STREAM,
   // Could not or cannot read from the file.
   SZ_ERROR_CANNOT_READ,
   // Reached EOF prematurely
@@ -103,10 +104,10 @@ struct s_sz_context {
   int open;
   int compound_level;
 
-  FILE *file;
-  fpos_t file_pos;
+  stream_t *stream;
+  off_t stream_pos;
 
-  buffer_t *active;
+  stream_t *active;
 
   // writing: map of compounds in use to their indices
   map_t compound_ptrs;
@@ -121,6 +122,7 @@ struct s_sz_context {
   // output buffer
   // unused in reading
   buffer_t buffer;
+  stream_t *buffer_stream;
 };
 
 typedef struct s_sz_root {
@@ -176,7 +178,7 @@ sz_close(sz_context_t *ctx);
 
 // Input / output file
 sz_response_t
-sz_set_file(sz_context_t *ctx, FILE *file);
+sz_set_stream(sz_context_t *ctx, stream_t *stream);
 
 sz_response_t
 sz_set_endianness(sz_context_t *ctx, sz_endianness_t endianness);
