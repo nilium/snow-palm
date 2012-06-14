@@ -1,5 +1,7 @@
 #include "serialize.h"
 
+#include <buffer/buffer_stream.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -11,10 +13,15 @@ extern "C" {
 
 typedef struct {
   // the position of the item in the file
-  fpos_t position;
+  off_t position;
   // NULL if not yet unpacked
   void *value;
 } sz_unpacked_compound_t;
+
+typedef struct {
+  buffer_t *buffer;
+  stream_t *stream;
+} sz_buffer_stream_t;
 
 
 static const char *sz_errstr_null_context = "Null serializer context.";
@@ -28,7 +35,7 @@ static const char *sz_errstr_read_on_write = "Cannot perform read operation on w
 static const char *sz_errstr_compound_reader_null = "Failed to deserialize compound object with reader: reader returned NULL.";
 static const char *sz_errstr_already_closed = "Cannot close serializer that isn't open.";
 static const char *sz_errstr_already_open = "Cannot set file for open serializer.";
-static const char *sz_errstr_null_file = "File is NULL.";
+static const char *sz_errstr_null_stream = "Stream is NULL.";
 static const char *sz_errstr_empty_array = "Array is empty.";
 static const char *sz_errstr_endian_open = "Cannot set endianness of open serializer.";
 
@@ -56,10 +63,15 @@ static inline uint32_t sz_to_endianness(uint32_t u, int src, int dst);
 static inline sz_response_t sz_check_context(sz_context_t *ctx, sz_mode_t mode);
 
 
+#define sz_read_with_bail(P, SIZE, STREAM, CTX) \
+  if (stream_read((P), (SIZE), (STREAM)) != (SIZE))\
+    return sz_file_error((CTX));
+
+
 static sz_response_t
 sz_file_error(sz_context_t *ctx)
 {
-  if (feof(ctx->file)) {
+  if (stream_eof(ctx->stream)) {
     ctx->error = sz_errstr_eof;
     return SZ_ERROR_EOF;
   } else {
@@ -74,8 +86,7 @@ sz_read_root(sz_context_t *ctx, sz_root_t *root)
 {
   sz_root_t res;
 
-  if (fread(&res, sizeof(sz_root_t), 1, ctx->file) != 1)
-    return sz_file_error(ctx);
+  sz_read_with_bail(&res, sizeof(sz_root_t), ctx->stream, ctx);
 
   if (res.magic != SZ_MAGIC) {
     ctx->error = sz_errstr_invalid_root;
@@ -94,11 +105,9 @@ sz_read_header(sz_context_t *ctx, sz_header_t *header, uint32_t name, uint8_t ki
   uint32_t seq[2];
   sz_header_t res;
 
-  if (fread(&res.kind, sizeof(res.kind), 1, ctx->file) != 1)
-    return sz_file_error(ctx);
+  sz_read_with_bail(&res.kind, sizeof(res.kind), ctx->stream, ctx);
 
-  if (fread(seq, sizeof(uint32_t), 2, ctx->file) != 2)
-    return sz_file_error(ctx);
+  sz_read_with_bail(seq, sizeof(uint32_t) * 2, ctx->stream, ctx);
 
   res.name = seq[0];
   res.size = seq[1];
@@ -128,11 +137,9 @@ sz_read_array_header(sz_context_t *ctx, sz_array_t *chunk, uint32_t name, uint8_
   if (response != SZ_SUCCESS)
     return response;
 
-  if (fread(&res.length, sizeof(uint32_t), 1, ctx->file) != 1)
-    return sz_file_error(ctx);
+  sz_read_with_bail(&res.length, sizeof(uint32_t), ctx->stream, ctx);
 
-  if (fread(&res.type, sizeof(uint8_t), 1, ctx->file) != 1)
-    return sz_file_error(ctx);
+  sz_read_with_bail(&res.type, sizeof(uint8_t), ctx->stream, ctx);
 
   if (chunk)
     *chunk = res;
@@ -165,9 +172,10 @@ sz_read_array_body(sz_context_t *ctx, const sz_array_t *chunk, void **buf_out, s
   element_size = block_remainder / (size_t)chunk->length;
 
   if (buf_out) {
+    size_t read_size = element_size * chunk->length;
     buffer = com_malloc(alloc, block_remainder);
 
-    if (fread(buffer, element_size, chunk->length, ctx->file) != chunk->length) {
+    if (stream_read(buffer, read_size, ctx->stream) != read_size) {
       com_free(alloc, buffer);
       return sz_file_error(ctx);
     }
@@ -175,7 +183,7 @@ sz_read_array_body(sz_context_t *ctx, const sz_array_t *chunk, void **buf_out, s
     if (buf_out)
       *buf_out = buffer;
   } else {
-    fseeko(ctx->file, (off_t)block_remainder, SEEK_CUR);
+    stream_seek(ctx->stream, (off_t)block_remainder, SEEK_CUR);
   }
 
   if (length)
@@ -199,11 +207,19 @@ static uint32_t
 sz_new_compound(sz_context_t *ctx, void *p)
 {
   uint32_t idx;
-  buffer_t *buffer = (buffer_t *)com_malloc(ctx->alloc, sizeof(*buffer));
+  sz_buffer_stream_t bs;
+  buffer_t *buffer;
+
+  buffer = com_malloc(ctx->alloc, sizeof(*buffer));
   buffer_init(buffer, 32, ctx->alloc);
-  array_push(&ctx->compounds, &buffer);
+  bs.buffer = buffer;
+  bs.stream = buffer_stream(buffer, STREAM_WRITE, true);
+
+  array_push(&ctx->compounds, &bs);
+
   idx = (uint32_t)array_size(&ctx->compounds);
   map_insert(&ctx->compound_ptrs, p, (void *)idx);
+
   return idx;
 }
 
@@ -217,12 +233,16 @@ sz_push_stack(sz_context_t *ctx)
   }
 
   if (ctx->mode == SZ_READER) {
-    array_push(&ctx->stack, NULL);
-    fgetpos(ctx->file, array_last(&ctx->stack));
+    off_t pos = stream_tell(ctx->stream);
+    array_push(&ctx->stack, &pos);
   } else {
-    buffer_t *buffer = ctx->active;
-    array_push(&ctx->stack, &buffer);
-    ctx->active = *(buffer_t **)array_last(&ctx->compounds);
+    sz_buffer_stream_t *bs;
+    stream_t *stream = ctx->active;
+
+    array_push(&ctx->stack, &stream);
+
+    bs = (sz_buffer_stream_t *)array_last(&ctx->compounds);
+    ctx->active = bs->stream;
   }
 }
 
@@ -235,11 +255,11 @@ sz_pop_stack(sz_context_t *ctx)
   }
 
   if (ctx->mode == SZ_READER) {
-    fpos_t pos;
+    off_t pos;
     array_pop(&ctx->stack, &pos);
-    fsetpos(ctx->file, &pos);
+    stream_seek(ctx->stream, pos, SEEK_SET);
   } else {
-    buffer_t *step = NULL;
+    stream_t *step = NULL;
     array_pop(&ctx->stack, &step);
     ctx->active = step;
   }
@@ -262,9 +282,9 @@ sz_write_null_pointer(sz_context_t *ctx, uint32_t name)
     .size = (uint32_t)(sizeof(chunk.kind) + sizeof(chunk.name) + sizeof(chunk.size))
   };
 
-  buffer_write(ctx->active, &chunk.kind, sizeof(chunk.kind));
-  buffer_write(ctx->active, &chunk.name, sizeof(chunk.name));
-  buffer_write(ctx->active, &chunk.size, sizeof(chunk.size));
+  stream_write(&chunk.kind, sizeof(chunk.kind), ctx->active);
+  stream_write(&chunk.name, sizeof(chunk.name), ctx->active);
+  stream_write(&chunk.size, sizeof(chunk.size), ctx->active);
 
   return SZ_SUCCESS;
 }
@@ -277,19 +297,19 @@ sz_read_primitive(sz_context_t *ctx,
 {
   sz_response_t response;
   sz_header_t chunk;
-  fpos_t pos;
+  off_t pos;
 
   response = sz_check_context(ctx, SZ_READER);
   if (response != SZ_SUCCESS)
     return response;
 
-  fgetpos(ctx->file, &pos);
+  pos = stream_tell(ctx->stream);
 
   response = sz_read_header(ctx, &chunk, name, chunktype, false);
   if (response != SZ_SUCCESS)
     goto sz_read_primitive_error;
 
-  if (fread(out, typesize, 1, ctx->file) != 1) {
+  if (stream_read(out, typesize, ctx->stream) != typesize) {
     response = sz_file_error(ctx);
     goto sz_read_primitive_error;
   }
@@ -297,7 +317,7 @@ sz_read_primitive(sz_context_t *ctx,
   return SZ_SUCCESS;
 
 sz_read_primitive_error:
-  fsetpos(ctx->file, &pos);
+  stream_seek(ctx->stream, pos, SEEK_SET);
   return response;
 }
 
@@ -323,7 +343,7 @@ sz_write_primitive(sz_context_t *ctx,
                    const void *input, size_t typesize)
 {
   sz_response_t response;
-  buffer_t *buf;
+  stream_t *stream;
   sz_header_t chunk = {
     .kind = chunktype,
     .name = name,
@@ -334,12 +354,12 @@ sz_write_primitive(sz_context_t *ctx,
   if (response != SZ_SUCCESS)
     return response;
 
-  buf = ctx->active;
+  stream = ctx->active;
 
-  buffer_write(buf, &chunk.kind, sizeof(chunk.kind));
-  buffer_write(buf, &chunk.name, sizeof(chunk.name));
-  buffer_write(buf, &chunk.size, sizeof(chunk.size));
-  buffer_write(buf, input, typesize);
+  stream_write(&chunk.kind, sizeof(chunk.kind), stream);
+  stream_write(&chunk.name, sizeof(chunk.name), stream);
+  stream_write(&chunk.size, sizeof(chunk.size), stream);
+  stream_write(input, typesize, stream);
 
   return SZ_SUCCESS;
 }
@@ -351,7 +371,7 @@ sz_write_primitive_array(sz_context_t *ctx,
                          const void *values, size_t length, size_t element_size)
 {
   sz_response_t response;
-  buffer_t *buf;
+  stream_t *stream;
   size_t data_size = length * element_size;
   sz_array_t chunk = {
     .header = {
@@ -370,15 +390,15 @@ sz_write_primitive_array(sz_context_t *ctx,
   if (values == NULL)
     return sz_write_null_pointer(ctx, name);
 
-  buf = ctx->active;
+  stream = ctx->active;
 
   // write each to deal with possible alignment/packing issues
-  buffer_write(buf, &chunk.header.kind, sizeof(chunk.header.kind));
-  buffer_write(buf, &chunk.header.name, sizeof(chunk.header.name));
-  buffer_write(buf, &chunk.header.size, sizeof(chunk.header.size));
-  buffer_write(buf, &chunk.length, sizeof(chunk.length));
-  buffer_write(buf, &chunk.type, sizeof(chunk.type));
-  buffer_write(buf, values, data_size);
+  stream_write(&chunk.header.kind, sizeof(chunk.header.kind), stream);
+  stream_write(&chunk.header.name, sizeof(chunk.header.name), stream);
+  stream_write(&chunk.header.size, sizeof(chunk.header.size), stream);
+  stream_write(&chunk.length, sizeof(chunk.length), stream);
+  stream_write(&chunk.type, sizeof(chunk.type), stream);
+  stream_write(values, data_size, stream);
 
   return SZ_SUCCESS;
 }
@@ -392,12 +412,12 @@ sz_read_primitive_array(sz_context_t *ctx,
 {
   sz_response_t response;
   sz_array_t chunk;
-  fpos_t pos;
+  off_t pos;
 
   response = sz_check_context(ctx, SZ_READER);
   if (response != SZ_SUCCESS) return response;
 
-  fgetpos(ctx->file, &pos);
+  pos = stream_tell(ctx->stream);
 
   response = sz_read_array_header(ctx, &chunk, name, chunktype);
   if (response != SZ_SUCCESS)
@@ -410,7 +430,7 @@ sz_read_primitive_array(sz_context_t *ctx,
   return SZ_SUCCESS;
 
 sz_read_primitive_array_error:
-  fsetpos(ctx->file, &pos);
+  stream_seek(ctx->stream, pos, SEEK_SET);
   return response;
 }
 
@@ -429,8 +449,6 @@ sz_init_context(sz_context_t *ctx, sz_mode_t mode, allocator_t *alloc)
     ctx->error = "";
     ctx->mode = mode;
     ctx->open = 0;
-
-    map_init(&ctx->compound_ptrs, g_mapops_default, alloc);
   }
 
   return ctx;
@@ -441,9 +459,6 @@ sz_response_t
 sz_destroy_context(sz_context_t *ctx)
 {
   if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
-
-  array_destroy(&ctx->compounds);
-  array_destroy(&ctx->stack);
 
   memset(ctx, 0, sizeof(*ctx));
 
@@ -461,8 +476,9 @@ sz_reader_begin(sz_context_t *ctx)
   // arrays
   sz_unpacked_compound_t *packs;
   uint32_t *offsets;
+  size_t offsets_size;
 
-  array_init(&ctx->stack, sizeof(fpos_t), 32, ctx->alloc);
+  array_init(&ctx->stack, sizeof(off_t), 32, ctx->alloc);
   array_init(&ctx->compounds, sizeof(sz_unpacked_compound_t), 32, ctx->alloc);
 
   sz_push_stack(ctx);
@@ -480,9 +496,10 @@ sz_reader_begin(sz_context_t *ctx)
   if (packs == NULL && len != 0)
     s_fatal_error(1, "Failed to create unpacked compounds array");
 
-  offsets = com_malloc(ctx->alloc, sizeof(uint32_t) * len);
+  offsets_size = sizeof(uint32_t) * len;
+  offsets = com_malloc(ctx->alloc, offsets_size);
 
-  fread(offsets, sizeof(uint32_t), len, ctx->file);
+  sz_read_with_bail(offsets, offsets_size, ctx->stream, ctx);
 
   sz_pop_stack(ctx);
 
@@ -491,15 +508,15 @@ sz_reader_begin(sz_context_t *ctx)
 
     sz_push_stack(ctx);
 
-    fseeko(ctx->file, offset, SEEK_CUR);
-    fgetpos(ctx->file, &packs[index].position);
+    stream_seek(ctx->stream, offset, SEEK_CUR);
+    packs[index].position = ctx->stream_pos + stream_tell(ctx->stream);
 
     sz_pop_stack(ctx);
   }
 
   com_free(ctx->alloc, offsets);
 
-  fseeko(ctx->file, (off_t)root.data_offset, SEEK_CUR);
+  stream_seek(ctx->stream, (off_t)root.data_offset, SEEK_CUR);
 
   return SZ_SUCCESS;
 }
@@ -509,10 +526,12 @@ static sz_response_t
 sz_writer_begin(sz_context_t *ctx)
 {
   buffer_init(&ctx->buffer, 32, ctx->alloc);
-  array_init(&ctx->stack, sizeof(buffer_t *), 32, ctx->alloc);
-  array_init(&ctx->compounds, sizeof(buffer_t *), 32, ctx->alloc);
+  ctx->buffer_stream = buffer_stream(&ctx->buffer, STREAM_WRITE, ctx->alloc);
+  array_init(&ctx->stack, sizeof(stream_t *), 32, ctx->alloc);
+  array_init(&ctx->compounds, sizeof(sz_buffer_stream_t), 32, ctx->alloc);
+  map_init(&ctx->compound_ptrs, g_mapops_default, ctx->alloc);
 
-  ctx->active = &ctx->buffer;
+  ctx->active = ctx->buffer_stream;
 
   return SZ_SUCCESS;
 }
@@ -523,7 +542,7 @@ sz_writer_flush(sz_context_t *ctx)
 {
   size_t index, len;
 
-  FILE *file = ctx->file;
+  stream_t *stream = ctx->stream;
 
   sz_root_t root = {
     .magic = SZ_MAGIC,
@@ -538,40 +557,39 @@ sz_writer_flush(sz_context_t *ctx)
   buffer_t *data = &ctx->buffer;
   size_t data_sz = buffer_size(data);
   void *data_ptr = buffer_pointer(data);
-  buffer_t **comp_buffers = array_buffer(&ctx->compounds, NULL);
+  sz_buffer_stream_t *comp_buffers = array_buffer(&ctx->compounds, NULL);
   buffer_t *comp_buf;
 
   uint32_t mappings_size = (uint32_t)sizeof(uint32_t) * root.num_compounds;
   uint32_t compounds_size = 0;
 
   for (index = 0, len = root.num_compounds; index < len; ++index)
-    compounds_size += (uint32_t)buffer_size(comp_buffers[index]);
+    compounds_size += (uint32_t)buffer_size(comp_buffers[index].buffer);
 
   root.compounds_offset = root.mappings_offset + mappings_size;
   root.data_offset = root.compounds_offset + compounds_size;
   root.size = root.data_offset + (uint32_t)buffer_size(&ctx->buffer);
 
-  fwrite(&root, sizeof(root), 1, file);
+  stream_write(&root, sizeof(root), stream);
 
   // write mappings
   relative_off = (uint32_t)(sizeof(root) + mappings_size);
   for (index = 0; index < len; ++index) {
-    comp_buf = comp_buffers[index];
-    fwrite(&relative_off, sizeof(uint32_t), 1, file);
-    size_t sz = buffer_size(comp_buf);
-    relative_off += sz;
+    comp_buf = comp_buffers[index].buffer;
+    stream_write(&relative_off, sizeof(uint32_t), stream);
+    relative_off += buffer_size(comp_buf);
   }
 
   for (index = 0; index < len; ++index) {
-    comp_buf = comp_buffers[index];
-    fwrite(buffer_pointer(comp_buf), buffer_size(comp_buf), 1, file);
-    buffer_destroy(comp_buf);
+    comp_buf = comp_buffers[index].buffer;
+    stream_write(buffer_pointer(comp_buf), buffer_size(comp_buf), stream);
+    stream_close(comp_buffers[index].stream);
   }
 
   if (data_ptr)
-    fwrite(data_ptr, 1, data_sz, file);
+    stream_write(data_ptr, data_sz, stream);
 
-  fflush(file);
+  map_destroy(&ctx->compound_ptrs);
 
   return SZ_SUCCESS;
 }
@@ -609,7 +627,10 @@ sz_close(sz_context_t *ctx)
     res = sz_writer_flush(ctx);
 
   if (ctx->mode == SZ_WRITER)
-    buffer_destroy(&ctx->buffer);
+    stream_close(ctx->buffer_stream);
+
+  array_destroy(&ctx->compounds);
+  array_destroy(&ctx->stack);
 
   ctx->open = 0;
 
@@ -618,7 +639,7 @@ sz_close(sz_context_t *ctx)
 
 
 sz_response_t
-sz_set_file(sz_context_t *ctx, FILE *file)
+sz_set_stream(sz_context_t *ctx, stream_t *stream)
 {
   if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
 
@@ -627,13 +648,13 @@ sz_set_file(sz_context_t *ctx, FILE *file)
     return SZ_ERROR_INVALID_OPERATION;
   }
 
-  if (file == NULL) {
-    ctx->error = sz_errstr_null_file;
-    return SZ_ERROR_INVALID_FILE;
+  if (NULL == stream) {
+    ctx->error = sz_errstr_null_stream;
+    return SZ_ERROR_INVALID_STREAM;
   }
 
-  ctx->file = file;
-  fgetpos(file, &ctx->file_pos);
+  ctx->stream = stream;
+  ctx->stream_pos = stream_tell(stream);
 
   return SZ_SUCCESS;
 }
@@ -721,7 +742,7 @@ sz_get_compound(sz_context_t *ctx, uint32_t idx,
   if (pkg->value == NULL) {
     sz_push_stack(ctx);
 
-    fsetpos(ctx->file, &pkg->position);
+    stream_seek(ctx->stream, pkg->position, SEEK_SET);
 
     reader(ctx, &pkg->value, reader_ctx);
 
@@ -737,7 +758,7 @@ sz_read_compound(sz_context_t *ctx, uint32_t name, void **p,
                      sz_compound_reader_t reader, void *reader_ctx)
 {
   sz_response_t response;
-  fpos_t pos;
+  off_t pos;
   uint32_t index;
   void *compound_ptr;
   sz_header_t chunk;
@@ -746,14 +767,14 @@ sz_read_compound(sz_context_t *ctx, uint32_t name, void **p,
   if (response != SZ_SUCCESS)
     return response;
 
-  fgetpos(ctx->file, &pos);
+  pos = stream_tell(ctx->stream);
 
   response = sz_read_header(ctx, &chunk, name, SZ_COMPOUND_REF_CHUNK, true);
   if (response != SZ_SUCCESS)
     goto sz_read_compound_error;
 
   if (chunk.kind == SZ_COMPOUND_REF_CHUNK) {
-    if (fread(&index, sizeof(uint32_t), 1, ctx->file) != 1) {
+    if (stream_read(&index, sizeof(uint32_t), ctx->stream) != sizeof(uint32_t)) {
       response = sz_file_error(ctx);
       goto sz_read_compound_error;
     }
@@ -776,7 +797,7 @@ sz_read_compound(sz_context_t *ctx, uint32_t name, void **p,
   return SZ_SUCCESS;
 
 sz_read_compound_error:
-  fsetpos(ctx->file, &pos);
+  stream_seek(ctx->stream, pos, SEEK_SET);
   return response;
 }
 
@@ -786,7 +807,7 @@ sz_write_compounds(sz_context_t *ctx, uint32_t name, void **p, size_t length,
                        sz_compound_writer_t writer, void *writer_ctx)
 {
   uint32_t index, ref;
-  buffer_t *buf;
+  stream_t *stream;
   sz_array_t chunk = {
     .header = {
       .kind = SZ_ARRAY_CHUNK,
@@ -809,16 +830,16 @@ sz_write_compounds(sz_context_t *ctx, uint32_t name, void **p, size_t length,
     return SZ_SUCCESS;
   }
 
-  buf = ctx->active;
-  buffer_write(buf, &chunk.header.kind, sizeof(chunk.header.kind));
-  buffer_write(buf, &chunk.header.name, sizeof(chunk.header.name));
-  buffer_write(buf, &chunk.header.size, sizeof(chunk.header.size));
-  buffer_write(buf, &chunk.length, sizeof(chunk.length));
-  buffer_write(buf, &chunk.type, sizeof(chunk.type));
+  stream = ctx->active;
+  stream_write(&chunk.header.kind, sizeof(chunk.header.kind), stream);
+  stream_write(&chunk.header.name, sizeof(chunk.header.name), stream);
+  stream_write(&chunk.header.size, sizeof(chunk.header.size), stream);
+  stream_write(&chunk.length, sizeof(chunk.length), stream);
+  stream_write(&chunk.type, sizeof(chunk.type), stream);
 
   for (index = 0; index < length; ++index) {
     ref = sz_store_compound(ctx, p[index], writer, writer_ctx);
-    buffer_write(ctx->active, &ref, sizeof(uint32_t));
+    stream_write(&ref, sizeof(uint32_t), ctx->active);
   }
 
   return SZ_SUCCESS;
@@ -842,12 +863,12 @@ sz_read_compounds(sz_context_t *ctx, uint32_t name, void ***out, size_t *length,
 
   sz_response_t response;
   sz_array_t chunk;
-  fpos_t pos;
-  fgetpos(ctx->file, &pos);
+  off_t pos;
+  pos = stream_tell(ctx->stream);
 
   response = sz_read_array_header(ctx, &chunk, name, SZ_COMPOUND_REF_CHUNK);
   if (response != SZ_SUCCESS) {
-    fsetpos(ctx->file, &pos);
+    stream_seek(ctx->stream, pos, SEEK_SET);
     return response;
   }
 
@@ -863,13 +884,17 @@ sz_read_compounds(sz_context_t *ctx, uint32_t name, void ***out, size_t *length,
       buf = (void **)com_malloc(buf_alloc, sizeof(void *) * chunk.length);
 
       for (index = 0; index < chunk.length; ++index) {
-        fread(&ref, sizeof(uint32_t), 1, ctx->file);
+        if (stream_read(&ref, sizeof(uint32_t), ctx->stream) != sizeof(uint32_t)) {
+          com_free(buf_alloc, buf);
+          stream_seek(ctx->stream, pos, SEEK_SET);
+          return sz_file_error(ctx);
+        }
         buf[index] = sz_get_compound(ctx, ref, reader, reader_ctx);
       }
 
       *out = buf;
     } else {
-      fseek(ctx->file, sizeof(uint32_t) * chunk.length, SEEK_CUR);
+      stream_seek(ctx->stream, sizeof(uint32_t) * chunk.length, SEEK_CUR);
     }
 
     if (length)
@@ -892,7 +917,7 @@ sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, size_t *length, a
 {
   sz_response_t response;
   sz_header_t chunk;
-  fpos_t pos;
+  off_t pos;
   size_t size;
   uint8_t *bytes;
 
@@ -903,7 +928,7 @@ sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, size_t *length, a
   if (buf_alloc == NULL)
     buf_alloc = g_default_allocator;
 
-  fgetpos(ctx->file, &pos);
+  pos = stream_tell(ctx->stream);
 
   response = sz_read_header(ctx, &chunk, name, SZ_BYTES_CHUNK, true);
   if (response != SZ_SUCCESS)
@@ -918,14 +943,14 @@ sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, size_t *length, a
     if (out) {
       bytes = (uint8_t *)com_malloc(buf_alloc, size);
 
-      if (fread(bytes, 1, size, ctx->file) != size) {
+      if (stream_read(bytes, size, ctx->stream) != size) {
         response = sz_file_error(ctx);
         goto sz_read_bytes_error;
       }
 
       *out = bytes;
     } else {
-      fseek(ctx->file, size, SEEK_CUR);
+      stream_seek(ctx->stream, size, SEEK_CUR);
     }
 
     if (length)
@@ -935,7 +960,7 @@ sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, size_t *length, a
   return SZ_SUCCESS;
 
 sz_read_bytes_error:
-  fsetpos(ctx->file, &pos);
+  stream_seek(ctx->stream, pos, SEEK_SET);
   return response;
 }
 
@@ -959,7 +984,7 @@ sz_read_float(sz_context_t *ctx, uint32_t name, float *out)
 {
   float out_buf;
   sz_response_t ret = sz_read_primitive(ctx, SZ_FLOAT_CHUNK, name, &out_buf, sizeof(float));
-  if (out) *out = out_buf;
+  if (out && ret == SZ_SUCCESS) *out = out_buf;
   return ret;
 }
 
@@ -990,7 +1015,7 @@ sz_read_int(sz_context_t *ctx, uint32_t name, int32_t *out)
 {
   int32_t out_buf;
   sz_response_t ret = sz_read_primitive(ctx, SZ_SINT32_CHUNK, name, &out_buf, sizeof(int32_t));
-  if (out) *out = out_buf;
+  if (out && ret == SZ_SUCCESS) *out = out_buf;
   return ret;
 }
 
@@ -1021,7 +1046,7 @@ sz_read_unsigned_int(sz_context_t *ctx, uint32_t name, uint32_t *out)
 {
   uint32_t out_buf;
   sz_response_t ret = sz_read_primitive(ctx, SZ_UINT32_CHUNK, name, &out_buf, sizeof(uint32_t));
-  if (out) *out = out_buf;
+  if (out && ret == SZ_SUCCESS) *out = out_buf;
   return ret;
 }
 
