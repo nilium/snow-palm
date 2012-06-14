@@ -1,6 +1,6 @@
 CC?=clang
 CXX?=clang++
 LDFLAGS+= -lstdc++ -framework Cocoa -framework OpenGL -framework QuartzCore -m64 -lpthread
-CFLAGS+= -framework Cocoa -framework OpenGL -framework QuartzCore -D TARGET_OS_MAC -m64 -x objective-c -fpie -fstack-protector-all -D_FORTIFY_SOURCE=2 -fobjc-arc
+CFLAGS+= -D TARGET_OS_MAC -m64 -x objective-c -fpie -fstack-protector-all -D_FORTIFY_SOURCE=2 -fobjc-arc
 
 APP_OUT=bin/snow
