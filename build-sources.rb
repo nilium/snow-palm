@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby -w
 
-OS_DIR = /(?i:\/os\.([^\/\\]+))\//
+OS_DIR = /(?i:\/[a-z0-9 \-_\.@]+\.([^\/\\]+))\//
 SOURCE_FILE = /(?i:\.(c(c|pp|xx|\+\+)?|m{1,2}))$/
 CPP_FILE = /(?i:\.(c(c|pp|xx|\+\+)|mm))$/
 INCLUDE_FILE = /^\s*#\s*include\s+(["<])([^">]+)[">]/
@@ -19,7 +19,7 @@ def pull_dependencies(filepath, search_paths=[], depth=1, checked=[])
 
   dir = File.dirname(filepath)
   deps = []
-  
+
   raise "File does not exist" unless File.exists?(filepath) && ! File.directory?(filepath)
 
   File.open(filepath, "r") {
@@ -165,6 +165,8 @@ def parse_args(args, opts={})
         else
           value = [cur_value, value]
         end
+      elsif allow_multiple != false
+        value = [value]
       end
 
       flags.store name, value
