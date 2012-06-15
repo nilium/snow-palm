@@ -110,7 +110,6 @@ int buffer_resize(buffer_t *buf, size_t size)
 int buffer_reserve(buffer_t *buf, size_t capacity)
 {
   size_t new_capacity;
-  ptrdiff_t off;
   void *new_buf;
 
   if (!buf) {
