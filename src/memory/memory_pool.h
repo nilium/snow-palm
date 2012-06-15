@@ -22,7 +22,7 @@
   necessary, memory that ought to be close together is.  There is no solid way
   to reduce fragmentation, but ::mem_alloc will always attempt to use the next
   free or most recently freed block of memory for any new allocations.
-  
+
   \par Thread Safety
   The only operations wrapped in a lock are ::mem_destroy_pool,
   ::mem_retain_pool, ::mem_release_pool, ::mem_alloc, and ::mem_free.  Others
@@ -61,7 +61,7 @@ struct s_block_head
   block_head_t *next;
   /*! Pointer back to the memory pool the block belongs to. */
   memory_pool_t *pool;
-  
+
 #if !NDEBUG
 
   /* debugging info for tracking allocations */
@@ -102,7 +102,7 @@ extern const int32_t MAIN_POOL_TAG;
 /*!
  * Initializes the global memory pool.
  */
-void sys_mem_init();
+void sys_mem_init(void);
 
 /*!
  * Destroys the global memory pool.  This will not destroy any other pools.
@@ -111,7 +111,7 @@ void sys_mem_shutdown(void);
 
 /*!
  * Initializes a new memory pool.  Newly-initialized pools have a retain-count of 1.
- * 
+ *
  * \param[inout]  pool The address of an uninitialized pool to be initialized.
  * \param[in]   size The size of the memory pool to initialize.
  */
