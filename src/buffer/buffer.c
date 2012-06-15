@@ -1,5 +1,8 @@
 #include "buffer.h"
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,6 +21,7 @@ buffer_t *buffer_init(buffer_t *buffer, size_t size, allocator_t *alloc)
     buffer->size = 0;
     buffer->capacity = 0;
     buffer->outside = false;
+    buffer->context.mapped_file = 0;
 
     buffer_resize(buffer, size);
   } else if (! buffer) {
@@ -38,6 +42,7 @@ buffer_t *buffer_init_with_pointer(buffer_t *buffer, size_t size, void *p, alloc
     buffer->size = size;
     buffer->capacity = size;
     buffer->outside = true;
+    buffer->context.mapped_file = 0;
   } else if (! p) {
     s_log_error("Cannot initialize a buffer with a NULL pointer.");
   } else if (! buffer) {
@@ -47,16 +52,86 @@ buffer_t *buffer_init_with_pointer(buffer_t *buffer, size_t size, void *p, alloc
   return buffer;
 }
 
+buffer_t *buffer_init_with_file(buffer_t *buffer, const char *file)
+{
+  #define FILE_MODE (O_RDWR|O_EXCL)
+
+  int fildes = -1;
+  void *mapped_ptr = NULL;
+  off_t end = 0;
+
+  if (buffer && file) {
+    fildes = open(file, FILE_MODE);
+    if (fildes < 0) {
+      s_log_error("Error opening file %s: %d.", file, errno);
+      return NULL;
+    }
+
+    // get size of file..
+    end = lseek(fildes, 0, SEEK_END);
+    if (end == -1 || lseek(fildes, 0, SEEK_SET) == -1) {
+      s_log_error("Error getting size of file %s: %d.", file, errno);
+      goto buffer_file_error;
+    } else if (end == 0) {
+      s_log_error("File %s is empty, closing buffer.", file);
+      goto buffer_file_error;
+    }
+
+    mapped_ptr = mmap(NULL, (size_t)end, PROT_READ|PROT_WRITE, MAP_FILE, fildes, 0);
+    if (mapped_ptr == MAP_FAILED) {
+      s_log_error("Error mapping buffer to file descriptor for file %s: %d.",
+        file, errno);
+      mapped_ptr = NULL;
+      goto buffer_file_error;
+    }
+
+    buffer->alloc = NULL;
+    buffer->ptr = mapped_ptr;
+    buffer->capacity = buffer->size = (size_t)end;
+    buffer->outside = true;
+    buffer->context.mapped_file = fildes;
+  } else if (! file) {
+    s_log_error("Cannot initialize a buffer with a NULL file path.");
+  } else if (! buffer) {
+    s_log_error("Attempt to initialize a NULL buffer.");
+  }
+
+  return buffer;
+
+buffer_file_error:
+  if (mapped_ptr && munmap(mapped_ptr, (size_t)end))
+    s_fatal_error(1, "Error unmapping pointer for file %s: %d.", file, errno);
+  else if (fildes > -1 && close(fildes))
+    s_fatal_error(1, "Error closing buffer-mapped file %s: %d.", file, errno);
+
+  return NULL;
+
+  #undef FILE_MODE
+}
+
 int buffer_destroy(buffer_t *buffer)
 {
+  int fildes;
+
   if (!buffer) {
     errno = EBADF;
     s_log_error("Attempt to destroy a NULL buffer.");
     return -1;
   }
 
-  if (buffer->ptr && ! buffer->outside)
+  fildes = buffer->context.mapped_file;
+
+  if (buffer->ptr && ! buffer->outside) {
     com_free(buffer->alloc, buffer->ptr);
+  } else if (buffer->ptr && fildes > -1) {
+    if (munmap(buffer->ptr, buffer->size)) {
+      s_log_error("Error unmapping file buffer (will not destroy buffer): %d.", errno);
+      return -1;
+    }
+
+    if (close(fildes))
+      s_log_error("Error closing file (continuing to destroy buffer): %d.", errno);
+  }
 
   memset(buffer, 0, sizeof(*buffer));
 

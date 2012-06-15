@@ -16,10 +16,14 @@ struct s_buffer {
   size_t size;
   size_t capacity;
   bool outside;
+  union {
+    int mapped_file;
+  } context;
 };
 
 buffer_t *buffer_init(buffer_t *buffer, size_t capacity, allocator_t *alloc);
 buffer_t *buffer_init_with_pointer(buffer_t *buffer, size_t size, void *p, allocator_t *alloc);
+buffer_t *buffer_init_with_file(buffer_t *buffer, const char *file);
 int buffer_destroy(buffer_t *buffer);
 
 size_t buffer_size(const buffer_t *buf);
