@@ -1,5 +1,7 @@
 #include "mesh.h"
 
+#include <system/sgl.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
