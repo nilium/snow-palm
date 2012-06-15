@@ -1,5 +1,7 @@
 #include "file_stream.h"
 #include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,8 +19,9 @@ static int file_close(stream_t *stream);
 
 stream_t *file_open(const char *path, stream_mode_t mode, allocator_t *alloc)
 {
-  const char *file_mode = NULL;
-  FILE *file = NULL;
+  #define FILE_CHMOD (mode_t)(S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
+  int file_flags = 0;
+  int file;
   stream_t *stream = NULL;
   char *pathcopy;
   size_t pathsize;
@@ -38,21 +41,17 @@ stream_t *file_open(const char *path, stream_mode_t mode, allocator_t *alloc)
     // TODO: rewrite to use PHYSFS
 
     switch (mode) {
-      case STREAM_READ: file_mode = "r"; break;
-      case STREAM_WRITE: file_mode = "w"; break;
-      case STREAM_READWRITE: file_mode = "r+"; break;
+      case STREAM_READ: file_flags = O_RDONLY; break;
+      case STREAM_WRITE: file_flags = O_WRONLY|O_TRUNC|O_CREAT; break;
+      case STREAM_READWRITE: file_flags = O_RDWR|O_CREAT; break;
       default: /* cannot reach */ break;
     }
 
-    file = fopen(path, file_mode);
+    file = open(path, file_flags, FILE_CHMOD);
 
-    // if r+ failed because the file doesn't exist, open again with w
-    if (file == NULL && mode == STREAM_READWRITE && errno == ENOENT)
-      file = fopen(path, (file_mode = "w+"));
-
-    if (file == NULL) {
-      s_log_error("Failed to open file '%s' with mode '%s'. Error code %d.",
-        path, file_mode, errno);
+    if (file < 0) {
+      s_log_error("Failed to open file '%s' with flags %x. Error code %d.",
+        path, file_flags, errno);
       stream_close(stream);
       return NULL;
     }
@@ -70,13 +69,14 @@ stream_t *file_open(const char *path, stream_mode_t mode, allocator_t *alloc)
 
     stream->context.stdio.file = file;
     stream->context.stdio.file_path = pathcopy;
+    stream->context.stdio.position = 0;
   }
 
   return stream;
 }
 
 static inline int file_check_context(stream_t *stream) {
-  if (stream->context.stdio.file == NULL) {
+  if (stream->context.stdio.file < 0) {
     s_log_error("File backing stream is NULL.");
     stream->error = STREAM_ERROR_INVALID_CONTEXT;
     return -1;
@@ -91,22 +91,23 @@ static inline int file_check_context(stream_t *stream) {
 
 static size_t file_write(const void * const p, size_t len, stream_t *stream)
 {
-  size_t count;
+  ssize_t count;
   int error;
-  FILE *file;
+  int file;
 
   if (file_check_context(stream))
     return 0;
 
   file = stream->context.stdio.file;
 
-  count = fwrite(p, 1, len, file);
+  count = write(file, p, len);
 
-  if (count < len && (error = ferror(file))) {
+  if (count < 0 && (error = errno)) {
     s_log_error("Error writing to file stream (%d). (File: %s)",
       error, stream->context.stdio.file_path);
     stream->error = STREAM_ERROR_FAILURE;
-    clearerr(file);
+  } else {
+    stream->context.stdio.position += count;
   }
 
   return count;
@@ -114,22 +115,23 @@ static size_t file_write(const void * const p, size_t len, stream_t *stream)
 
 static size_t file_read(void * const p, size_t len, stream_t *stream)
 {
-  size_t count;
+  ssize_t count;
   int error;
-  FILE *file;
+  int file;
 
   if (file_check_context(stream))
     return 0;
 
   file = stream->context.stdio.file;
 
-  count = fread(p, 1, len, file);
+  count = read(file, p, len);
 
-  if (count < len && (error = ferror(file))) {
+  if (count < 0 && (error = errno)) {
     s_log_error("Error reading from file stream (%d). (File: %s)",
       error, stream->context.stdio.file_path);
     stream->error = STREAM_ERROR_FAILURE;
-    clearerr(file);
+  } else {
+    stream->context.stdio.position += count;
   }
 
   return count;
@@ -138,18 +140,17 @@ static size_t file_read(void * const p, size_t len, stream_t *stream)
 static off_t file_seek(stream_t *stream, off_t pos, int whence)
 {
   off_t new_offset;
-  FILE *file;
+  int file;
 
   if (file_check_context(stream))
     return -1;
 
   file = stream->context.stdio.file;
 
-  // doing nothing, use ftello
   if (pos == 0 && whence == SEEK_CUR)
-    new_offset = ftello(file);
-  else
-    new_offset = fseeko(file, pos, whence);
+    return stream->context.stdio.position;
+
+  new_offset = lseek(file, pos, whence);
 
   if (new_offset == -1) {
     switch (errno) {
@@ -180,33 +181,51 @@ static off_t file_seek(stream_t *stream, off_t pos, int whence)
     }
   }
 
+  stream->context.stdio.position = new_offset;
+
   return new_offset;
 }
 
 static int file_eof(stream_t *stream)
 {
-  FILE *file;
+  int file;
+  int test;
+  ssize_t count;
+  off_t pos;
 
   if (file_check_context(stream))
     return -1;
 
   file = stream->context.stdio.file;
 
-  return !!feof(file);
+  pos = stream->context.stdio.position;
+
+  count = pread(file, &test, 1, pos);
+
+  if (count == -1) {
+    s_log_error("Error determining if file stream is at EOF: %d. (File: %s)",
+      errno, stream->context.stdio.file_path);
+    stream->error = STREAM_ERROR_FAILURE;
+    return -1;
+  }
+
+  return count == 0;
 }
 
 static int file_close(stream_t *stream)
 {
-  FILE *file;
+  int file;
 
   if (file_check_context(stream))
     return -1;
 
   file = stream->context.stdio.file;
 
+  fsync(file);
+
   com_free(stream->alloc, stream->context.stdio.file_path);
 
-  if (fclose(file)) {
+  if (close(file)) {
     int error = errno;
     stream->error = STREAM_ERROR_FAILURE;
     switch (error) {

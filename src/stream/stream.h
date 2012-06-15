@@ -103,8 +103,9 @@ struct s_stream {
 
   union {
     struct {
-      FILE *file;
+      int file;
       char *file_path;
+      off_t position;
     } stdio;
     void *unknown[STREAM_UNKNOWN_CONTEXT_COUNT];
   } context;
