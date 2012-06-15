@@ -51,6 +51,7 @@ extern "C" {
 EOS
 
   unless File.exists? c_filename
+    puts "Writing '#{c_filename}'"
     File.open(c_filename, "w") { |io|
       io.write C_TEMPLATE
     }
@@ -59,6 +60,7 @@ EOS
   end
 
   unless File.exists? h_filename
+    puts "Writing '#{h_filename}'"
     File.open(h_filename, "w") { |io|
       io.write H_TEMPLATE
     }
