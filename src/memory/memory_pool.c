@@ -67,6 +67,16 @@ static void mem_check_pool(const memory_pool_t *pool);
  * @param block The block to check.
  */
 static void mem_check_block(const block_head_t *block, int debug_block);
+/*!
+ * Returns whether a particular block can be split into a new block of
+ * pred_size and its difference.
+ */
+static int mem_can_split_block(block_head_t *block, buffersize_t pred_size);
+/*!
+ * Splits a block into two blocks, the original block sized pred_size and the
+ * new block taking up the difference.
+ */
+static int mem_split_block(block_head_t *block, buffersize_t pred_size);
 
 
 
@@ -183,6 +193,47 @@ void mem_release_pool(memory_pool_t *pool)
   }
 }
 
+
+static int mem_can_split_block(block_head_t *block, buffersize_t pred_size)
+{
+  if (block->size < pred_size)
+    return 0;
+
+  return ((block->size - pred_size) > MIN_BLOCK_SIZE);
+}
+
+
+static int mem_split_block(block_head_t *block, buffersize_t pred_size)
+{
+  if (block->size < pred_size) {
+    /* original block is too small to split */
+    return -1;
+  }
+
+  /* check if the block can be split */
+  if ((block->size - pred_size) > MIN_BLOCK_SIZE) {
+    block_head_t *unused = (block_head_t *)((char *)block + pred_size);
+
+    unused->size = block->size - pred_size;
+    block->size = pred_size;
+
+    unused->used = 0;
+    unused->tag = 0;
+    unused->pool = block->pool;
+    /* update list */
+    unused->next = block->next;
+    unused->prev = block;
+    unused->next->prev = unused;
+    block->next = unused;
+
+    return 0;
+    }
+
+    /* new block is too small to split */
+    return -1;
+}
+
+
 #if NDEBUG
 void *mem_alloc(memory_pool_t *pool, buffersize_t size, int32_t tag)
 #else
@@ -225,27 +276,13 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
     if (block->size < block_size) continue;
 
     /* if the free block is large enough to be split into two blocks, do that */
-    if ((block->size - block_size) > MIN_BLOCK_SIZE) {
-      block_head_t *unused = (block_head_t *)((char *)block + block_size);
+    if (mem_can_split_block(block, block_size))
+      if (mem_split_block(block, block_size))
+        s_log_error("Failed to split block, using unsplit block.");
 
-      unused->size = block->size - block_size;
-      block->size = block_size;
+    if (pool->sequence == 0)
+      pool->sequence = 1; /* in case of overflow */
 
-      unused->used = 0;
-      unused->tag = 0;
-      unused->pool = pool;
-      /*unused->tag = DEFAULT_BLOCK_TAG_UNUSED;*/
-      /* update list */
-      unused->next = block->next;
-      unused->prev = block;
-      unused->next->prev = unused;
-      block->next = unused;
-
-      /*s_log_note("new unused block created:");*/
-      /*dbg_print_block(unused);*/
-    }
-
-    if (pool->sequence == 0) pool->sequence = 1; /* in case of overflow */
     block->used = ++pool->sequence;
     block->tag = tag;
 #if USE_MEMORY_GUARD
