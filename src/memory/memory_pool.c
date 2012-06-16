@@ -17,6 +17,8 @@ extern "C"
 
 #define USE_MEMORY_GUARD 1
 
+typedef uint32_t guard_t;
+
 /*!
  * The minimum size of a memory pool.  This number is kind of arbitrary, but by
  * default the minimum is the size of four minimum-size blocks.
@@ -27,7 +29,7 @@ extern "C"
 /*! Alignment for memory blocks.  Must be a power of two minus one. */
 #define BLOCK_ALIGNMENT (16)
 #if USE_MEMORY_GUARD
-#define MEMORY_GUARD_SIZE (sizeof(uint32_t))
+#define MEMORY_GUARD_SIZE (sizeof(guard_t))
 #else
 #define MEMORY_GUARD_SIZE (0)
 #endif /* USE_MEMORY_GUARD */
@@ -247,7 +249,7 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
     block->used = ++pool->sequence;
     block->tag = tag;
 #if USE_MEMORY_GUARD
-    ((uint32_t *)((char *)block + block_size))[-1] = MEMORY_GUARD;
+    ((guard_t *)((char *)block + block_size))[-1] = MEMORY_GUARD;
 #endif
     pool->next_unused = block->next;
 
@@ -316,7 +318,7 @@ void mem_free(void *buffer)
   }
 
 #if USE_MEMORY_GUARD
-  uint32_t guard = ((uint32_t *)((char *)block + block->size))[-1];
+  guard_t guard = ((guard_t *)((char *)block + block->size))[-1];
   if (guard != MEMORY_GUARD) {
     s_log_error("Block memory guard corrupted - reads %X", guard);
   }
@@ -365,7 +367,7 @@ static inline void dbg_print_block(const block_head_t *block)
 {
   /* the odd exception where s_log_* is not used... */
   fprintf(stderr, "BLOCK [header: %p | buffer: %p] {\n", (void *)block, (void *)(block+1));
-  fprintf(stderr, "  guard: %X\n", ((const uint32_t *)((const char *)block+block->size))[-1]);
+  fprintf(stderr, "  guard: %X\n", ((const guard_t *)((const char *)block+block->size))[-1]);
   fprintf(stderr, "  block size: %zu bytes\n", block->size);
   fprintf(stderr, "  prev: %p\n", block->prev);
   fprintf(stderr, "  next: %p\n", block->next);
@@ -423,7 +425,7 @@ static void mem_check_block(const block_head_t *block, int debug_block)
 
 #if USE_MEMORY_GUARD
   if (block->used) {
-    uint32_t guard = ((const uint32_t *)((const char *)block + block->size))[-1];
+    guard_t guard = ((const guard_t *)((const char *)block + block->size))[-1];
     if (guard != MEMORY_GUARD) {
       s_log_error("Memory guard corrupted");
     }
@@ -445,7 +447,7 @@ const block_head_t *mem_get_block(const void *buffer)
   const block_head_t *block = (const block_head_t *)buffer - 1;
 
 #if USE_MEMORY_GUARD
-  uint32_t guard = ((uint32_t *)((const char *)buffer + block->size))[-1];
+  guard_t guard = ((guard_t *)((const char *)buffer + block->size))[-1];
   if (guard != MEMORY_GUARD) {
     s_log_error("Memory guard corrupted");
     dbg_print_block(block);
