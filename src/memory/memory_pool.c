@@ -678,6 +678,50 @@ const block_head_t *mem_get_block(const void *buffer)
   return block;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+////                             Pool Allocator                            ////
+///////////////////////////////////////////////////////////////////////////////
+
+#define POOL_ALLOCATOR_TAG (-1)
+
+static void *al_pool_malloc(size_t min_size, void *ctx);
+static void *al_pool_realloc(void *p, size_t min_size, void *ctx);
+static void al_pool_free(void *p, void *ctx);
+
+
+allocator_t pool_allocator(memory_pool_t *pool)
+{
+  allocator_t alloc = {
+    .malloc = al_pool_malloc,
+    .realloc = al_pool_realloc,
+    .free = al_pool_free,
+    .context = pool
+  };
+  return alloc;
+}
+
+
+static void *al_pool_malloc(size_t min_size, void *ctx)
+{
+  return mem_alloc((memory_pool_t *)ctx, min_size, POOL_ALLOCATOR_TAG);
+}
+
+
+static void *al_pool_realloc(void *p, size_t min_size, void *ctx)
+{
+  if (p)
+    return mem_realloc(p, min_size);
+  else
+    return mem_alloc((memory_pool_t *)ctx, min_size, POOL_ALLOCATOR_TAG);
+}
+
+
+static void al_pool_free(void *p, void *ctx)
+{
+  (void)ctx;
+  mem_free(p);
+}
+
 
 #if defined(__cplusplus)
 }

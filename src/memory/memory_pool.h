@@ -195,6 +195,10 @@ void mem_free(void *buffer);
 const block_head_t *mem_get_block(const void *buffer);
 
 
+//! Gets an allocator for the given memory pool.
+allocator_t pool_allocator(memory_pool_t *pool);
+
+
 #if defined(__cplusplus)
 }
 #endif
