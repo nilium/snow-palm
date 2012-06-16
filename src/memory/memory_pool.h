@@ -5,8 +5,6 @@
   See LICENSE.md for license information
 */
 
-// TODO: Move to allocator model
-
 #ifndef MEMORY_H_SA7RAUP3
 #define MEMORY_H_SA7RAUP3
 
