@@ -12,6 +12,7 @@
 
 #include <snow-config.h>
 #include <threads/mutex.h>
+#include "allocator.h"
 
 /*!
   \file
@@ -81,6 +82,7 @@ struct s_block_head
  */
 struct s_memory_pool
 {
+  allocator_t *alloc;
   /*! Size of the memory pool.  Includes adjustment for alignment. */
   buffersize_t size;
   /*! Reference count. */
@@ -102,7 +104,7 @@ extern const int32_t MAIN_POOL_TAG;
 /*!
  * Initializes the global memory pool.
  */
-void sys_mem_init(void);
+void sys_mem_init(allocator_t *alloc);
 
 /*!
  * Destroys the global memory pool.  This will not destroy any other pools.
@@ -115,7 +117,7 @@ void sys_mem_shutdown(void);
  * \param[inout]  pool The address of an uninitialized pool to be initialized.
  * \param[in]   size The size of the memory pool to initialize.
  */
-void mem_init_pool(memory_pool_t *pool, buffersize_t size);
+void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc);
 
 /*!
  * Destroys a memory pool.

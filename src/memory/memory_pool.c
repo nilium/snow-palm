@@ -68,11 +68,11 @@ static void mem_check_block(const block_head_t *block, int debug_block);
 
 
 
-void sys_mem_init(void)
+void sys_mem_init(allocator_t *alloc)
 {
   if (g_main_pool.head.used) return;
 
-  mem_init_pool(&g_main_pool, MAIN_POOL_SIZE);
+  mem_init_pool(&g_main_pool, MAIN_POOL_SIZE, alloc);
   g_main_pool.refs = 0;
 }
 
@@ -85,8 +85,11 @@ void sys_mem_shutdown(void)
 }
 
 
-void mem_init_pool(memory_pool_t *pool, buffersize_t size)
+void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
 {
+  if (alloc == NULL)
+    alloc = g_default_allocator;
+
   if (!pool->buffer) {
     if (size < MIN_POOL_SIZE) {
       size = MIN_POOL_SIZE;
@@ -100,8 +103,9 @@ void mem_init_pool(memory_pool_t *pool, buffersize_t size)
     if (size < MIN_POOL_SIZE)
       size = MIN_POOL_SIZE;
 
+    pool->alloc = alloc;
     pool->size = buffer_size;
-    pool->buffer = (char *)malloc(buffer_size);
+    pool->buffer = (char *)com_malloc(alloc, buffer_size);
 
     block_head_t *block = (block_head_t *)(((unsigned long)pool->buffer + (BLOCK_ALIGNMENT)) & ~(BLOCK_ALIGNMENT - 1));
     block->size = size;
@@ -136,7 +140,7 @@ void mem_destroy_pool(memory_pool_t *pool)
 
     mem_check_pool(pool);
 
-    free(pool->buffer);
+    com_free(pool->alloc, pool->buffer);
     pool->buffer = NULL;
     pool->head.next = NULL;
     pool->head.prev = NULL;
