@@ -108,7 +108,7 @@ void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
     }
     s_log_note("Initializing memory pool (%p) with size %zu", (const void *)pool, size);
 
-    mutex_init(&pool->lock, false);
+    mutex_init(&pool->lock, true);
     mutex_lock(&pool->lock);
 
     buffersize_t buffer_size = (size + BLOCK_ALIGNMENT) & ~(BLOCK_ALIGNMENT - 1);
