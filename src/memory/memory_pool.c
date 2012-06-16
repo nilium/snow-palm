@@ -306,7 +306,19 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
 
 
   block = pool->next_unused;
+
+  if (!block) {
+    s_log_error("Allocation failed - pool corrupted.");
+    return NULL;
+  }
+
   terminator = pool->next_unused->prev;
+
+  if (!terminator) {
+    s_log_error("Allocation failed - pool corrupted.");
+    return NULL;
+  }
+
   for (; block != terminator; block = block->next) {
     /* skip used blocks and blocks that're too small */
     if (block->used)
