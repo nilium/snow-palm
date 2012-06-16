@@ -77,6 +77,11 @@ static int mem_can_split_block(block_head_t *block, buffersize_t pred_size);
  * new block taking up the difference.
  */
 static int mem_split_block(block_head_t *block, buffersize_t pred_size);
+/*!
+ * Combines two blocks into one. They must be seated next to each other, or
+ * the function will return -1 (failure). Returns 0 on success.
+ */
+static int mem_merge_blocks(block_head_t *blka, block_head_t *blkb);
 
 
 
@@ -231,6 +236,34 @@ static int mem_split_block(block_head_t *block, buffersize_t pred_size)
 
     /* new block is too small to split */
     return -1;
+}
+
+
+static int mem_merge_blocks(block_head_t *blka, block_head_t *blkb)
+{
+  if (!blka || !blkb) {
+    s_log_error("Attempt to join one or more NULL blocks.");
+    return -1;
+  }
+
+  /* swap blocks if they're out of order */
+  if (blkb < blka) {
+    block_head_t *swap = blka;
+    blka = blkb;
+    blkb = swap;
+  }
+
+  /* make sure blocks are adjacent */
+  if (blka->next != blkb) {
+    s_log_error("Attempt to join non-adjacent memory blocks.");
+    return -2;
+  }
+
+  blka->next = blkb->next;
+  blka->next->prev = blka;
+  blka->size += blkb->size;
+
+  return 0;
 }
 
 
