@@ -5,13 +5,12 @@
   See LICENSE.md for license information
 */
 
-// TODO: Move to allocator model
-
 #ifndef MEMORY_H_SA7RAUP3
 #define MEMORY_H_SA7RAUP3
 
 #include <snow-config.h>
 #include <threads/mutex.h>
+#include "allocator.h"
 
 /*!
   \file
@@ -81,6 +80,7 @@ struct s_block_head
  */
 struct s_memory_pool
 {
+  allocator_t *alloc;
   /*! Size of the memory pool.  Includes adjustment for alignment. */
   buffersize_t size;
   /*! Reference count. */
@@ -102,7 +102,7 @@ extern const int32_t MAIN_POOL_TAG;
 /*!
  * Initializes the global memory pool.
  */
-void sys_mem_init(void);
+void sys_mem_init(allocator_t *alloc);
 
 /*!
  * Destroys the global memory pool.  This will not destroy any other pools.
@@ -115,7 +115,7 @@ void sys_mem_shutdown(void);
  * \param[inout]  pool The address of an uninitialized pool to be initialized.
  * \param[in]   size The size of the memory pool to initialize.
  */
-void mem_init_pool(memory_pool_t *pool, buffersize_t size);
+void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc);
 
 /*!
  * Destroys a memory pool.
@@ -159,6 +159,17 @@ void *mem_alloc(memory_pool_t *pool, buffersize_t size, int32_t tag);
 #endif
 
 /*!
+ * Reallocates memory for the given pointer with the new buffer size.
+ * Returns NULL on failure. If mem_realloc fails, the original buffer
+ * is not freed.
+ *
+ * Unlike normal realloc, this will NOT allocate new memory if you
+ * pass NULL as the original pointer. com_realloc will do this given a
+ * pool allocator, however.
+ */
+void *mem_realloc(void *p, buffersize_t size);
+
+/*!
  * Frees a buffer previously allocated by ::mem_alloc.
  *
  * \param[in] buffer The buffer to be freed.
@@ -180,6 +191,10 @@ void mem_free(void *buffer);
  *  suspected to be corrupt.
  */
 const block_head_t *mem_get_block(const void *buffer);
+
+
+//! Gets an allocator for the given memory pool.
+allocator_t pool_allocator(memory_pool_t *pool);
 
 
 #if defined(__cplusplus)
