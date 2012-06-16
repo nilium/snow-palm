@@ -273,6 +273,10 @@ void *mem_alloc(memory_pool_t *pool, buffersize_t size, int32_t tag)
 void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const char *file, const char *function, int32_t line)
 #endif
 {
+  block_head_t *block = NULL;
+  block_head_t *terminator = NULL;
+  buffersize_t block_size;
+
   if (pool == NULL)
     pool = &g_main_pool;
 
@@ -288,7 +292,8 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
     goto alloc_unlock_and_exit;
   }
 
-  buffersize_t block_size = BLOCK_SIZE(size);
+  block_size = BLOCK_SIZE(size);
+
   if (block_size < MIN_BLOCK_SIZE) {
     block_size = MIN_BLOCK_SIZE;
     s_log_warning("Allocation of %zu is too small, allocating minimum size of %zu instead", size, MIN_ALLOC_SIZE);
@@ -300,13 +305,14 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
   }
 
 
-  block_head_t *block = pool->next_unused;
-  block_head_t *const terminator = pool->next_unused->prev;
+  block = pool->next_unused;
+  terminator = pool->next_unused->prev;
   for (; block != terminator; block = block->next) {
     /* skip used blocks and blocks that're too small */
-    if (block->used) continue;
-
-    if (block->size < block_size) continue;
+    if (block->used)
+      continue;
+    else if (block->size < block_size)
+      continue;
 
     /* if the free block is large enough to be split into two blocks, do that */
     if (mem_can_split_block(block, block_size))
@@ -318,10 +324,12 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
 
     block->used = ++pool->sequence;
     block->tag = tag;
+
+
 #if USE_MEMORY_GUARD
     ((guard_t *)((char *)block + block_size))[-1] = MEMORY_GUARD;
 #endif
-    pool->next_unused = block->next;
+
 
 #if !NDEBUG
     /* store source file, function, line, and requested size in debugging struct */
@@ -341,6 +349,8 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
     block->debug_info.line = line;
     block->debug_info.requested_size = size;
 #endif /* !NDEBUG */
+
+    pool->next_unused = block->next;
 
     mutex_unlock(&pool->lock);
 
