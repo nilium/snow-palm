@@ -257,7 +257,7 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
     size_t file_length = strlen(file) + 1;
     size_t fn_length = strlen(function) + 1; /* account for \0 in both cases */
     /* to avoid pointless fragmentation, we'll allocate this using malloc normally */
-    char *file_copy = (char *)malloc((file_length + fn_length) * sizeof(char));
+    char *file_copy = (char *)com_malloc(pool->alloc, (file_length + fn_length) * sizeof(char));
     strncpy(file_copy, file, file_length + 1);
     block->debug_info.source_file = file_copy;
 
@@ -346,7 +346,7 @@ void mem_free(void *buffer)
 #if !NDEBUG
 
   /* clear debug info */
-  free(block->debug_info.source_file);
+  com_free(pool->alloc, block->debug_info.source_file);
   block->debug_info.source_file = NULL;
   block->debug_info.function = NULL;
   block->debug_info.line = -1;
