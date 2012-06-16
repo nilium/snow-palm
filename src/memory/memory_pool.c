@@ -96,7 +96,7 @@ void sys_mem_init(allocator_t *alloc)
 
 void sys_mem_shutdown(void)
 {
-  if (!g_main_pool.head.used) return;
+  if ( ! g_main_pool.head.used) return;
 
   mem_destroy_pool(&g_main_pool);
 }
@@ -107,7 +107,7 @@ void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
   if (alloc == NULL)
     alloc = g_default_allocator;
 
-  if (!pool->buffer) {
+  if ( ! pool->buffer) {
     if (size < MIN_POOL_SIZE) {
       size = MIN_POOL_SIZE;
     }
@@ -178,7 +178,7 @@ void mem_destroy_pool(memory_pool_t *pool)
 
 memory_pool_t *mem_retain_pool(memory_pool_t *pool)
 {
-  if (!pool) return pool;
+  if ( ! pool) return pool;
 
   mutex_lock(&pool->lock);
   ++pool->refs;
@@ -189,7 +189,7 @@ memory_pool_t *mem_retain_pool(memory_pool_t *pool)
 
 void mem_release_pool(memory_pool_t *pool)
 {
-  if (!pool) return;
+  if ( ! pool) return;
   mutex_lock(&pool->lock);
   int32_t refs = --pool->refs;
   mutex_unlock(&pool->lock);
@@ -241,7 +241,7 @@ static int mem_split_block(block_head_t *block, buffersize_t pred_size)
 
 static int mem_merge_blocks(block_head_t *blka, block_head_t *blkb)
 {
-  if (!blka || !blkb) {
+  if ( ! blka || ! blkb) {
     s_log_error("Attempt to join one or more NULL blocks.");
     return -1;
   }
@@ -287,7 +287,7 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
     goto alloc_unlock_and_exit;
   }
 
-  if (!pool->head.used) {
+  if ( ! pool->head.used) {
     s_log_error("Allocation failed - pool is not initialized or corrupt");
     goto alloc_unlock_and_exit;
   }
@@ -307,14 +307,14 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
 
   block = pool->next_unused;
 
-  if (!block) {
+  if ( ! block) {
     s_log_error("Allocation failed - pool corrupted.");
     return NULL;
   }
 
   terminator = pool->next_unused->prev;
 
-  if (!terminator) {
+  if ( ! terminator) {
     s_log_error("Allocation failed - pool corrupted.");
     return NULL;
   }
@@ -407,7 +407,7 @@ void *mem_realloc(void *p, buffersize_t size)
   size_t new_size;
   off_t size_diff;
 
-  if (!p) {
+  if ( ! p) {
     s_log_error("Realloc on NULL");
     return NULL;
   }
@@ -415,7 +415,7 @@ void *mem_realloc(void *p, buffersize_t size)
   block = (block_head_t *)p - 1;
   pool = block->pool;
 
-  if (!pool) {
+  if ( ! pool) {
     s_log_error("Attempt to reallocate block without an associated pool");
     return NULL;
   }
@@ -449,7 +449,7 @@ void *mem_realloc(void *p, buffersize_t size)
       if (mem_split_block(block, new_size) == 0) {
         p = block + 1;
 
-        if (!block->next->next->used) {
+        if ( ! block->next->next->used) {
           mem_merge_blocks(block->next, block->next->next);
         }
 
@@ -464,7 +464,7 @@ void *mem_realloc(void *p, buffersize_t size)
     /* if the block can't be split, leave it as is -- the size difference is
        small enough that resizing is probably pointless. */
 
-  } else if (!block->next->used && (block->next->size - size_diff) >= MIN_BLOCK_SIZE) {
+  } else if ( ! block->next->used && (block->next->size - size_diff) >= MIN_BLOCK_SIZE) {
     /* if the next block is unused, try to join it with that.
        not using mem_split_block because the new block is the only one that
        has to be valid -- in a sense, it's more like moving a block. */
@@ -488,7 +488,7 @@ void *mem_realloc(void *p, buffersize_t size)
 
     /* done */
     block->size = new_size;
-  } else if (!block->prev->used) {
+  } else if ( ! block->prev->used) {
     /* if the last block is unused, try to join it with that */
     block_head_t *split = (block_head_t *)((char *)block->prev + (block->size - size_diff));
     block->prev->size -= size_diff;
@@ -531,7 +531,7 @@ void *mem_realloc(void *p, buffersize_t size)
 
 void mem_free(void *buffer)
 {
-  if (!buffer) {
+  if ( ! buffer) {
     s_log_error("Free on NULL");
     return;
   }
@@ -542,7 +542,7 @@ void mem_free(void *buffer)
   /*s_log_note("freeing block:");*/
   /*dbg_print_block(block);*/
 
-  if (!pool) {
+  if ( ! pool) {
     s_log_error("Attempt to free block without an associated pool");
     return;
   }
@@ -566,7 +566,7 @@ void mem_free(void *buffer)
   }
 #endif
 
-  if (!block->used) {
+  if ( ! block->used) {
     s_log_error("Double-free on block");
     goto free_unlock_and_exit;
   }
@@ -574,13 +574,13 @@ void mem_free(void *buffer)
   /*block->tag = DEFAULT_BLOCK_TAG_UNUSED;*/
   block->used = 0;
 
-  if (!block->next->used) {
+  if ( ! block->next->used) {
     block->size += block->next->size;
     block->next = block->next->next;
     block->next->prev = block;
   }
 
-  if (!block->prev->used) {
+  if ( ! block->prev->used) {
     block = block->prev;
     block->size += block->next->size;
     block->next = block->next->next;
@@ -674,7 +674,7 @@ static void mem_check_block(const block_head_t *block, int debug_block)
   }
 #endif
 
-  if (!block->pool) {
+  if ( ! block->pool) {
     s_log_error("Block detached from memory pool");
   }
 
