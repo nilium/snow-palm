@@ -161,6 +161,17 @@ void *mem_alloc(memory_pool_t *pool, buffersize_t size, int32_t tag);
 #endif
 
 /*!
+ * Reallocates memory for the given pointer with the new buffer size.
+ * Returns NULL on failure. If mem_realloc fails, the original buffer
+ * is not freed.
+ *
+ * Unlike normal realloc, this will NOT allocate new memory if you
+ * pass NULL as the original pointer. com_realloc will do this given a
+ * pool allocator, however.
+ */
+void *mem_realloc(void *p, buffersize_t size);
+
+/*!
  * Frees a buffer previously allocated by ::mem_alloc.
  *
  * \param[in] buffer The buffer to be freed.
