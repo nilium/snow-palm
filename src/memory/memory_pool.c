@@ -287,6 +287,12 @@ alloc_unlock_and_exit:
 }
 
 
+void *mem_realloc(void *p, buffersize_t size)
+{
+  return p;
+}
+
+
 void mem_free(void *buffer)
 {
   if (!buffer) {
