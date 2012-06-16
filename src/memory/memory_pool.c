@@ -387,12 +387,14 @@ static void mem_check_pool(const memory_pool_t *pool)
     return;
   }
 
+  if (pool->alloc == NULL) {
+    s_fatal_error(1, "Pool allocator is NULL.");
+    return;
+  }
+
   const block_head_t *block = pool->head.next;
   for (; block != &pool->head; block = block->next) {
     if (block) {
-      if (block->used) {
-        s_log_note("Used memory block located");
-      }
       mem_check_block(block, block->used);
     } else {
       s_fatal_error(1, "Memory pool links are corrupted.");
