@@ -357,8 +357,152 @@ alloc_unlock_and_exit:
 }
 
 
+/*
+  mem_realloc tries to make reallocation as cheap as possible by expanding its
+  block to fit the new size. This is done by splitting previous/next blocks in
+  the pool and merging those blocks.
+
+  The best case scenario is that the new block is smaller. In that case, the
+  block may not be resized at all.  It will be split if it can, but it's not
+  an error if the block isn't resized at all.
+
+  Second best case is that the next block in the pool can be split and merged
+  with the original block. If it can't be split, it's not used, period.
+
+  Third best case is that the previous block can be split and merged, with the
+  original block memmove'd into place.
+
+  Worst case is a new block is allocated, the contents memcpy'd to the new
+  block, and then the old block is released.
+
+  In the event of an error, NULL is returned and a log message is written
+  describing what went wrong.
+*/
 void *mem_realloc(void *p, buffersize_t size)
 {
+  block_head_t *block;
+  memory_pool_t *pool;
+  size_t new_size;
+  off_t size_diff;
+
+  if (!p) {
+    s_log_error("Realloc on NULL");
+    return NULL;
+  }
+
+  block = (block_head_t *)p - 1;
+  pool = block->pool;
+
+  if (!pool) {
+    s_log_error("Attempt to reallocate block without an associated pool");
+    return NULL;
+  }
+
+  mutex_lock(&pool->lock);
+
+  if (block == &block->pool->head) {
+    s_log_error("Realloc on header block of pool");
+    p = NULL;
+    goto mem_realloc_exit;
+  }
+
+  new_size = BLOCK_SIZE(size);
+
+  if (new_size < MIN_BLOCK_SIZE)
+    new_size = MIN_BLOCK_SIZE; /* new size cannot go below the minimum
+                                    block size */
+
+  size_diff = (off_t)new_size - (off_t)block->size;
+
+  if (size_diff == 0)
+    return p; /* not resized at all */
+  if (size_diff < 0 && abs(size_diff) < MIN_BLOCK_SIZE)
+    return p; /* the size difference is small enough that resizing is
+                 pointless, so we won't bother doing it */
+
+  if (size_diff < 0) {
+    /* new block is smaller, see if we can split it */
+    if (mem_can_split_block(block, new_size)) {
+      /* if we can split it, do so */
+      if (mem_split_block(block, new_size) == 0) {
+        p = block + 1;
+
+        if (!block->next->next->used) {
+          mem_merge_blocks(block->next, block->next->next);
+        }
+
+        pool->next_unused = block->next;
+      } else {
+        s_log_warning("Failed to split block, using unsplit block.");
+      }
+    } else {
+      s_log_warning("New block size is too small to resize, leaving as-is.");
+    }
+
+    /* if the block can't be split, leave it as is -- the size difference is
+       small enough that resizing is probably pointless. */
+
+  } else if (!block->next->used && (block->next->size - size_diff) >= MIN_BLOCK_SIZE) {
+    /* if the next block is unused, try to join it with that.
+       not using mem_split_block because the new block is the only one that
+       has to be valid -- in a sense, it's more like moving a block. */
+    block_head_t copy = *block->next;
+    block_head_t *split = (block_head_t *)((char *)block->next + size_diff);
+
+    /* copy old to new */
+    *split = copy;
+
+    /* reset pointers */
+    split->next->prev = split;
+    split->prev->next = split;
+
+#if USE_MEMORY_GUARD
+    /* put memory guard in place (if in use) */
+    ((guard_t *)((char *)block + new_size))[-1] = MEMORY_GUARD;
+#endif /* USE_MEMORY_GUARD */
+
+    /* reset next unused pointer */
+    pool->next_unused = split;
+
+    /* done */
+    block->size = new_size;
+  } else if (!block->prev->used) {
+    /* if the last block is unused, try to join it with that */
+    block_head_t *split = (block_head_t *)((char *)block->prev + (block->size - size_diff));
+    block->prev->size -= size_diff;
+
+    /* copy old to new */
+    memmove(split, block, block->size);
+
+    /* reset pointers */
+    split->next->prev = split;
+    split->prev->next = split;
+
+#if USE_MEMORY_GUARD
+    ((guard_t *)((char *)block + new_size))[-1] = MEMORY_GUARD;
+#endif /* USE_MEMORY_GUARD */
+
+    /* again, reset next unused pointer */
+    pool->next_unused = block->prev;
+
+    block->size = new_size;
+    p = block+1;
+  } else {
+    /* last resort: allocate a new block, copy, free the old block */
+    void *new_p = mem_alloc(block->pool, size, block->tag);
+
+    if (new_p) {
+      memcpy(new_p, p, block->size - sizeof(block_head_t));
+      mem_free(p);
+    } else {
+      s_log_error("Failed to allocate new memory block for realloc");
+    }
+
+    p = new_p;
+  }
+
+  mem_realloc_exit:
+  mutex_unlock(&pool->lock);
   return p;
 }
 
