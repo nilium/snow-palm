@@ -522,7 +522,7 @@ void mem_free(void *buffer)
 
   if (!pool) {
     s_log_error("Attempt to free block without an associated pool");
-    goto free_unlock_and_exit;
+    return;
   }
 
   mutex_lock(&pool->lock);
