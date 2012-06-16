@@ -609,7 +609,9 @@ static inline void dbg_print_block(const block_head_t *block)
 {
   /* the odd exception where s_log_* is not used... */
   fprintf(stderr, "BLOCK [header: %p | buffer: %p] {\n", (void *)block, (void *)(block+1));
+#if USE_MEMORY_GUARD
   fprintf(stderr, "  guard: %X\n", ((const guard_t *)((const char *)block+block->size))[-1]);
+#endif /* USE_MEMORY_GUARD */
   fprintf(stderr, "  block size: %zu bytes\n", block->size);
   fprintf(stderr, "  prev: %p\n", block->prev);
   fprintf(stderr, "  next: %p\n", block->next);
