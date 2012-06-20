@@ -43,14 +43,6 @@ struct s_anim_vertex
   GLushort weights[2];
 } PACKED_STRUCT;
 
-typedef union u_vertex
-{
-  anim_vertex_t anim_vert;
-  static_vertex_t static_vert;
-} vertex_t;
-
-#define S_VERTEX_STRIDE sizeof(vertex_t)
-
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
