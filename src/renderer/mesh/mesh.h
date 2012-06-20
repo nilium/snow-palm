@@ -14,6 +14,7 @@ typedef struct s_rmesh {
   GLuint num_bones;
   GLuint num_vertices;
   GLuint num_indices;
+  bool animated;
 
   struct s_rmodel *owner;
   struct s_rbones *bones;
@@ -25,7 +26,7 @@ typedef struct s_rmesh {
 
   union {
     fixed_vertex_t *fixed;
-    anim_vertex_t *dynamic;
+    anim_vertex_t *anim;
   } vertices;
 } rmesh_t;
 
