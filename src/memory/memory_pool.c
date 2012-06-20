@@ -102,7 +102,7 @@ void sys_mem_shutdown(void)
 }
 
 
-void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
+int mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
 {
   if (alloc == NULL)
     alloc = g_default_allocator;
@@ -143,12 +143,14 @@ void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
   } else {
     s_log_error("Attempt to initialize already-initialized memory pool (%p) with new", (const void *)pool);
   }
+
+  return 0;
 }
 
 
-void mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, allocator_t *alloc)
+int mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, allocator_t *alloc)
 {
-
+  return -1;
 }
 
 

@@ -115,12 +115,12 @@ void sys_mem_shutdown(void);
  * \param[inout]  pool The address of an uninitialized pool to be initialized.
  * \param[in]   size The size of the memory pool to initialize.
  */
-void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc);
+int mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc);
 
 /*!
  * Initializes a new memory pool with an existing block of memory.
  */
-void mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, allocator_t *alloc);
+int mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, allocator_t *alloc);
 
 /*!
  * Destroys a memory pool.
