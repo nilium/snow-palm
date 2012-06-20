@@ -167,6 +167,12 @@ int mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
   if ( ! pool->buffer) {
     buffer = com_malloc(alloc, buffer_size);
 
+    if (buffer == NULL) {
+      s_log_error("Failed to allocate buffer for memory pool.");
+
+      return -1;
+    }
+
     if (mem_setup_pool(pool, buffer, size, true, alloc)) {
       com_free(alloc, buffer);
 
