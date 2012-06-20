@@ -89,6 +89,9 @@ struct s_memory_pool
   int32_t sequence;
   /*! The memory used by the memory pool. */
   char *buffer;
+  /*! Whether the buffer should be freed on destruction. If managed, free the
+      memory.  If not, do nothing to it. */
+  bool managed;
   /*! The next free block of memory. */
   block_head_t *next_unused;
   /*! Header block - size is always 0, used is always 1, etc. */

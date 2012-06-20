@@ -138,6 +138,8 @@ static int mem_setup_pool(memory_pool_t *pool, char *buffer, buffersize_t pool_s
 
   pool->refs = 1;
 
+  pool->managed = managed;
+
   mutex_unlock(&pool->lock);
 
   return 0;
