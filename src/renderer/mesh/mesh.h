@@ -20,9 +20,14 @@ typedef struct s_rmesh {
   struct s_rbones *bones;
 
   struct {
+    // TODO: probably move this off into its own thing - create some sort of
+    // thing that manages buffers/offsets so we don't have a bunch of different
+    // buffers
     GLuint vertex_buffer;
     GLuint index_buffer;
   } gl;
+
+  GLuint *indices;
 
   union {
     fixed_vertex_t *fixed;
