@@ -21,11 +21,11 @@ extern "C"
 /*! Static vertex structure, used for objects that are not animated, but can
   move if need be (normals provided for vertex lighting).
 */
-typedef struct s_static_vertex static_vertex_t;
+typedef struct s_fixed_vertex fixed_vertex_t;
 /*! Animated vertex data - supports two bones.  Only has one set of texcoords. */
 typedef struct s_anim_vertex anim_vertex_t;
 
-struct s_static_vertex
+struct s_fixed_vertex
 {
   GLfloat position[3];
   GLfloat normals[3];
