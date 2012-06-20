@@ -31,6 +31,12 @@
 # endif
 #endif
 
+#ifdef SNOW_SOURCE
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
+
 /* define NULL ifndef */
 #if !defined(NULL)
 # if defined(__cplusplus)

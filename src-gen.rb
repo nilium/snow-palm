@@ -8,9 +8,7 @@ ARGV.each { |mod_name|
   h_guard = "__#{guard_name}_H__"
 
 C_TEMPLATE = <<-EOS
-#ifndef SNOW_SOURCE
 #define SNOW_SOURCE
-#endif
 
 #include "#{base}.h"
 
@@ -28,12 +26,6 @@ EOS
 H_TEMPLATE = <<-EOS
 #ifndef #{h_guard}
 #define #{h_guard} 1
-
-#ifdef SNOW_SOURCE
-#define S_INLINE
-#else
-#define S_INLINE inline
-#endif
 
 #include <snow-config.h>
 
