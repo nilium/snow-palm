@@ -31,10 +31,7 @@ struct s_fixed_vertex
   GLfloat normals[3];
   GLfloat texcoord0[2];
   GLfloat texcoord1[2]; // lightmap coordinates
-  union {
-    GLubyte rgba[4];    // RGBA color
-    GLuint color;
-  };
+  GLubyte rgba[4];    // RGBA color
 } PACKED_STRUCT;
 
 struct s_anim_vertex
