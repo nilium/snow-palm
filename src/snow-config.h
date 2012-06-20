@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <math.h>
+#include <physfs.h>
 
 #ifndef S_BREAKPOINT
 # if NDEBUG
