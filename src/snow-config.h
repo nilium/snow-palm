@@ -25,7 +25,13 @@
 
 #ifndef S_BREAKPOINT
 # if NDEBUG
-#   define S_BREAKPOINT s_log_note("Breakpoint in non-debug code");
+#   if defined(S_BREAKPOINT) && defined(S_NO_BREAKPOINTS)
+      // should result in a compiler error if S_NO_BREAKPOINTS is enabled
+#     undef S_BREAKPOINT
+#   else
+      // otherwise do nothing
+#     define S_BREAKPOINT
+#   endif // !defined(S_BREAKPOINT)
 # else
 #   define S_BREAKPOINT
 # endif
