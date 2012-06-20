@@ -102,6 +102,48 @@ void sys_mem_shutdown(void)
 }
 
 
+static int mem_setup_pool(memory_pool_t *pool, char *buffer, buffersize_t pool_size, bool managed, allocator_t *alloc)
+{
+  if (pool_size < MIN_POOL_SIZE) {
+    s_log_error("Attempt to allocate pool smaller than the minimum pool size.");
+    return -1;
+  }
+
+  if (mutex_init(&pool->lock, true)) {
+    s_log_error("Failed to initialize pool mutex.");
+    return -1;
+  }
+
+  mutex_lock(&pool->lock);
+
+  pool->alloc = alloc;
+  pool->size = pool_size;
+  pool->buffer = buffer;
+
+  block_head_t *block = (block_head_t *)(((unsigned long)pool->buffer + (BLOCK_ALIGNMENT)) & ~(BLOCK_ALIGNMENT - 1));
+  block->size = pool_size;
+  block->used = 0;
+  block->next = &pool->head;
+  block->prev = &pool->head;
+  block->pool = pool;
+
+  pool->head.used = 1;
+  pool->head.size = 0;
+  pool->head.next = block;
+  pool->head.prev = block;
+  pool->head.pool = pool;
+
+  pool->next_unused = block;
+  pool->sequence = 1;
+
+  pool->refs = 1;
+
+  mutex_unlock(&pool->lock);
+
+  return 0;
+}
+
+
 int mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
 {
   if (alloc == NULL)
