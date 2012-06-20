@@ -26,12 +26,16 @@ typedef int mutex_t;
 
 #endif
 
-void mutex_init(mutex_t *lock, bool recursive);
-void mutex_destroy(mutex_t *lock);
+/* All mutex routines return 0 on success, negative values on failure. */
 
-void mutex_lock(mutex_t *lock);
-bool mutex_trylock(mutex_t *lock);
-void mutex_unlock(mutex_t *lock);
+int mutex_init(mutex_t *lock, bool recursive);
+int mutex_destroy(mutex_t *lock);
+
+int mutex_lock(mutex_t *lock);
+/* trylock returns 1 on a failure to lock (which isn't an error), returns
+  0 on success (meaning the lock was acquired). */
+int mutex_trylock(mutex_t *lock);
+int mutex_unlock(mutex_t *lock);
 
 #if defined(__cplusplus)
 }

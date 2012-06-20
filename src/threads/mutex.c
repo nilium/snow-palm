@@ -46,12 +46,12 @@ static void init_mutex_attr(void)
   bool success = true;
 
   s_log_note("Initializing mutex attributes");
-  
+
   error = pthread_mutexattr_init(&g_normal_attr);
   success = success && !error;
   if (error)
     s_log_error("Non-recursive mutex attribute could not be initialized: %s", c_mutex_err_no_memory_attr);
-  
+
   /* init normal mutex attr */
   #if defined(NDEBUG)
   error = pthread_mutexattr_settype(&g_normal_attr, PTHREAD_MUTEX_NORMAL);
@@ -66,13 +66,13 @@ static void init_mutex_attr(void)
 
   if (error)
     s_log_error("Non-recursive mutex attribute type could not be set: %s", c_mutex_err_attr_settype);
-  
+
   /* init recursive mutex attr */
   error = pthread_mutexattr_init(&g_recursive_attr);
   success = success && !error;
   if (error)
     s_log_error("Recursive mutex attribute could not be initialized: %s", c_mutex_err_no_memory_attr);
-  
+
   error = pthread_mutexattr_settype(&g_recursive_attr, PTHREAD_MUTEX_RECURSIVE);
   success = success && !error;
   if (error)
@@ -86,7 +86,7 @@ static void init_mutex_attr(void)
   atexit(destroy_mutex_attr);
 }
 
-void mutex_init(mutex_t *lock, bool recursive)
+int mutex_init(mutex_t *lock, bool recursive)
 {
   pthread_mutexattr_t *attr = (recursive ? &g_recursive_attr : &g_normal_attr);
   pthread_once(&g_mutex_attr_once, init_mutex_attr);
@@ -94,22 +94,26 @@ void mutex_init(mutex_t *lock, bool recursive)
 
   if (error) {
     const char *reason = c_mutex_err_unknown;
-    
+
     switch (error) {
     case EINVAL: reason = c_mutex_err_invalid_attr; break;
     case EAGAIN: reason = c_mutex_err_temp_no_memory; break;
     case ENOMEM: reason = c_mutex_err_no_memory_mutex; break;
     default: break;
     }
-    
+
     s_log_error("Error initializing mutex: %s", reason);
+
+    return -1;
   }
+
+  return 0;
 }
 
-void mutex_destroy(mutex_t *lock)
+int mutex_destroy(mutex_t *lock)
 {
   int error = pthread_mutex_destroy((pthread_mutex_t *)lock);
-  
+
   if (error) {
     const char *reason = c_mutex_err_unknown;
     switch (error) {
@@ -117,14 +121,19 @@ void mutex_destroy(mutex_t *lock)
     case EBUSY: reason = c_mutex_err_currently_locked; break;
     default: break;
     }
+
     s_log_error("Error destroying mutex: %s", reason);
+
+    return -1;
   }
+
+  return 0;
 }
 
-void mutex_lock(mutex_t *lock)
+int mutex_lock(mutex_t *lock)
 {
   int error = pthread_mutex_lock((pthread_mutex_t *)lock);
-  
+
   if (error) {
     const char *reason = c_mutex_err_unknown;
     switch (error) {
@@ -132,14 +141,19 @@ void mutex_lock(mutex_t *lock)
     case EDEADLK: reason = c_mutex_err_deadlock; break;
     default: break;
     }
+
     s_log_error("Error locking mutex (lock): %s", reason);
+
+    return -1;
   }
+
+  return 0;
 }
 
-bool mutex_trylock(mutex_t *lock)
+int mutex_trylock(mutex_t *lock)
 {
   int error = pthread_mutex_trylock((pthread_mutex_t *)lock);
-  
+
   /* though EBUSY is an error code, in this case, it's not a bad error code */
   if (error != EBUSY && error) {
     const char *reason = c_mutex_err_unknown;
@@ -148,16 +162,19 @@ bool mutex_trylock(mutex_t *lock)
     /* case EBUSY: reason = c_mutex_err_permission; break; */
     default: break;
     }
+
     s_log_error("Error trying to lock mutex (trylock): %s", reason);
+
+    return -1;
   }
-  
+
   return !error;
 }
 
-void mutex_unlock(mutex_t *lock)
+int mutex_unlock(mutex_t *lock)
 {
   int error = pthread_mutex_unlock((pthread_mutex_t *)lock);
-  
+
   if (error) {
     const char *reason = c_mutex_err_unknown;
     switch (error) {
@@ -165,9 +182,13 @@ void mutex_unlock(mutex_t *lock)
     case EPERM: reason = c_mutex_err_permission; break;
     default: break;
     }
-    
+
     s_log_error("Error unlocking mutex: %s", reason);
+
+    return -1;
   }
+
+  return 0;
 }
 
 #else /* S_USE_PTHREADS */
