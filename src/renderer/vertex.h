@@ -16,6 +16,8 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+#define PACKED_STRUCT __attribute__((packed))
+
 /*! Static vertex structure, used for objects that are not animated, but can
   move if need be (normals provided for vertex lighting).
 */
@@ -33,7 +35,7 @@ struct s_static_vertex
     GLubyte rgba[4];    // RGBA color
     GLuint color;
   };
-};
+} PACKED_STRUCT;
 
 struct s_anim_vertex
 {
@@ -42,7 +44,7 @@ struct s_anim_vertex
   GLfloat texcoord0[2];
   GLfloat bones[2];
   GLushort weights[2];
-};
+} PACKED_STRUCT;
 
 typedef union u_vertex
 {
