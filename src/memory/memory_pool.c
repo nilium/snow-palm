@@ -142,6 +142,7 @@ int mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
     mutex_unlock(&pool->lock);
   } else {
     s_log_error("Attempt to initialize already-initialized memory pool (%p) with new", (const void *)pool);
+    return -1;
   }
 
   return 0;
@@ -170,6 +171,7 @@ void mem_destroy_pool(memory_pool_t *pool)
     pool->head.next = NULL;
     pool->head.prev = NULL;
     pool->next_unused = NULL;
+    pool->alloc = NULL;
     pool->head.used = 0;
     pool->sequence = 0;
     pool->refs = 0;
