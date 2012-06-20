@@ -70,9 +70,17 @@ def get_sources(search_in=".", for_os=[])
   for_os ||= []
   for_os = for_os.map { |e| e.downcase }
   search_in = search_in.chomp '/'
-  Dir.glob("#{search_in}/**/*").select {
+
+  skips = []
+  paths = Dir.glob("#{search_in}/**/*").select {
     # ignore non-C/C++ source, files starting/in a dir starting with a ., and files in dirs marked .exclude
     |e|
+    if File.basename(e).downcase == "exclude"
+      d = File.dirname(e)
+      skips << d
+      $stderr.puts "Skipping <#{d}>"
+    end
+
     matches = File.extname(e) =~ SOURCE_FILE && ! (e =~ /\/\.[^\.]/) && ! (e.include? '.exclude/')
     if matches
       if e =~ OS_DIR
@@ -81,6 +89,12 @@ def get_sources(search_in=".", for_os=[])
         true
       end
     end
+  }.select {
+    |e|
+    skip = false
+    skips.each { |d| skip ||= e.start_with? d }
+
+    ! skip
   }
 end
 
