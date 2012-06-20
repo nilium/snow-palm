@@ -2,7 +2,9 @@
 #define __SNOW_MESH_H__ 1
 
 #include <snow-config.h>
+#include <system/sgl.h>
 #include <serialize/serialize.h>
+#include <renderer/vertex.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,7 +16,7 @@ typedef struct s_rmesh {
   GLuint num_indices;
 
   struct s_rmodel *owner;
-  struct s_rbones bones[];
+  struct s_rbones *bones;
 
   struct {
     GLuint vertex_buffer;
@@ -22,8 +24,8 @@ typedef struct s_rmesh {
   } gl;
 
   union {
-    static_vertex_t statics[];
-    anim_vertex_t dynamics[];
+    fixed_vertex_t *fixed;
+    anim_vertex_t *dynamic;
   } vertices;
 } rmesh_t;
 
