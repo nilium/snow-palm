@@ -48,7 +48,7 @@ typedef uint32_t guard_t;
 #endif
 
 /*! The main memory pool. */
-static memory_pool_t g_main_pool;
+static pool_t g_main_pool;
 
 
 /*!
@@ -60,49 +60,48 @@ static inline void dbg_print_block(const block_head_t *block);
  * Checks a pool's blocks for problems.
  * @param pool The pool to check.
  */
-static void mem_check_pool(const memory_pool_t *pool);
+static void pool_check_for_errors(const pool_t *pool);
 /*!
  * Checks a block for problems (incorrect size, corrupt memory guard, NULL
  * pool/neighboring block pointers).
  * @param block The block to check.
  */
-static void mem_check_block(const block_head_t *block, int debug_block);
+static void pool_check_block_for_errors(const block_head_t *block, int debug_block);
 /*!
  * Returns whether a particular block can be split into a new block of
  * pred_size and its difference.
  */
-static int mem_can_split_block(block_head_t *block, buffersize_t pred_size);
+static int pool_can_split_block(block_head_t *block, buffersize_t pred_size);
 /*!
  * Splits a block into two blocks, the original block sized pred_size and the
  * new block taking up the difference.
  */
-static int mem_split_block(block_head_t *block, buffersize_t pred_size);
+static int pool_split_block(block_head_t *block, buffersize_t pred_size);
 /*!
  * Combines two blocks into one. They must be seated next to each other, or
  * the function will return -1 (failure). Returns 0 on success.
  */
-static int mem_merge_blocks(block_head_t *blka, block_head_t *blkb);
+static int pool_merge_blocks(block_head_t *blka, block_head_t *blkb);
 
 
 
-void sys_mem_init(allocator_t *alloc)
+void sys_pool_init(allocator_t *alloc)
 {
   if (g_main_pool.head.used) return;
 
-  mem_init_pool(&g_main_pool, MAIN_POOL_SIZE, alloc);
-  g_main_pool.refs = 0;
+  pool_init(&g_main_pool, MAIN_POOL_SIZE, alloc);
 }
 
 
-void sys_mem_shutdown(void)
+void sys_pool_shutdown(void)
 {
   if ( ! g_main_pool.head.used) return;
 
-  mem_destroy_pool(&g_main_pool);
+  pool_destroy(&g_main_pool);
 }
 
 
-static int mem_setup_pool(memory_pool_t *pool, char *buffer, buffersize_t pool_size, bool managed, allocator_t *alloc)
+static int pool_set_up(pool_t *pool, char *buffer, buffersize_t pool_size, bool managed, allocator_t *alloc)
 {
   if (pool_size < MIN_POOL_SIZE) {
     s_log_error("Attempt to allocate pool smaller than the minimum pool size.");
@@ -136,8 +135,6 @@ static int mem_setup_pool(memory_pool_t *pool, char *buffer, buffersize_t pool_s
   pool->next_unused = block;
   pool->sequence = 1;
 
-  pool->refs = 1;
-
   pool->managed = managed;
 
   mutex_unlock(&pool->lock);
@@ -146,7 +143,7 @@ static int mem_setup_pool(memory_pool_t *pool, char *buffer, buffersize_t pool_s
 }
 
 
-int mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
+int pool_init(pool_t *pool, buffersize_t size, allocator_t *alloc)
 {
   buffersize_t buffer_size;
   void *buffer;
@@ -173,7 +170,7 @@ int mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
       return -1;
     }
 
-    if (mem_setup_pool(pool, buffer, size, true, alloc)) {
+    if (pool_set_up(pool, buffer, size, true, alloc)) {
       com_free(alloc, buffer);
 
       s_log_error("Failed to set up memory pool.");
@@ -190,7 +187,7 @@ int mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
 }
 
 
-int mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, allocator_t *alloc)
+int pool_init_with_pointer(pool_t *pool, void *p, buffersize_t size, allocator_t *alloc)
 {
   if (pool == NULL) {
     s_log_error("Attempt to initialize NULL memory pool.");
@@ -204,7 +201,7 @@ int mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, 
     return -1;
   }
 
-  if (mem_setup_pool(pool, p, size, false, alloc)) {
+  if (pool_set_up(pool, p, size, false, alloc)) {
     s_log_error("Failed to initialize memory pool.");
     return -1;
   }
@@ -213,16 +210,12 @@ int mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, 
 }
 
 
-void mem_destroy_pool(memory_pool_t *pool)
+void pool_destroy(pool_t *pool)
 {
   if (pool->head.used) {
     mutex_lock(&pool->lock);
 
-    if (pool->refs != 0) {
-      s_log_warning("Destroying memory pool with non-zero reference count (%d)", pool->refs);
-    }
-
-    mem_check_pool(pool);
+    pool_check_for_errors(pool);
 
     if (pool->managed)
       com_free(pool->alloc, pool->buffer);
@@ -234,7 +227,6 @@ void mem_destroy_pool(memory_pool_t *pool)
     pool->alloc = NULL;
     pool->head.used = 0;
     pool->sequence = 0;
-    pool->refs = 0;
     pool->managed = false;
 
     mutex_unlock(&pool->lock);
@@ -247,30 +239,7 @@ void mem_destroy_pool(memory_pool_t *pool)
 }
 
 
-memory_pool_t *mem_retain_pool(memory_pool_t *pool)
-{
-  if ( ! pool) return pool;
-
-  mutex_lock(&pool->lock);
-  ++pool->refs;
-  mutex_unlock(&pool->lock);
-  return pool;
-}
-
-
-void mem_release_pool(memory_pool_t *pool)
-{
-  if ( ! pool) return;
-  mutex_lock(&pool->lock);
-  int32_t refs = --pool->refs;
-  mutex_unlock(&pool->lock);
-  if (refs == 0) {
-    mem_destroy_pool(pool);
-  }
-}
-
-
-static int mem_can_split_block(block_head_t *block, buffersize_t pred_size)
+static int pool_can_split_block(block_head_t *block, buffersize_t pred_size)
 {
   if (block->size < pred_size)
     return 0;
@@ -279,7 +248,7 @@ static int mem_can_split_block(block_head_t *block, buffersize_t pred_size)
 }
 
 
-static int mem_split_block(block_head_t *block, buffersize_t pred_size)
+static int pool_split_block(block_head_t *block, buffersize_t pred_size)
 {
   if (block->size < pred_size) {
     /* original block is too small to split */
@@ -310,7 +279,7 @@ static int mem_split_block(block_head_t *block, buffersize_t pred_size)
 }
 
 
-static int mem_merge_blocks(block_head_t *blka, block_head_t *blkb)
+static int pool_merge_blocks(block_head_t *blka, block_head_t *blkb)
 {
   if ( ! blka || ! blkb) {
     s_log_error("Attempt to join one or more NULL blocks.");
@@ -339,9 +308,9 @@ static int mem_merge_blocks(block_head_t *blka, block_head_t *blkb)
 
 
 #if NDEBUG
-void *mem_alloc(memory_pool_t *pool, buffersize_t size, int32_t tag)
+void *pool_malloc(pool_t *pool, buffersize_t size, int32_t tag)
 #else
-void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const char *file, const char *function, int32_t line)
+void *pool_malloc_debug(pool_t *pool, buffersize_t size, int32_t tag, const char *file, const char *function, int32_t line)
 #endif
 {
   block_head_t *block = NULL;
@@ -398,8 +367,8 @@ void *mem_alloc_debug(memory_pool_t *pool, buffersize_t size, int32_t tag, const
       continue;
 
     /* if the free block is large enough to be split into two blocks, do that */
-    if (mem_can_split_block(block, block_size))
-      if (mem_split_block(block, block_size))
+    if (pool_can_split_block(block, block_size))
+      if (pool_split_block(block, block_size))
         s_log_error("Failed to split block, using unsplit block.");
 
     if (pool->sequence == 0)
@@ -451,7 +420,7 @@ alloc_unlock_and_exit:
 
 
 /*
-  mem_realloc tries to make reallocation as cheap as possible by expanding its
+  pool_realloc tries to make reallocation as cheap as possible by expanding its
   block to fit the new size. This is done by splitting previous/next blocks in
   the pool and merging those blocks.
 
@@ -471,10 +440,10 @@ alloc_unlock_and_exit:
   In the event of an error, NULL is returned and a log message is written
   describing what went wrong.
 */
-void *mem_realloc(void *p, buffersize_t size)
+void *pool_realloc(void *p, buffersize_t size)
 {
   block_head_t *block;
-  memory_pool_t *pool;
+  pool_t *pool;
   size_t new_size;
   off_t size_diff;
 
@@ -496,7 +465,7 @@ void *mem_realloc(void *p, buffersize_t size)
   if (block == &block->pool->head) {
     s_log_error("Realloc on header block of pool");
     p = NULL;
-    goto mem_realloc_exit;
+    goto pool_realloc_exit;
   }
 
   new_size = BLOCK_SIZE(size);
@@ -515,13 +484,13 @@ void *mem_realloc(void *p, buffersize_t size)
 
   if (size_diff < 0) {
     /* new block is smaller, see if we can split it */
-    if (mem_can_split_block(block, new_size)) {
+    if (pool_can_split_block(block, new_size)) {
       /* if we can split it, do so */
-      if (mem_split_block(block, new_size) == 0) {
+      if (pool_split_block(block, new_size) == 0) {
         p = block + 1;
 
         if ( ! block->next->next->used) {
-          mem_merge_blocks(block->next, block->next->next);
+          pool_merge_blocks(block->next, block->next->next);
         }
 
         pool->next_unused = block->next;
@@ -537,7 +506,7 @@ void *mem_realloc(void *p, buffersize_t size)
 
   } else if ( ! block->next->used && (block->next->size - size_diff) >= MIN_BLOCK_SIZE) {
     /* if the next block is unused, try to join it with that.
-       not using mem_split_block because the new block is the only one that
+       not using pool_split_block because the new block is the only one that
        has to be valid -- in a sense, it's more like moving a block. */
     block_head_t copy = *block->next;
     block_head_t *split = (block_head_t *)((char *)block->next + size_diff);
@@ -582,11 +551,11 @@ void *mem_realloc(void *p, buffersize_t size)
     p = block+1;
   } else {
     /* last resort: allocate a new block, copy, free the old block */
-    void *new_p = mem_alloc(block->pool, size, block->tag);
+    void *new_p = pool_malloc(block->pool, size, block->tag);
 
     if (new_p) {
       memcpy(new_p, p, block->size - sizeof(block_head_t));
-      mem_free(p);
+      pool_free(p);
     } else {
       s_log_error("Failed to allocate new memory block for realloc");
     }
@@ -594,13 +563,13 @@ void *mem_realloc(void *p, buffersize_t size)
     p = new_p;
   }
 
-  mem_realloc_exit:
+  pool_realloc_exit:
   mutex_unlock(&pool->lock);
   return p;
 }
 
 
-void mem_free(void *buffer)
+void pool_free(void *buffer)
 {
   if ( ! buffer) {
     s_log_error("Free on NULL");
@@ -608,7 +577,7 @@ void mem_free(void *buffer)
   }
 
   block_head_t *block = (block_head_t *)buffer - 1;
-  memory_pool_t *pool = block->pool;
+  pool_t *pool = block->pool;
 
   /*s_log_note("freeing block:");*/
   /*dbg_print_block(block);*/
@@ -697,7 +666,7 @@ static inline void dbg_print_block(const block_head_t *block)
 }
 
 
-static void mem_check_pool(const memory_pool_t *pool)
+static void pool_check_for_errors(const pool_t *pool)
 {
   if (pool == NULL) {
     s_fatal_error(1, "Attempt to check NULL pool.");
@@ -712,7 +681,7 @@ static void mem_check_pool(const memory_pool_t *pool)
   const block_head_t *block = pool->head.next;
   for (; block != &pool->head; block = block->next) {
     if (block) {
-      mem_check_block(block, block->used);
+      pool_check_block_for_errors(block, block->used);
     } else {
       s_fatal_error(1, "Memory pool links are corrupted.");
       return;
@@ -721,7 +690,7 @@ static void mem_check_pool(const memory_pool_t *pool)
 }
 
 
-static void mem_check_block(const block_head_t *block, int debug_block)
+static void pool_check_block_for_errors(const block_head_t *block, int debug_block)
 {
   if (block->pool && block == &block->pool->head) {
     s_log_error("Cannot check pool header block");
@@ -757,7 +726,7 @@ static void mem_check_block(const block_head_t *block, int debug_block)
 }
 
 
-const block_head_t *mem_get_block(const void *buffer)
+const block_head_t *pool_block_for_pointer(const void *buffer)
 {
   const block_head_t *block = (const block_head_t *)buffer - 1;
 
@@ -784,7 +753,7 @@ static void *al_pool_realloc(void *p, size_t min_size, void *ctx);
 static void al_pool_free(void *p, void *ctx);
 
 
-allocator_t pool_allocator(memory_pool_t *pool)
+allocator_t pool_allocator(pool_t *pool)
 {
   allocator_t alloc = {
     .malloc = al_pool_malloc,
@@ -798,23 +767,23 @@ allocator_t pool_allocator(memory_pool_t *pool)
 
 static void *al_pool_malloc(size_t min_size, void *ctx)
 {
-  return mem_alloc((memory_pool_t *)ctx, min_size, POOL_ALLOCATOR_TAG);
+  return pool_malloc((pool_t *)ctx, min_size, POOL_ALLOCATOR_TAG);
 }
 
 
 static void *al_pool_realloc(void *p, size_t min_size, void *ctx)
 {
   if (p)
-    return mem_realloc(p, min_size);
+    return pool_realloc(p, min_size);
   else
-    return mem_alloc((memory_pool_t *)ctx, min_size, POOL_ALLOCATOR_TAG);
+    return pool_malloc((pool_t *)ctx, min_size, POOL_ALLOCATOR_TAG);
 }
 
 
 static void al_pool_free(void *p, void *ctx)
 {
   (void)ctx;
-  mem_free(p);
+  pool_free(p);
 }
 
 

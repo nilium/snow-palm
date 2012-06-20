@@ -18,13 +18,13 @@ static void main_shutdown(void)
   sys_events_shutdown();
   sys_entity_shutdown();
   sys_tls_shutdown();
-  sys_mem_shutdown();
+  sys_pool_shutdown();
 }
 
 int main(int argc, const char *argv[])
 {
   sys_time_init();
-  sys_mem_init(g_default_allocator);
+  sys_pool_init(g_default_allocator);
   sys_tls_init(g_default_allocator);
   sys_entity_init(g_default_allocator);
   sys_events_init(g_default_allocator);
