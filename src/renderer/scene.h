@@ -10,12 +10,6 @@
 extern "C" {
 #endif // __cplusplus
 
-#if __SNOW_SCENE_C__
-# define SCENE_INLINE
-#else
-# define SCENE_INLINE inline
-#endif
-
 typedef struct s_scene {
   allocator_t *alloc;
   // FIXME: Camera is not implemented, uncomment when it is.
@@ -31,17 +25,17 @@ typedef struct s_scene {
 scene_t *scene_new(allocator_t *alloc);
 void scene_destroy(scene_t *scene);
 
-SCENE_INLINE void scene_lock(scene_t *scene)
+S_INLINE void scene_lock(scene_t *scene)
 {
   mutex_lock(&scene->lock);
 }
 
-SCENE_INLINE void scene_unlock(scene_t *scene)
+S_INLINE void scene_unlock(scene_t *scene)
 {
   mutex_lock(&scene->lock);
 }
 
-SCENE_INLINE void scene_trylock(scene_t *scene)
+S_INLINE void scene_trylock(scene_t *scene)
 {
   mutex_lock(&scene->lock);
 }
