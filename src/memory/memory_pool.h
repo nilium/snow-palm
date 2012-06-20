@@ -35,6 +35,9 @@ extern "C"
 {
 #endif
 
+#define SBSFMT "%zu"
+#define SBDFMT "%td"
+
 typedef size_t buffersize_t;
 typedef ptrdiff_t bufferdiff_t;
 
