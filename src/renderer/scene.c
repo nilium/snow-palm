@@ -1,4 +1,4 @@
-#define __SNOW_SCENE_C__ 1
+#define SNOW_SOURCE 1
 
 #include "scene.h"
 #include <entity.h>
@@ -8,7 +8,7 @@
 extern "C" {
 #endif // __cplusplus
 
-
+extern entity_t *entity_new(scene_t *scene, const char *name, entity_t *parent);
 
 #ifdef __cplusplus
 }
