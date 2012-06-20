@@ -192,7 +192,24 @@ int mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
 
 int mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, allocator_t *alloc)
 {
-  return -1;
+  if (pool == NULL) {
+    s_log_error("Attempt to initialize NULL memory pool.");
+    return -1;
+  } else if (size < MIN_POOL_SIZE) {
+    s_log_error("Attempt to create memory pool with too small outside buffer (must be " SBSFMT " or greater).",
+      MIN_POOL_SIZE);
+    return -1;
+  } else if (p == NULL) {
+    s_log_error("Attempt to initialize memory pool with NULL buffer.");
+    return -1;
+  }
+
+  if (mem_setup_pool(pool, p, size, false, alloc)) {
+    s_log_error("Failed to initialize memory pool.");
+    return -1;
+  }
+
+  return 0;
 }
 
 
