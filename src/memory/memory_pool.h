@@ -35,6 +35,9 @@ extern "C"
 {
 #endif
 
+#define SBSFMT "%zu"
+#define SBDFMT "%td"
+
 typedef size_t buffersize_t;
 typedef ptrdiff_t bufferdiff_t;
 
@@ -89,6 +92,9 @@ struct s_memory_pool
   int32_t sequence;
   /*! The memory used by the memory pool. */
   char *buffer;
+  /*! Whether the buffer should be freed on destruction. If managed, free the
+      memory.  If not, do nothing to it. */
+  bool managed;
   /*! The next free block of memory. */
   block_head_t *next_unused;
   /*! Header block - size is always 0, used is always 1, etc. */
@@ -115,7 +121,12 @@ void sys_mem_shutdown(void);
  * \param[inout]  pool The address of an uninitialized pool to be initialized.
  * \param[in]   size The size of the memory pool to initialize.
  */
-void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc);
+int mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc);
+
+/*!
+ * Initializes a new memory pool with an existing block of memory.
+ */
+int mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, allocator_t *alloc);
 
 /*!
  * Destroys a memory pool.

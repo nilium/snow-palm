@@ -102,47 +102,114 @@ void sys_mem_shutdown(void)
 }
 
 
-void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
+static int mem_setup_pool(memory_pool_t *pool, char *buffer, buffersize_t pool_size, bool managed, allocator_t *alloc)
 {
+  if (pool_size < MIN_POOL_SIZE) {
+    s_log_error("Attempt to allocate pool smaller than the minimum pool size.");
+    return -1;
+  }
+
+  if (mutex_init(&pool->lock, true)) {
+    s_log_error("Failed to initialize pool mutex.");
+    return -1;
+  }
+
+  mutex_lock(&pool->lock);
+
+  pool->alloc = alloc;
+  pool->size = pool_size;
+  pool->buffer = buffer;
+
+  block_head_t *block = (block_head_t *)(((unsigned long)pool->buffer + (BLOCK_ALIGNMENT)) & ~(BLOCK_ALIGNMENT - 1));
+  block->size = pool_size;
+  block->used = 0;
+  block->next = &pool->head;
+  block->prev = &pool->head;
+  block->pool = pool;
+
+  pool->head.used = 1;
+  pool->head.size = 0;
+  pool->head.next = block;
+  pool->head.prev = block;
+  pool->head.pool = pool;
+
+  pool->next_unused = block;
+  pool->sequence = 1;
+
+  pool->refs = 1;
+
+  pool->managed = managed;
+
+  mutex_unlock(&pool->lock);
+
+  return 0;
+}
+
+
+int mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
+{
+  buffersize_t buffer_size;
+  void *buffer;
+
+  if (pool == NULL) {
+    s_log_error("Attempt to initialize NULL memory pool.");
+    return -1;
+  } else if (size < MIN_POOL_SIZE) {
+    s_log_warning("Attempt to initialize pool with size less than minimum pool size.");
+    size = MIN_POOL_SIZE;
+  }
+
+  buffer_size = (size + BLOCK_ALIGNMENT) & ~(BLOCK_ALIGNMENT - 1);
+
   if (alloc == NULL)
     alloc = g_default_allocator;
 
   if ( ! pool->buffer) {
-    if (size < MIN_POOL_SIZE) {
-      size = MIN_POOL_SIZE;
+    buffer = com_malloc(alloc, buffer_size);
+
+    if (buffer == NULL) {
+      s_log_error("Failed to allocate buffer for memory pool.");
+
+      return -1;
     }
-    s_log_note("Initializing memory pool (%p) with size %zu", (const void *)pool, size);
 
-    mutex_init(&pool->lock, true);
-    mutex_lock(&pool->lock);
+    if (mem_setup_pool(pool, buffer, size, true, alloc)) {
+      com_free(alloc, buffer);
 
-    buffersize_t buffer_size = (size + BLOCK_ALIGNMENT) & ~(BLOCK_ALIGNMENT - 1);
-    if (size < MIN_POOL_SIZE)
-      size = MIN_POOL_SIZE;
+      s_log_error("Failed to set up memory pool.");
 
-    pool->alloc = alloc;
-    pool->size = buffer_size;
-    pool->buffer = (char *)com_malloc(alloc, buffer_size);
+      return -1;
+    }
 
-    block_head_t *block = (block_head_t *)(((unsigned long)pool->buffer + (BLOCK_ALIGNMENT)) & ~(BLOCK_ALIGNMENT - 1));
-    block->size = size;
-    block->used = 0;
-    block->next = &pool->head;
-    block->prev = &pool->head;
-    block->pool = pool;
-
-    pool->head.used = 1;
-    pool->head.size = 0;
-    pool->head.next = block;
-    pool->head.prev = block;
-    pool->head.pool = pool;
-    pool->next_unused = block;
-    pool->sequence = 1;
-    pool->refs = 1;
-    mutex_unlock(&pool->lock);
   } else {
     s_log_error("Attempt to initialize already-initialized memory pool (%p) with new", (const void *)pool);
+    return -1;
   }
+
+  return 0;
+}
+
+
+int mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, allocator_t *alloc)
+{
+  if (pool == NULL) {
+    s_log_error("Attempt to initialize NULL memory pool.");
+    return -1;
+  } else if (size < MIN_POOL_SIZE) {
+    s_log_error("Attempt to create memory pool with too small outside buffer (must be " SBSFMT " or greater).",
+      MIN_POOL_SIZE);
+    return -1;
+  } else if (p == NULL) {
+    s_log_error("Attempt to initialize memory pool with NULL buffer.");
+    return -1;
+  }
+
+  if (mem_setup_pool(pool, p, size, false, alloc)) {
+    s_log_error("Failed to initialize memory pool.");
+    return -1;
+  }
+
+  return 0;
 }
 
 
@@ -157,14 +224,18 @@ void mem_destroy_pool(memory_pool_t *pool)
 
     mem_check_pool(pool);
 
-    com_free(pool->alloc, pool->buffer);
+    if (pool->managed)
+      com_free(pool->alloc, pool->buffer);
+
     pool->buffer = NULL;
     pool->head.next = NULL;
     pool->head.prev = NULL;
     pool->next_unused = NULL;
+    pool->alloc = NULL;
     pool->head.used = 0;
     pool->sequence = 0;
     pool->refs = 0;
+    pool->managed = false;
 
     mutex_unlock(&pool->lock);
     mutex_destroy(&pool->lock);
