@@ -90,7 +90,6 @@ void sys_pool_init(allocator_t *alloc)
   if (g_main_pool.head.used) return;
 
   pool_init(&g_main_pool, MAIN_POOL_SIZE, alloc);
-  g_main_pool.refs = 0;
 }
 
 
@@ -135,8 +134,6 @@ static int pool_set_up(pool_t *pool, char *buffer, buffersize_t pool_size, bool 
 
   pool->next_unused = block;
   pool->sequence = 1;
-
-  pool->refs = 1;
 
   pool->managed = managed;
 
@@ -218,10 +215,6 @@ void pool_destroy(pool_t *pool)
   if (pool->head.used) {
     mutex_lock(&pool->lock);
 
-    if (pool->refs != 0) {
-      s_log_warning("Destroying memory pool with non-zero reference count (%d)", pool->refs);
-    }
-
     pool_check_for_errors(pool);
 
     if (pool->managed)
@@ -234,7 +227,6 @@ void pool_destroy(pool_t *pool)
     pool->alloc = NULL;
     pool->head.used = 0;
     pool->sequence = 0;
-    pool->refs = 0;
     pool->managed = false;
 
     mutex_unlock(&pool->lock);
@@ -243,29 +235,6 @@ void pool_destroy(pool_t *pool)
     s_log_note("Destroyed pool (%p)", (const void *)pool);
   } else {
     s_log_error("Attempt to destroy already-destroyed memory pool (%p)", (const void *)pool);
-  }
-}
-
-
-memory_pool_t *mem_retain_pool(memory_pool_t *pool)
-{
-  if ( ! pool) return pool;
-
-  mutex_lock(&pool->lock);
-  ++pool->refs;
-  mutex_unlock(&pool->lock);
-  return pool;
-}
-
-
-void mem_release_pool(memory_pool_t *pool)
-{
-  if ( ! pool) return;
-  mutex_lock(&pool->lock);
-  int32_t refs = --pool->refs;
-  mutex_unlock(&pool->lock);
-  if (refs == 0) {
-    mem_destroy_pool(pool);
   }
 }
 

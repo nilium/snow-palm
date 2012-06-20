@@ -90,8 +90,6 @@ struct s_pool
   allocator_t *alloc;
   /*! Size of the memory pool. Includes adjustment for alignment. */
   buffersize_t size;
-  /*! Reference count. */
-  int32_t refs;
   /*! Counter for block allocation - can overflow. */
   int32_t sequence;
   /*! The memory used by the memory pool. */
@@ -135,23 +133,6 @@ int pool_init_with_pointer(pool_t *pool, void *p, buffersize_t size, allocator_t
  * @param pool The address of a previously-initialized pool to be destroyed.
  */
 void pool_destroy(pool_t *pool);
-
-/*!
- * Increases the retain count of a pool.  All retains must be matched by a call
- * to ::mem_release_pool.
- * #112933
- * \param[in] pool The pool to retain.
- * \returns The memory pool being retained.
- */
-memory_pool_t *mem_retain_pool(memory_pool_t *pool);
-
-/*!
- * Decreases the retain count of a pool.  If the retain count of the pool reaches
- * zero, it is destroyed via ::mem_destroy_pool.
- *
- * \param[in] pool The pool to release.
- */
-void mem_release_pool(memory_pool_t *pool);
 
 /*! \fn void *pool_malloc(pool_t *pool, buffersize_t size, int32_t tag)
  * Allocates a buffer of the requested size with the given tag.
