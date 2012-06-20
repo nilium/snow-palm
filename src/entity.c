@@ -6,6 +6,7 @@
 */
 
 #include "entity.h"
+#include <renderer/scene.h>
 
 #if defined(__cplusplus)
 extern "C"
@@ -35,27 +36,6 @@ static inline bool entity_is_flag_set(entity_t *self, entity_flag_t flag)
   return ((self->prv_iflags & flag) == flag);
 }
 
-static list_t g_entities;
-static allocator_t *g_entity_alloc = NULL;
-
-void sys_entity_init(allocator_t *alloc)
-{
-  if (!alloc)
-    alloc = g_default_allocator;
-
-  list_init(&g_entities, alloc);
-}
-
-void sys_entity_shutdown(void)
-{
-  listnode_t *node;
-
-  while ((node = list_first_node(&g_entities)))
-    entity_destroy((entity_t *) node->pointer);
-
-  list_destroy(&g_entities);
-}
-
 void entity_destroy(entity_t *self)
 {
   if (self->parent) {
@@ -71,28 +51,47 @@ void entity_destroy(entity_t *self)
   }
 
   list_destroy(&self->children);
+
+  com_free(self->alloc, self);
 }
 
-entity_t *entity_new(const char *name, entity_t *parent)
+/*! Allocates a new instance of the given entity class.
+  \param[in] name The entity's name.
+  \param[in] parent The entity's parent.
+  \returns A new instance of the given entity class, or NULL if the class
+  doesn't inherit from ::entity_class.
+*/
+entity_t *entity_new(scene_t *scene, const char *name, entity_t *parent, allocator_t *alloc)
 {
-  entity_t *self = com_malloc(g_entity_alloc, sizeof(*self));
+  if (scene == NULL)
+    return NULL;
+
+  if (alloc == NULL)
+    alloc = g_default_allocator;
+
+  entity_t *self = com_malloc(alloc, sizeof(*self));
 
   if (self) {
+    self->alloc = alloc;
+    self->scene = scene;
+
     vec3_copy(g_vec3_zero, self->position);
     vec3_copy(g_vec3_one, self->scale);
     quat_identity(self->rotation);
     mat4_identity(self->transform);
 
-    list_init(&self->children, g_entity_alloc);
+    list_init(&self->children, alloc);
 
-    self->parent = NULL;
-    self->parentnode = list_append(&g_entities, self);
+    if (parent) {
+      self->parent = parent;
+      self->parentnode = list_append(&parent->children, self);
+    } else {
+      self->parent = NULL;
+      self->parentnode = list_append(&scene->entities, self);
+    }
 
     if (name != NULL)
       entity_set_name(self, name);
-
-    if (parent)
-      entity_add_child(parent, self);
   }
 
   return self;
@@ -113,7 +112,7 @@ void entity_remove_from_parent(entity_t *self)
 {
   if (self->parent) {
     list_remove(self->parentnode);
-    self->parentnode = list_append(&g_entities, self);
+    self->parentnode = list_append(&self->scene->entities, self);
     self->parent = NULL;
   } else {
     s_log_error("Attempting to remove entity from a parent when it has no parent.\n");
@@ -229,7 +228,7 @@ static void entity_invalidate_transform(entity_t *self, bool invalid_local, bool
   if (!flag) return;
 
   entity_set_flag(self, flag);
-  
+
   listnode_t *node = list_first_node(&self->children);
   while (node) {
     entity_invalidate_transform((entity_t *)node->pointer, false, invalid_local);

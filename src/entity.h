@@ -21,28 +21,33 @@ extern "C"
 
 #define ENTITY_NAME_MAX_LEN (64)
 
-typedef enum
+enum
 {
   DIRTY_TRANSFORM   =0x1<<0,  /*! Transformation matrix is dirty. */
-  DIRTY_WORLD     =0x1<<1,  /*! World transform is dirty. */
+  DIRTY_WORLD       =0x1<<1,  /*! World transform is dirty. */
   /*! Combination of all DIRTY_ flags. */
-  DIRTY_FLAGS     =(DIRTY_TRANSFORM|DIRTY_WORLD),
+  DIRTY_FLAGS       =(DIRTY_TRANSFORM|DIRTY_WORLD),
 
-  ROOT_ENTITY     =0x1<<2,  /*! Entity is a root entity. */
-  
+  ROOT_ENTITY       =0x1<<2,  /*! Entity is a root entity. */
+
   ENTITY_DISABLED   =0x1<<3,  /*! Entity is currently disabled. */
-  ENTITY_HIDDEN   =0x1<<4,  /*! Entity is currently hidden. */
-} entity_flag_t;
+  ENTITY_HIDDEN     =0x1<<4,  /*! Entity is currently hidden. */
+};
+
+typedef long entity_flag_t;
 
 typedef struct s_entity entity_t;
 
 struct s_entity
 {
+  allocator_t *alloc;
+  struct s_scene *scene;
+
   list_t children;
 
   listnode_t *parentnode;
   entity_t *parent;
-  
+
   /*! internal flags */
   entity_flag_t prv_iflags;
 
@@ -55,17 +60,6 @@ struct s_entity
   char name[ENTITY_NAME_MAX_LEN];
 };
 
-/** The entity system depends on the object and memory systems. */
-void sys_entity_init(allocator_t *alloc);
-void sys_entity_shutdown(void);
-
-/*! Allocates a new instance of the given entity class.
-  \param[in] name The entity's name.
-  \param[in] parent The entity's parent.
-  \returns A new instance of the given entity class, or NULL if the class
-  doesn't inherit from ::entity_class.
-*/
-entity_t *entity_new(const char *name, entity_t *parent);
 /*! Destroys and deallocates an entity. This will destroy all child entities
     as well.
 */
