@@ -146,6 +146,12 @@ void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc)
 }
 
 
+void mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, allocator_t *alloc)
+{
+
+}
+
+
 void mem_destroy_pool(memory_pool_t *pool)
 {
   if (pool->head.used) {

@@ -118,6 +118,11 @@ void sys_mem_shutdown(void);
 void mem_init_pool(memory_pool_t *pool, buffersize_t size, allocator_t *alloc);
 
 /*!
+ * Initializes a new memory pool with an existing block of memory.
+ */
+void mem_init_pool_with_pointer(memory_pool_t *pool, void *p, buffersize_t size, allocator_t *alloc);
+
+/*!
  * Destroys a memory pool.
  * @param pool The address of a previously-initialized pool to be destroyed.
  */
