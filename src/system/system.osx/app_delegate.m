@@ -21,19 +21,23 @@ static void queue_active_event(id sender, bool active)
 
 @implementation SnowAppDelegate
 
-- (void)applicationDidFinishLaunching:(NSNotification *)note {
+- (void)applicationDidFinishLaunching:(NSNotification *)note
+{
   [NSApp activateIgnoringOtherApps:YES];
 }
 
-- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)app {
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)app
+{
   return YES;
 }
 
-- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)app {
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)app
+{
   return NSTerminateNow;
 }
 
-- (void)applicationWillTerminate:(NSNotification *)note {
+- (void)applicationWillTerminate:(NSNotification *)note
+{
   sys_quit();
 }
 
