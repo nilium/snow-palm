@@ -340,9 +340,6 @@ void sys_main(int argc, const char *argv[]) {
     SnowAppDelegate *delegate = [SnowAppDelegate new];
     [app setDelegate:delegate];
 
-    init_menu(app);
-    sys_create_window(app, 800, 600, 32, false);
-
     pref_dir = PHYSFS_getPrefDir(APP_ORGANIZATION, APP_TITLE);
 
     bundle = [NSBundle mainBundle];
@@ -372,6 +369,9 @@ void sys_main(int argc, const char *argv[]) {
     PHYSFS_mount(base_dir, NULL, TRUE);
 
     free(base_dir);
+
+    init_menu(app);
+    sys_create_window(app, 800, 600, 32, false);
 
     [app run];
   }
