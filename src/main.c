@@ -37,8 +37,10 @@ int main(int argc, const char *argv[])
 
   atexit(main_shutdown);
 
+  // doesn't exit return unless something goes wrong
   sys_main(argc, argv);
 
-  return 0;
+  // if it reaches this point, something went wrong in sys_main
+  return 1;
 }
 
