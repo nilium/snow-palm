@@ -57,6 +57,11 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event);
   com_queue_event(event);
 }
 
+- (void)dealloc
+{
+  self.context = nil;
+}
+
 @end
 
 
