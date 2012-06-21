@@ -333,12 +333,45 @@ static void init_menu(NSApplication *app) {
 void sys_main(int argc, const char *argv[]) {
   @autoreleasepool {
     NSApplication *app = [NSApplication sharedApplication];
+    NSBundle *bundle;
+    char *base_dir;
+    const char *pref_dir;
 
     SnowAppDelegate *delegate = [SnowAppDelegate new];
     [app setDelegate:delegate];
 
     init_menu(app);
     sys_create_window(app, 800, 600, 32, false);
+
+    pref_dir = PHYSFS_getPrefDir(APP_ORGANIZATION, APP_TITLE);
+
+    bundle = [NSBundle mainBundle];
+    if (bundle != nil) {
+      NSString *resPath;
+      NSUInteger length_encoded;
+
+      resPath = bundle.resourcePath;
+      resPath = [resPath stringByAppendingString: @"/" APP_BASE_DIR];
+
+      length_encoded = [resPath lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+      base_dir = malloc((size_t)length_encoded + 1);
+
+      [resPath getCString:base_dir
+                maxLength:(length_encoded + 1)
+                 encoding:NSUTF8StringEncoding];
+    } else {
+      s_fatal_error(1, "Failed to get application bundle.");
+      return;
+    }
+
+    s_log_note("Setting write path to <%s>", pref_dir);
+    s_log_note("Setting base path to <%s>", base_dir);
+
+    PHYSFS_setWriteDir(pref_dir);
+    PHYSFS_mount(pref_dir, NULL, TRUE);
+    PHYSFS_mount(base_dir, NULL, TRUE);
+
+    free(base_dir);
 
     [app run];
   }
