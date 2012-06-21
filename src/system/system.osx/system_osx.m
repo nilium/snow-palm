@@ -168,7 +168,7 @@ static CGDisplayModeRef display_mode_for_params(
   for (__unsafe_unretained id anon_mode in modes) {
     CGDisplayModeRef mode = (__bridge CGDisplayModeRef)anon_mode;
     size_t score = score_for_mode_params(mode, width, height, bpp);
-    
+
     if (score == 400) {
       pref_mode = mode;
       break;
@@ -317,7 +317,7 @@ static void init_menu(NSApplication *app) {
   [item setKeyEquivalentModifierMask:NSAlternateKeyMask | NSCommandKeyMask];
   [app_menu addItemWithTitle:@"Show All" action:@selector(unhideAllApplications:)
     keyEquivalent:@""];
-  
+
   [app_menu addItem:[NSMenuItem separatorItem]];
 
   [app_menu addItemWithTitle:quit_string action:@selector(terminate:) keyEquivalent:@"q"];
@@ -423,4 +423,4 @@ void sys_terminate() {
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus 
+#endif // __cplusplus
