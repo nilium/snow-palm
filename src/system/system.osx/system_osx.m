@@ -336,6 +336,7 @@ void sys_main(int argc, const char *argv[]) {
     NSBundle *bundle;
     char *base_dir;
     const char *pref_dir;
+    const char *ph_error;
 
     SnowAppDelegate *delegate = [SnowAppDelegate new];
     [app setDelegate:delegate];
@@ -364,9 +365,23 @@ void sys_main(int argc, const char *argv[]) {
     s_log_note("Setting write path to <%s>", pref_dir);
     s_log_note("Setting base path to <%s>", base_dir);
 
-    PHYSFS_setWriteDir(pref_dir);
-    PHYSFS_mount(pref_dir, NULL, TRUE);
-    PHYSFS_mount(base_dir, NULL, TRUE);
+    if ( ! PHYSFS_setWriteDir(pref_dir)) {
+      ph_error = PHYSFS_getLastError();
+      s_log_error("Failed to set write directory:\n  -> %s", ph_error);
+      return;
+    }
+
+    if ( ! PHYSFS_mount(pref_dir, NULL, TRUE)) {
+      ph_error = PHYSFS_getLastError();
+      s_log_error("Failed to mount write directory:\n  -> %s", ph_error);
+      return;
+    }
+
+    if ( ! PHYSFS_mount(base_dir, NULL, TRUE)) {
+      ph_error = PHYSFS_getLastError();
+      s_log_error("Failed to mount base directory:\n  -> %s", ph_error);
+      return;
+    }
 
     free(base_dir);
 
