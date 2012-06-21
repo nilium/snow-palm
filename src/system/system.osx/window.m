@@ -7,7 +7,8 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event);
 
 @implementation SnowWindow
 
-- (void)sendEvent:(NSEvent *)event {
+- (void)sendEvent:(NSEvent *)event
+{
   snow_osx_handle_event(self, event);
 
   switch (event.type) {
@@ -28,7 +29,8 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event);
 #pragma mark Event handling
 
 // Get key modifiers for the NSEvent
-static uint16_t key_modifiers_for_event(NSEvent *event) {
+static uint16_t key_modifiers_for_event(NSEvent *event)
+{
   NSUInteger modifiers = event.modifierFlags;
   uint16_t result = MOD_NONE;
 
@@ -42,7 +44,8 @@ static uint16_t key_modifiers_for_event(NSEvent *event) {
 
 // Handle the NSEvent
 // Takes a sender (the window) and queues the event in the event queue.
-static void snow_osx_handle_event(NSWindow *window, NSEvent *event) {
+static void snow_osx_handle_event(NSWindow *window, NSEvent *event)
+{
   event_t msg;
 
   msg.sender = (__bridge void *)window;
