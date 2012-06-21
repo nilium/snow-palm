@@ -334,12 +334,14 @@ static void init_menu(NSApplication *app) {
 
 void sys_main(int argc, const char *argv[]) {
   @autoreleasepool {
-    NSApplication *app = [NSApplication sharedApplication];
     allocator_t *alloc = g_default_allocator;
+    NSApplication *app;
     NSBundle *bundle;
     char *base_dir;
     const char *pref_dir;
     const char *ph_error;
+
+    app = [NSApplication sharedApplication];
 
     SnowAppDelegate *delegate = [SnowAppDelegate new];
     [app setDelegate:delegate];
