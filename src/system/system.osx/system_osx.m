@@ -1,19 +1,14 @@
-#import <Cocoa/Cocoa.h>
-#import <QuartzCore/QuartzCore.h>
-
-#import <snow-config.h>
-#import <time/time.h>
-
-#import "NSOpenGLPixelFormat+SnowPF.h"
-#import "window.h"
-
 #import "../system.h"
 
 #import "../sgl.h"
-
 #import "app_delegate.h"
-
+#import "NSOpenGLPixelFormat+SnowPF.h"
+#import "window.h"
+#import <Cocoa/Cocoa.h>
 #import <memory/allocator.h>
+#import <QuartzCore/QuartzCore.h>
+#import <snow-config.h>
+#import <time/time.h>
 
 #ifdef __cplusplus
 extern "C" {
