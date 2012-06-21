@@ -388,19 +388,16 @@ void sys_main(int argc, const char *argv[]) {
     if ( ! PHYSFS_setWriteDir(pref_dir)) {
       ph_error = PHYSFS_getLastError();
       s_log_error("Failed to set write directory:\n  -> %s", ph_error);
-      return;
     }
 
     if ( ! PHYSFS_mount(pref_dir, NULL, TRUE)) {
       ph_error = PHYSFS_getLastError();
       s_log_error("Failed to mount write directory:\n  -> %s", ph_error);
-      return;
     }
 
     if ( ! PHYSFS_mount(base_dir, NULL, TRUE)) {
       ph_error = PHYSFS_getLastError();
       s_log_error("Failed to mount base directory:\n  -> %s", ph_error);
-      return;
     }
 
     com_free(base_dir);
