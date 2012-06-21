@@ -23,6 +23,17 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event);
   [super sendEvent:event];
 }
 
+- (BOOL)windowShouldClose:(id)sender
+{
+  event_t event = {
+    .sender = (__bridge void *)self,
+    .time = current_time(),
+    .kind = EVENT_WINDOW_CLOSE
+  };
+  com_queue_event(event);
+  return NO;
+}
+
 @end
 
 
