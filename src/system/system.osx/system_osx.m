@@ -26,6 +26,7 @@ static CVDisplayLinkRef g_display_link = NULL;
 static s_time_t g_previous_time = 0;
 static s_time_t g_time_frequency = 1;
 static s_time_t g_frame_time = 1.0 / 60.0;
+static SnowWindow *g_snow_window = nil;
 
 
 ///// Prototypes
@@ -240,6 +241,8 @@ static void create_normal_window(
   [window makeKeyAndOrderFront:app];
 
   ctx.view = window.contentView;
+
+  g_snow_window = window;
 }
 
 // Create window interface (public)
