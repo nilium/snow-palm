@@ -237,6 +237,7 @@ static void create_normal_window(
   [window makeKeyAndOrderFront:app];
 
   ctx.view = window.contentView;
+  window.context = ctx;
 
   g_snow_window = window;
 }

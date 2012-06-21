@@ -5,6 +5,9 @@
 
 @interface SnowWindow : NSWindow <NSWindowDelegate> {
 }
+
+@property (readwrite, retain) NSOpenGLContext *context;
+
 @end
 
 #endif /* end __WINDOW_HH__ include guard */

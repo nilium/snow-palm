@@ -7,6 +7,8 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event);
 
 @implementation SnowWindow
 
+@synthesize context = _context;
+
 - (void)sendEvent:(NSEvent *)event
 {
   snow_osx_handle_event(self, event);
@@ -49,6 +51,8 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event);
       .height = (int32_t)frame.size.height,
     }
   };
+
+  [_context update];
 
   com_queue_event(event);
 }
