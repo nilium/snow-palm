@@ -61,7 +61,7 @@ typedef enum {
   EVENT_MOUSE_BUTTON,
   EVENT_WINDOW_CLOSE,
   EVENT_WINDOW_RESIZE,
-  EVENT_RESET_GRAPHCIS,
+  EVENT_RESET_GRAPHICS
 } event_kind_t;
 
 typedef enum {
