@@ -68,12 +68,9 @@ static void sys_mount_archives(void)
   for (iter = filenames; *iter != NULL; ++iter) {
     size_t name_len = strlen(*iter);
 
-    if (name_len <= 4)
+    if (name_len <= 4 || (*iter)[name_len - 4] != '.')
       continue;
-    else if ((*iter)[name_len - 4] != '.')
-      continue;
-
-    if (strncasecmp(*iter + (name_len - 3), "zip", 3) == 0) {
+    else if (strncasecmp(*iter + (name_len - 3), "zip", 3) == 0) {
       sys_mount_archives_callback(*iter, name_len);
     }
   }
