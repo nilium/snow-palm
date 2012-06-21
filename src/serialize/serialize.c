@@ -493,8 +493,10 @@ sz_reader_begin(sz_context_t *ctx)
   len = root.num_compounds;
   packs = array_buffer(&ctx->compounds, NULL);
 
-  if (packs == NULL && len != 0)
+  if (packs == NULL && len != 0) {
     s_fatal_error(1, "Failed to create unpacked compounds array");
+    return SZ_ERROR_NULL_POINTER;
+  }
 
   offsets_size = sizeof(uint32_t) * len;
   offsets = com_malloc(ctx->alloc, offsets_size);
