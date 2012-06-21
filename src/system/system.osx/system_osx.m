@@ -13,6 +13,8 @@
 
 #import "app_delegate.h"
 
+#import <memory/allocator.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -333,6 +335,7 @@ static void init_menu(NSApplication *app) {
 void sys_main(int argc, const char *argv[]) {
   @autoreleasepool {
     NSApplication *app = [NSApplication sharedApplication];
+    allocator_t *alloc = g_default_allocator;
     NSBundle *bundle;
     char *base_dir;
     const char *pref_dir;
@@ -352,7 +355,7 @@ void sys_main(int argc, const char *argv[]) {
       resPath = [resPath stringByAppendingString: @"/" APP_BASE_DIR];
 
       length_encoded = [resPath lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
-      base_dir = malloc((size_t)length_encoded + 1);
+      base_dir = com_malloc(alloc, (size_t)length_encoded + 1);
 
       [resPath getCString:base_dir
                 maxLength:(length_encoded + 1)
@@ -372,7 +375,7 @@ void sys_main(int argc, const char *argv[]) {
       base_len = strlen(APP_BASE_DIR);
       mount_len = (size_t)(last_slash - argv[0]) + 1;
       // 2 for the NULL and trailing slash
-      base_dir = malloc(sizeof(char) * (mount_len + base_len + 2));
+      base_dir = com_malloc(alloc, sizeof(char) * (mount_len + base_len + 2));
       strncpy(base_dir, argv[0], mount_len);
       strncat(base_dir, APP_BASE_DIR, base_len);
     }
@@ -398,7 +401,7 @@ void sys_main(int argc, const char *argv[]) {
       return;
     }
 
-    free(base_dir);
+    com_free(base_dir);
 
     init_menu(app);
     sys_create_window(app, 800, 600, 32, false);
