@@ -400,7 +400,7 @@ void sys_main(int argc, const char *argv[]) {
       s_log_error("Failed to mount base directory:\n  -> %s", ph_error);
     }
 
-    com_free(base_dir);
+    com_free(alloc, base_dir);
 
     init_menu(app);
     sys_create_window(app, 800, 600, 32, false);
