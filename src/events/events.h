@@ -60,6 +60,7 @@ typedef enum {
   EVENT_MOUSE_MOTION,
   EVENT_MOUSE_BUTTON,
   EVENT_WINDOW_CLOSE,
+  EVENT_WINDOW_ACTIVE,
   EVENT_WINDOW_RESIZE,
   EVENT_RESET_GRAPHICS
 } event_kind_t;
@@ -114,6 +115,10 @@ typedef struct s_resize_event {
   int32_t height;
 } resize_event_t;
 
+typedef struct s_active_event {
+  bool active;
+} active_event_t;
+
 typedef struct s_event {
   void *sender;
   s_time_t time;
@@ -125,6 +130,7 @@ typedef struct s_event {
     mouse_motion_event_t motion;
     touch_event_t touch;
     resize_event_t resize;
+    active_event_t active;
   };
 } event_t;
 
