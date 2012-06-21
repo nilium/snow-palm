@@ -358,8 +358,23 @@ void sys_main(int argc, const char *argv[]) {
                 maxLength:(length_encoded + 1)
                  encoding:NSUTF8StringEncoding];
     } else {
-      s_fatal_error(1, "Failed to get application bundle.");
-      return;
+      const char *last_slash;
+      size_t mount_len;
+      size_t base_len;
+
+      last_slash = strrchr(argv[0], '/');
+
+      if (!last_slash) {
+        printf("Failed to initialize filesystem");
+        return;
+      }
+
+      base_len = strlen(APP_BASE_DIR);
+      mount_len = (size_t)(last_slash - argv[0]) + 1;
+      // 2 for the NULL and trailing slash
+      base_dir = malloc(sizeof(char) * (mount_len + base_len + 2));
+      strncpy(base_dir, argv[0], mount_len);
+      strncat(base_dir, APP_BASE_DIR, base_len);
     }
 
     s_log_note("Setting write path to <%s>", pref_dir);
