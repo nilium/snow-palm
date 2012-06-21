@@ -10,6 +10,8 @@
 #define __SNOW_CONFIG_H__
 
 #define APP_TITLE "Snow"
+#define APP_ORGANIZATION "Cower"
+#define APP_BASE_DIR "base"
 
 #if defined(__APPLE__)
 # include <TargetConditionals.h>
