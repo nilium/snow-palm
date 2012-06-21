@@ -219,6 +219,7 @@ static void create_normal_window(
 {
   const NSUInteger style_mask =
     NSTitledWindowMask
+  | NSResizableWindowMask
   | NSClosableWindowMask
   | NSMiniaturizableWindowMask;
 
@@ -236,6 +237,7 @@ static void create_normal_window(
   [window makeKeyAndOrderFront:app];
 
   ctx.view = window.contentView;
+  window.context = ctx;
 
   g_snow_window = window;
 }

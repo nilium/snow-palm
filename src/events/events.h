@@ -59,8 +59,10 @@ typedef enum {
   EVENT_TOUCH,
   EVENT_MOUSE_MOTION,
   EVENT_MOUSE_BUTTON,
+  EVENT_WINDOW_CLOSE,
+  EVENT_WINDOW_ACTIVE,
   EVENT_WINDOW_RESIZE,
-  EVENT_RESET_GRAPHCIS,
+  EVENT_RESET_GRAPHICS
 } event_kind_t;
 
 typedef enum {
@@ -106,6 +108,17 @@ typedef struct s_touch_event {
   uint8_t num_touches;
 } touch_event_t;
 
+typedef struct s_resize_event {
+  int32_t x;
+  int32_t y;
+  int32_t width;
+  int32_t height;
+} resize_event_t;
+
+typedef struct s_active_event {
+  bool active;
+} active_event_t;
+
 typedef struct s_event {
   void *sender;
   s_time_t time;
@@ -116,6 +129,8 @@ typedef struct s_event {
     mouse_button_event_t mouse;
     mouse_motion_event_t motion;
     touch_event_t touch;
+    resize_event_t resize;
+    active_event_t active;
   };
 } event_t;
 

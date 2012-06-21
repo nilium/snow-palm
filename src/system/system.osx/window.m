@@ -7,6 +7,8 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event);
 
 @implementation SnowWindow
 
+@synthesize context = _context;
+
 - (void)sendEvent:(NSEvent *)event
 {
   snow_osx_handle_event(self, event);
@@ -21,6 +23,43 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event);
   }
 
   [super sendEvent:event];
+}
+
+- (BOOL)windowShouldClose:(id)sender
+{
+  event_t event = {
+    .sender = (__bridge void *)self,
+    .time = current_time(),
+    .kind = EVENT_WINDOW_CLOSE
+  };
+  com_queue_event(event);
+  return NO;
+}
+
+- (void)windowDidResize:(NSNotification *)notify
+{
+  NSRect frame = [self frame];
+
+  event_t event = {
+    .sender = (__bridge void *)self,
+    .time = current_time(),
+    .kind = EVENT_WINDOW_RESIZE,
+    .resize = {
+      .x = (int32_t)frame.origin.x,
+      .y = (int32_t)frame.origin.y,
+      .width = (int32_t)frame.size.width,
+      .height = (int32_t)frame.size.height,
+    }
+  };
+
+  [_context update];
+
+  com_queue_event(event);
+}
+
+- (void)dealloc
+{
+  self.context = nil;
 }
 
 @end
