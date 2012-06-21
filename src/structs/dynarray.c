@@ -5,6 +5,8 @@
   See LICENSE.md for license information
 */
 
+#define SNOW_SOURCE 1
+
 #include "dynarray.h"
 
 #if defined(__cplusplus)
