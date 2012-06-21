@@ -16,6 +16,7 @@ static bool event_foo(event_t *event, void *context)
   switch (event->kind) {
     case EVENT_KEYBOARD:
       if (event->key.character == L'q' && !event->key.pressed) {
+        case EVENT_WINDOW_CLOSE:
         sys_terminate();
         return true;
       }
