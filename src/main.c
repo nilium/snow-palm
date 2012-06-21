@@ -19,10 +19,16 @@ static void main_shutdown(void)
   sys_entity_shutdown();
   sys_tls_shutdown();
   sys_pool_shutdown();
+
+  if ( ! PHYSFS_deinit()) {
+    const char *error = PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode());
+    s_log_error("Error shutting down PhysFS: %s", error);
+  }
 }
 
 int main(int argc, const char *argv[])
 {
+  PHYSFS_init(argv[0]);
   sys_time_init();
   sys_pool_init(g_default_allocator);
   sys_tls_init(g_default_allocator);
@@ -31,8 +37,10 @@ int main(int argc, const char *argv[])
 
   atexit(main_shutdown);
 
+  // doesn't exit return unless something goes wrong
   sys_main(argc, argv);
 
-  return 0;
+  // if it reaches this point, something went wrong in sys_main
+  return 1;
 }
 

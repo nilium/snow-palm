@@ -13,6 +13,8 @@
 
 #import "app_delegate.h"
 
+#import <memory/allocator.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -166,7 +168,7 @@ static CGDisplayModeRef display_mode_for_params(
   for (__unsafe_unretained id anon_mode in modes) {
     CGDisplayModeRef mode = (__bridge CGDisplayModeRef)anon_mode;
     size_t score = score_for_mode_params(mode, width, height, bpp);
-    
+
     if (score == 400) {
       pref_mode = mode;
       break;
@@ -315,7 +317,7 @@ static void init_menu(NSApplication *app) {
   [item setKeyEquivalentModifierMask:NSAlternateKeyMask | NSCommandKeyMask];
   [app_menu addItemWithTitle:@"Show All" action:@selector(unhideAllApplications:)
     keyEquivalent:@""];
-  
+
   [app_menu addItem:[NSMenuItem separatorItem]];
 
   [app_menu addItemWithTitle:quit_string action:@selector(terminate:) keyEquivalent:@"q"];
@@ -332,10 +334,73 @@ static void init_menu(NSApplication *app) {
 
 void sys_main(int argc, const char *argv[]) {
   @autoreleasepool {
-    NSApplication *app = [NSApplication sharedApplication];
+    allocator_t *alloc = g_default_allocator;
+    NSApplication *app;
+    NSBundle *bundle;
+    char *base_dir;
+    const char *pref_dir;
+    const char *ph_error;
+
+    app = [NSApplication sharedApplication];
 
     SnowAppDelegate *delegate = [SnowAppDelegate new];
     [app setDelegate:delegate];
+
+    pref_dir = PHYSFS_getPrefDir(APP_ORGANIZATION, APP_TITLE);
+
+    bundle = [NSBundle mainBundle];
+    if (bundle != nil) {
+      NSString *resPath;
+      NSUInteger length_encoded;
+
+      resPath = bundle.resourcePath;
+      resPath = [resPath stringByAppendingString: @"/" APP_BASE_DIR];
+
+      length_encoded = [resPath lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+      base_dir = com_malloc(alloc, (size_t)length_encoded + 1);
+
+      [resPath getCString:base_dir
+                maxLength:(length_encoded + 1)
+                 encoding:NSUTF8StringEncoding];
+    } else {
+      const char *last_slash;
+      size_t mount_len;
+      size_t base_len;
+
+      last_slash = strrchr(argv[0], '/');
+
+      if (!last_slash) {
+        printf("Failed to initialize filesystem");
+        return;
+      }
+
+      base_len = strlen(APP_BASE_DIR);
+      mount_len = (size_t)(last_slash - argv[0]) + 1;
+      // 2 for the NULL and trailing slash
+      base_dir = com_malloc(alloc, sizeof(char) * (mount_len + base_len + 2));
+      strncpy(base_dir, argv[0], mount_len);
+      strncat(base_dir, APP_BASE_DIR, base_len);
+    }
+
+    s_log_note("Setting write path to <%s>", pref_dir);
+    s_log_note("Setting base path to <%s>", base_dir);
+
+    if ( ! PHYSFS_setWriteDir(pref_dir)) {
+      ph_error = PHYSFS_getLastError();
+      s_log_error("Failed to set write directory:\n  -> %s", ph_error);
+    }
+
+    if ( ! PHYSFS_mount(pref_dir, NULL, TRUE)) {
+      ph_error = PHYSFS_getLastError();
+      s_log_error("Failed to mount write directory:\n  -> %s", ph_error);
+    }
+
+    if ( ! PHYSFS_mount(base_dir, NULL, TRUE)) {
+      ph_error = PHYSFS_getLastError();
+      s_log_error("Failed to mount base directory:\n  -> %s", ph_error);
+    }
+
+    com_free(base_dir);
 
     init_menu(app);
     sys_create_window(app, 800, 600, 32, false);
@@ -358,4 +423,4 @@ void sys_terminate() {
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus 
+#endif // __cplusplus
