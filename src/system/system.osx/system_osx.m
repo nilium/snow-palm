@@ -219,6 +219,7 @@ static void create_normal_window(
 {
   const NSUInteger style_mask =
     NSTitledWindowMask
+  | NSResizableWindowMask
   | NSClosableWindowMask
   | NSMiniaturizableWindowMask;
 

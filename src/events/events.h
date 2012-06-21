@@ -107,6 +107,13 @@ typedef struct s_touch_event {
   uint8_t num_touches;
 } touch_event_t;
 
+typedef struct s_resize_event {
+  int32_t x;
+  int32_t y;
+  int32_t width;
+  int32_t height;
+} resize_event_t;
+
 typedef struct s_event {
   void *sender;
   s_time_t time;
@@ -117,6 +124,7 @@ typedef struct s_event {
     mouse_button_event_t mouse;
     mouse_motion_event_t motion;
     touch_event_t touch;
+    resize_event_t resize;
   };
 } event_t;
 

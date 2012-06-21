@@ -34,6 +34,25 @@ static void snow_osx_handle_event(NSWindow *window, NSEvent *event);
   return NO;
 }
 
+- (void)windowDidResize:(NSNotification *)notify
+{
+  NSRect frame = [self frame];
+
+  event_t event = {
+    .sender = (__bridge void *)self,
+    .time = current_time(),
+    .kind = EVENT_WINDOW_RESIZE,
+    .resize = {
+      .x = (int32_t)frame.origin.x,
+      .y = (int32_t)frame.origin.y,
+      .width = (int32_t)frame.size.width,
+      .height = (int32_t)frame.size.height,
+    }
+  };
+
+  com_queue_event(event);
+}
+
 @end
 
 
