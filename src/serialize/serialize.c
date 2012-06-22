@@ -9,6 +9,10 @@ extern "C" {
 
 // There shouldn't be object trees deeper than this
 #define SZ_MAX_STACK_SIZE (384)
+// The size of a chunk header
+#define SZ_HEADER_SIZE (9)
+// The size of an array chunk
+#define SZ_ARRAY_SIZE (SZ_HEADER_SIZE + 5)
 
 
 typedef struct {
@@ -168,7 +172,7 @@ sz_read_array_body(sz_context_t *ctx, const sz_array_t *chunk, void **buf_out, s
   if (alloc == NULL)
     alloc = g_default_allocator;
 
-  block_remainder = (size_t)chunk->header.size - sizeof(*chunk);
+  block_remainder = (size_t)chunk->header.size - SZ_ARRAY_SIZE;
   element_size = block_remainder / (size_t)chunk->length;
 
   if (buf_out) {
@@ -279,7 +283,7 @@ sz_write_null_pointer(sz_context_t *ctx, uint32_t name)
   sz_header_t chunk = {
     .kind = SZ_NULL_POINTER_CHUNK,
     .name = name,
-    .size = (uint32_t)(sizeof(chunk.kind) + sizeof(chunk.name) + sizeof(chunk.size))
+    .size = (uint32_t)(SZ_HEADER_SIZE)
   };
 
   stream_write(&chunk.kind, sizeof(chunk.kind), ctx->active);
@@ -347,7 +351,7 @@ sz_write_primitive(sz_context_t *ctx,
   sz_header_t chunk = {
     .kind = chunktype,
     .name = name,
-    .size = (uint32_t)(sizeof(chunk.kind) + sizeof(chunk.name) + sizeof(chunk.size) + typesize)
+    .size = (uint32_t)(SZ_HEADER_SIZE + typesize)
   };
 
   response = sz_check_context(ctx, SZ_WRITER);
@@ -377,7 +381,7 @@ sz_write_primitive_array(sz_context_t *ctx,
     .header = {
       .kind = SZ_ARRAY_CHUNK,
       .name = name,
-      .size = (uint32_t)(sizeof(chunk) + data_size)
+      .size = (uint32_t)(SZ_ARRAY_SIZE + data_size)
     },
     .length = (uint32_t)length,
     .type = type
@@ -814,7 +818,7 @@ sz_write_compounds(sz_context_t *ctx, uint32_t name, void **p, size_t length,
     .header = {
       .kind = SZ_ARRAY_CHUNK,
       .name = name,
-      .size = (uint32_t)(sizeof(chunk) + sizeof(uint32_t) * length)
+      .size = (uint32_t)(SZ_ARRAY_SIZE + sizeof(uint32_t) * length)
     },
     .length = length,
     .type = SZ_COMPOUND_REF_CHUNK
@@ -940,7 +944,7 @@ sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, size_t *length, a
     if (out) *out = NULL;
     if (length) *length = 0;
   } else {
-    size = (size_t)chunk.size - sizeof(chunk);
+    size = (size_t)chunk.size - SZ_HEADER_SIZE;
 
     if (out) {
       bytes = (uint8_t *)com_malloc(buf_alloc, size);
