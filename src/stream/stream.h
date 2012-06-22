@@ -119,8 +119,28 @@ stream_t *stream_file_open(const char *filepath, stream_mode_t);
 // Reads length bytes from stream into out
 size_t stream_read(void * const out, size_t length, stream_t *stream);
 
+int stream_read_uint8(stream_t *stream, uint8_t *out);
+int stream_read_uint16(stream_t *stream, uint16_t *out);
+int stream_read_uint32(stream_t *stream, uint32_t *out);
+int stream_read_uint64(stream_t *stream, uint64_t *out);
+
+int stream_read_sint8(stream_t *stream, int8_t *out);
+int stream_read_sint16(stream_t *stream, int16_t *out);
+int stream_read_sint32(stream_t *stream, int32_t *out);
+int stream_read_sint64(stream_t *stream, int64_t *out);
+
 // Writes length bytes to stream from in.
 size_t stream_write(const void * const in, size_t length, stream_t *stream);
+
+int stream_write_uint8(stream_t *stream, uint8_t in);
+int stream_write_uint16(stream_t *stream, uint16_t in);
+int stream_write_uint32(stream_t *stream, uint32_t in);
+int stream_write_uint64(stream_t *stream, uint64_t in);
+
+int stream_write_sint8(stream_t *stream, int8_t in);
+int stream_write_sint16(stream_t *stream, int16_t in);
+int stream_write_sint32(stream_t *stream, int32_t in);
+int stream_write_sint64(stream_t *stream, int64_t in);
 
 // Operates the same as fseeko.
 // Changes stream position from the current position to an offset from the

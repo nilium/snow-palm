@@ -144,6 +144,122 @@ stream_error_t stream_close(stream_t *stream)
   return error;
 }
 
+
+// read/write for specific types
+// thank god for multiple cursors.
+
+int stream_write_uint8(stream_t *stream, uint8_t v)
+{
+  return stream_write(&v, sizeof(v), stream) != sizeof(v);
+}
+
+int stream_write_sint8(stream_t *stream, int8_t v)
+{
+  return stream_write(&v, sizeof(v), stream) != sizeof(v);
+}
+
+int stream_write_uint16(stream_t *stream, uint16_t v)
+{
+  v = (uint16_t)PHYSFS_swapULE16((PHYSFS_uint16)v);
+  return stream_write(&v, sizeof(v), stream) != sizeof(v);
+}
+
+int stream_write_sint16(stream_t *stream, int16_t v)
+{
+  v = (int16_t)PHYSFS_swapSLE16((PHYSFS_sint16)v);
+  return stream_write(&v, sizeof(v), stream) != sizeof(v);
+}
+
+int stream_write_uint32(stream_t *stream, uint32_t v)
+{
+  v = (uint32_t)PHYSFS_swapULE32((PHYSFS_uint32)v);
+  return stream_write(&v, sizeof(v), stream) != sizeof(v);
+}
+
+int stream_write_sint32(stream_t *stream, int32_t v)
+{
+  v = (int32_t)PHYSFS_swapSLE32((PHYSFS_sint32)v);
+  return stream_write(&v, sizeof(v), stream) != sizeof(v);
+}
+
+int stream_write_uint64(stream_t *stream, uint64_t v)
+{
+  v = (uint64_t)PHYSFS_swapULE64((PHYSFS_uint64)v);
+  return stream_write(&v, sizeof(v), stream) != sizeof(v);
+}
+
+int stream_write_sint64(stream_t *stream, int64_t v)
+{
+  v = (int64_t)PHYSFS_swapSLE64((PHYSFS_sint64)v);
+  return stream_write(&v, sizeof(v), stream) != sizeof(v);
+}
+
+// read
+
+int stream_read_uint8(stream_t *stream, uint8_t *v)
+{
+  return stream_read(v, sizeof(*v), stream) != sizeof(*v);
+}
+
+int stream_read_sint8(stream_t *stream, int8_t *v)
+{
+  return stream_read(v, sizeof(*v), stream) != sizeof(*v);
+}
+
+int stream_read_uint16(stream_t *stream, uint16_t *v)
+{
+  uint16_t store;
+  size_t count = stream_read(&store, sizeof(store), stream);
+  if (count == sizeof(store) && v != NULL)
+    *v = (uint16_t)PHYSFS_swapULE16(store);
+  return count != sizeof(store);
+}
+
+int stream_read_sint16(stream_t *stream, int16_t *v)
+{
+  int16_t store;
+  size_t count = stream_read(&store, sizeof(store), stream);
+  if (count == sizeof(store) && v != NULL)
+    *v = (int16_t)PHYSFS_swapSLE16(store);
+  return count != sizeof(store);
+}
+
+int stream_read_uint32(stream_t *stream, uint32_t *v)
+{
+  uint32_t store;
+  size_t count = stream_read(&store, sizeof(store), stream);
+  if (count == sizeof(store) && v != NULL)
+    *v = (uint32_t)PHYSFS_swapULE32(store);
+  return count != sizeof(store);
+}
+
+int stream_read_sint32(stream_t *stream, int32_t *v)
+{
+  int32_t store;
+  size_t count = stream_read(&store, sizeof(store), stream);
+  if (count == sizeof(store) && v != NULL)
+    *v = (int32_t)PHYSFS_swapSLE32(store);
+  return count != sizeof(store);
+}
+
+int stream_read_uint64(stream_t *stream, uint64_t *v)
+{
+  uint64_t store;
+  size_t count = stream_read(&store, sizeof(store), stream);
+  if (count == sizeof(store) && v != NULL)
+    *v = (uint64_t)PHYSFS_swapULE64(store);
+  return count != sizeof(store);
+}
+
+int stream_read_sint64(stream_t *stream, int64_t *v)
+{
+  int64_t store;
+  size_t count = stream_read(&store, sizeof(store), stream);
+  if (count == sizeof(store) && v != NULL)
+    *v = (int64_t)PHYSFS_swapSLE64(store);
+  return count != sizeof(store);
+}
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
