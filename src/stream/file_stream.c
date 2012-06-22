@@ -17,8 +17,7 @@ static int file_close(stream_t *stream);
 
 stream_t *file_open(const char *path, stream_mode_t mode, allocator_t *alloc)
 {
-  const char *file_mode = NULL;
-  FILE *file = NULL;
+  PHYSFS_File *file = NULL;
   stream_t *stream = NULL;
   char *pathcopy;
   size_t pathsize;
@@ -34,25 +33,23 @@ stream_t *file_open(const char *path, stream_mode_t mode, allocator_t *alloc)
   stream = stream_alloc(mode, alloc);
 
   if (stream) {
-
-    // TODO: rewrite to use PHYSFS
-
     switch (mode) {
-      case STREAM_READ: file_mode = "r"; break;
-      case STREAM_WRITE: file_mode = "w"; break;
-      case STREAM_READWRITE: file_mode = "r+"; break;
+      case STREAM_READ:
+        file = PHYSFS_openRead(path);
+      break;
+      case STREAM_WRITE:
+        file = PHYSFS_openWrite(path);
+      break;
+      case STREAM_APPEND:
+        file = PHYSFS_openAppend(path);
+      break;
       default: /* cannot reach */ break;
     }
 
-    file = fopen(path, file_mode);
-
     // if r+ failed because the file doesn't exist, open again with w
-    if (file == NULL && mode == STREAM_READWRITE && errno == ENOENT)
-      file = fopen(path, (file_mode = "w+"));
-
     if (file == NULL) {
-      s_log_error("Failed to open file '%s' with mode '%s'. Error code %d.",
-        path, file_mode, errno);
+      s_log_error("Failed to open file '%s' with mode %d. Error: %s.",
+        path, mode, pfs_get_error());
       stream_close(stream);
       return NULL;
     }
@@ -64,23 +61,23 @@ stream_t *file_open(const char *path, stream_mode_t mode, allocator_t *alloc)
     stream->close = file_close;
 
     // copy path string
-    pathsize = sizeof(char) * (strlen(path) + 1);
+    pathsize = strlen(path) + 1;
     pathcopy = com_malloc(alloc, pathsize);
     strncpy(pathcopy, path, pathsize);
 
-    stream->context.stdio.file = file;
-    stream->context.stdio.file_path = pathcopy;
+    stream->context.pfs.file = file;
+    stream->context.pfs.file_path = pathcopy;
   }
 
   return stream;
 }
 
 static inline int file_check_context(stream_t *stream) {
-  if (stream->context.stdio.file == NULL) {
+  if (stream->context.pfs.file == NULL) {
     s_log_error("File backing stream is NULL.");
     stream->error = STREAM_ERROR_INVALID_CONTEXT;
     return -1;
-  } else if (stream->context.stdio.file_path == NULL) {
+  } else if (stream->context.pfs.file_path == NULL) {
     s_log_error("File path for stream is NULL.");
     stream->error = STREAM_ERROR_INVALID_CONTEXT;
     return -1;
@@ -91,145 +88,137 @@ static inline int file_check_context(stream_t *stream) {
 
 static size_t file_write(const void * const p, size_t len, stream_t *stream)
 {
-  size_t count;
+  PHYSFS_sint64 count;
   int error;
-  FILE *file;
+  PHYSFS_File *file;
 
   if (file_check_context(stream))
     return 0;
 
-  file = stream->context.stdio.file;
+  file = stream->context.pfs.file;
 
-  count = fwrite(p, 1, len, file);
+  count = PHYSFS_writeBytes(file, p, len);
 
-  if (count < len && (error = ferror(file))) {
-    s_log_error("Error writing to file stream (%d). (File: %s)",
-      error, stream->context.stdio.file_path);
+  if (count < len && (error = PHYSFS_getLastErrorCode())) {
+    s_log_error("Error writing to file stream (pfs: %s). (File: %s)",
+      PHYSFS_getErrorByCode(error), stream->context.pfs.file_path);
+
     stream->error = STREAM_ERROR_FAILURE;
-    clearerr(file);
+
+    if (count == -1)
+      return 0;
   }
 
-  return count;
+  return (size_t)count;
 }
 
 static size_t file_read(void * const p, size_t len, stream_t *stream)
 {
-  size_t count;
+  PHYSFS_sint64 count;
   int error;
-  FILE *file;
+  PHYSFS_File *file;
 
   if (file_check_context(stream))
     return 0;
 
-  file = stream->context.stdio.file;
+  file = stream->context.pfs.file;
 
-  count = fread(p, 1, len, file);
+  count = PHYSFS_readBytes(file, p, len);
 
-  if (count < len && (error = ferror(file))) {
-    s_log_error("Error reading from file stream (%d). (File: %s)",
-      error, stream->context.stdio.file_path);
+  if (count < len && (error = PHYSFS_getLastErrorCode())) {
+    s_log_error("Error reading from file stream (pfs: %s). (File: %s)",
+      PHYSFS_getErrorByCode(error), stream->context.pfs.file_path);
+
     stream->error = STREAM_ERROR_FAILURE;
-    clearerr(file);
+
+    if (count == -1)
+      return 0;
   }
 
-  return count;
+  return (size_t)count;
 }
 
 static off_t file_seek(stream_t *stream, off_t pos, int whence)
 {
-  off_t new_offset;
-  FILE *file;
+  PHYSFS_sint64 new_pos;
+  PHYSFS_File *file;
 
   if (file_check_context(stream))
     return -1;
 
-  file = stream->context.stdio.file;
+  file = stream->context.pfs.file;
+  new_pos = PHYSFS_tell(file);
 
-  // doing nothing, use ftello
-  if (pos == 0 && whence == SEEK_CUR)
-    new_offset = ftello(file);
-  else
-    new_offset = fseeko(file, pos, whence);
+  if (new_pos == -1) {
+    s_log_error("Error getting file position: %s. (File: %s)",
+      pfs_get_error(), stream->context.pfs.file_path);
 
-  if (new_offset == -1) {
-    switch (errno) {
-      case EBADF:
-        stream->error = STREAM_ERROR_SEEK_NOT_PERMITTED;
-        s_log_error("File stream is not seekable. (File: %s)",
-          stream->context.stdio.file_path);
-      case EINVAL:
-        stream->error = STREAM_ERROR_INVALID_WHENCE;
-        s_log_error("Invalid whence argument to stream_seek. (File: %s)",
-          stream->context.stdio.file_path);
-        break;
-      case EOVERFLOW:
-        stream->error = STREAM_ERROR_OUT_OF_RANGE;
-        s_log_error("Attempt to seek past the bounds of the file. (File: %s)",
-          stream->context.stdio.file_path);
-        break;
-      case ESPIPE:
-        stream->error = STREAM_ERROR_SEEK_NOT_PERMITTED;
-        s_log_error("File stream is a pipe, cannot seek. (File: %s)",
-          stream->context.stdio.file_path);
-        break;
-      default:
-        stream->error = STREAM_ERROR_FAILURE;
-        s_log_error("Undefined error while seeking in file stream: %d. (File: %s)",
-          errno, stream->context.stdio.file_path);
-        break;
-    }
+    stream->error = STREAM_ERROR_FAILURE;
+
+    return -1;
   }
 
-  return new_offset;
+  if (pos == 0 && whence == SEEK_CUR)
+    return new_pos;
+
+  switch (whence) {
+    case SEEK_CUR:
+      new_pos += pos;
+      break;
+    case SEEK_SET:
+      new_pos = pos;
+      break;
+    case SEEK_END:
+      new_pos = PHYSFS_fileLength(file) + pos;
+      break;
+  }
+
+  if ( ! PHYSFS_seek(file, new_pos)) {
+    s_log_error("Error seeking in file: %s. (File: %s)",
+      pfs_get_error(), stream->context.pfs.file_path);
+
+    stream->error = STREAM_ERROR_FAILURE;
+
+    return -1;
+  }
+
+  return new_pos;
 }
 
 static int file_eof(stream_t *stream)
 {
-  FILE *file;
+  PHYSFS_File *file;
 
   if (file_check_context(stream))
     return -1;
 
-  file = stream->context.stdio.file;
+  file = stream->context.pfs.file;
 
-  return !!feof(file);
+  return PHYSFS_eof(file);
 }
 
 static int file_close(stream_t *stream)
 {
-  FILE *file;
+  PHYSFS_File *file;
+  int r = 0;
 
   if (file_check_context(stream))
-    return -1;
+    r = -1;
 
-  file = stream->context.stdio.file;
+  file = stream->context.pfs.file;
 
-  com_free(stream->alloc, stream->context.stdio.file_path);
+  if (file && ! PHYSFS_close(file)) {
+    s_log_error("Error closing file: %s. (File: %s)",
+      pfs_get_error(), stream->context.pfs.file_path);
 
-  if (fclose(file)) {
-    int error = errno;
     stream->error = STREAM_ERROR_FAILURE;
-    switch (error) {
-      case EBADF:
-        s_log_error("Error closing file, invalid file. (File: %s)",
-          stream->context.stdio.file_path);
-        break;
-      case EINTR:
-        s_log_error("Error closing file, signal interrupted closing. (File: %s)",
-          stream->context.stdio.file_path);
-        break;
-      case EIO:
-        s_log_error("Error closing file, IO error. (File: %s)",
-          stream->context.stdio.file_path);
-        break;
-      default:
-        s_log_error("Error closing file, unknown error code %d. (File: %s)",
-          error, stream->context.stdio.file_path);
-    }
-    return -1;
+    r = -1;
   }
 
-  return 0;
+  if (stream->context.pfs.file_path)
+    com_free(stream->alloc, stream->context.pfs.file_path);
+
+  return r;
 }
 
 

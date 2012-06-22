@@ -23,8 +23,8 @@ typedef enum {
   STREAM_READ = 1,
   // Opens the stream for writing only, starts at the beginning.
   STREAM_WRITE = 2,
-  // Opens the stream for both reading and writing, starts at the beginning.
-  STREAM_READWRITE = STREAM_READ | STREAM_WRITE
+  // Opens the stream for writing, starts at the end of the file.
+  STREAM_APPEND = 3
 } stream_mode_t;
 
 typedef enum {
@@ -103,9 +103,9 @@ struct s_stream {
 
   union {
     struct {
-      FILE *file;
+      PHYSFS_File *file;
       char *file_path;
-    } stdio;
+    } pfs;
     void *unknown[STREAM_UNKNOWN_CONTEXT_COUNT];
   } context;
 };
@@ -141,7 +141,7 @@ STREAM_INLINE off_t stream_rewind(stream_t *stream)
 }
 
 // Operates the same as ftello.
-// If no tell operation is provided, it returns seek(stream, 0, SEEK_CUR).
+// Returns seek(stream, 0, SEEK_CUR).
 STREAM_INLINE off_t stream_tell(stream_t *stream)
 {
   return stream_seek(stream, 0, SEEK_CUR);

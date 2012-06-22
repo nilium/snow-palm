@@ -12,7 +12,7 @@ stream_t *stream_alloc(stream_mode_t mode, allocator_t *alloc)
   switch (mode) {
     case STREAM_READ:
     case STREAM_WRITE:
-    case STREAM_READWRITE:
+    case STREAM_APPEND:
       break;
     default:
       s_log_error("Invalid stream mode %x.", mode);
@@ -44,7 +44,7 @@ size_t stream_read(void * const ptr, size_t length, stream_t *stream)
   if (stream == NULL) {
     s_log_error("Stream is NULL");
     return 0;
-  } else if (! (stream->mode & STREAM_READ)) {
+  } else if (stream->mode != STREAM_READ) {
     stream->error = STREAM_ERROR_READ_NOT_PERMITTED;
     return 0;
   } else if (stream->read == NULL) {
@@ -66,7 +66,7 @@ size_t stream_write(const void * const ptr, size_t length, stream_t *stream)
   if (stream == NULL) {
     s_log_error("Stream is NULL");
     return 0;
-  } else if (! (stream->mode & STREAM_WRITE)) {
+  } else if (stream->mode == STREAM_READ) {
     stream->error = STREAM_ERROR_WRITE_NOT_PERMITTED;
     return 0;
   } else if (stream->read == NULL) {
