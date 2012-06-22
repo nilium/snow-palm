@@ -4,6 +4,11 @@
 #include <snow-config.h>
 #include <time/time.h>
 
+enum {
+  SYS_LOCK_FRAME = 0,
+  SYS_LOCK_COUNT
+};
+
 // Implemented in platform-specific code
 void sys_main(int argc, const char *argv[]);
 
@@ -23,5 +28,9 @@ void sys_quit(void);
 // Tells the app/game to shut down right now
 // Implemented in platform-specific code
 void sys_terminate(void);
+
+int sys_lock(unsigned int lock);
+int sys_unlock(unsigned int lock);
+int sys_trylock(unsigned int lock);
 
 #endif /* end __SNOW_SYSTEM_H__ include guard */

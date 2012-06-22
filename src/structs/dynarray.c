@@ -5,6 +5,8 @@
   See LICENSE.md for license information
 */
 
+#define SNOW_SOURCE 1
+
 #include "dynarray.h"
 
 #if defined(__cplusplus)
@@ -373,6 +375,9 @@ void *array_last(array_t *self)
   }
 
   if (self->buf == NULL)
+    return NULL;
+
+  if (self->size < 1)
     return NULL;
 
   return (self->buf + (self->size - 1));

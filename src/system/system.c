@@ -1,10 +1,13 @@
 #include "system.h"
 #include "sgl.h"
 #include <events/events.h>
+#include <threads/mutex.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+mutex_t g_system_locks[SYS_LOCK_COUNT];
 
 static bool event_foo(event_t *event, void *context)
 {
@@ -81,7 +84,12 @@ static void sys_mount_archives(void)
 
 int sys_init()
 {
+  size_t lockidx;
+
   s_log_note("Initializing");
+
+  for (lockidx = 0; lockidx < SYS_LOCK_COUNT; ++lockidx)
+    mutex_init(&g_system_locks[lockidx], false);
 
   sys_mount_archives();
 
@@ -94,9 +102,12 @@ int sys_init()
 
 int sys_frame(const s_time_t frame_time)
 {
+  sys_lock(SYS_LOCK_FRAME);
+
   glClear(GL_COLOR_BUFFER_BIT);
   com_process_event_queue();
 
+  sys_unlock(SYS_LOCK_FRAME);
   return 0;
 }
 
@@ -104,6 +115,37 @@ void sys_quit()
 {
 
 }
+
+int sys_lock(unsigned int lock)
+{
+  if (SYS_LOCK_COUNT <= lock) {
+    s_log_error("Invalid system lock");
+    return -1;
+  }
+
+  return mutex_lock(&g_system_locks[lock]);
+}
+
+int sys_unlock(unsigned int lock)
+{
+  if (SYS_LOCK_COUNT <= lock) {
+    s_log_error("Invalid system lock");
+    return -1;
+  }
+
+  return mutex_unlock(&g_system_locks[lock]);
+}
+
+int sys_trylock(unsigned int lock)
+{
+  if (SYS_LOCK_COUNT <= lock) {
+    s_log_error("Invalid system lock");
+    return -1;
+  }
+
+  return mutex_trylock(&g_system_locks[lock]);
+}
+
 
 #ifdef __cplusplus
 }
