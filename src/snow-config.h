@@ -17,14 +17,18 @@
 # include <TargetConditionals.h>
 #endif
 
-#include <stdint.h>
-#include <stddef.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <sys/types.h>
+// system
+#include <assert.h>
 #include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+// physicsfs
 #include <physfs.h>
+// snow
+#include <sys/types.h>
 
 #ifndef S_BREAKPOINT
 # if NDEBUG
