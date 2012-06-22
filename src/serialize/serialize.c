@@ -45,22 +45,37 @@ static const char *sz_errstr_endian_open = "Cannot set endianness of open serial
 
 
 // static prototypes
+// returns an error for the stream (never returns SZ_SUCCESS -- only call when you know an error has occurred)
 static sz_response_t sz_file_error(sz_context_t *ctx);
+// reads the file root
 static sz_response_t sz_read_root(sz_context_t *ctx, sz_root_t *root);
+// reads a simple chunk header
 static sz_response_t sz_read_header(sz_context_t *ctx, sz_header_t *header, uint32_t name, uint8_t kind, bool null_allowed);
+// reads an array header
 static sz_response_t sz_read_array_header(sz_context_t *ctx, sz_array_t *chunk, uint32_t name, uint8_t type);
+// reads the body of a primitive array
 static sz_response_t sz_read_array_body(sz_context_t *ctx, const sz_array_t *chunk, void **buf_out, size_t *length, allocator_t *alloc);
+// allocates storage for a new compound
 static uint32_t sz_new_compound(sz_context_t *ctx, void *p);
+// stores a compound for writing later
+static uint32_t sz_store_compound(sz_context_t *ctx, void *p, sz_compound_writer_t writer, void *writer_ctx);
+// push/pop stack for reader/writer
 static void sz_push_stack(sz_context_t *ctx);
 static void sz_pop_stack(sz_context_t *ctx);
+// writes a null pointer chunk
 static sz_response_t sz_write_null_pointer(sz_context_t *ctx, uint32_t name);
+// reads a single primitive
 static sz_response_t sz_read_primitive(sz_context_t *ctx, uint8_t chunktype, uint32_t name, void *out, size_t typesize);
+// writes a single primitive
 static sz_response_t sz_write_primitive(sz_context_t *ctx, uint8_t chunktype, uint32_t name, const void *input, size_t typesize);
+// writes an array of primitives
 static sz_response_t sz_write_primitive_array(sz_context_t *ctx, uint8_t type, uint32_t name, const void *values, size_t length, size_t element_size);
+// tells the reader to prepare itself
 static sz_response_t sz_reader_begin(sz_context_t *ctx);
+// tells the writer to prepare itself
 static sz_response_t sz_writer_begin(sz_context_t *ctx);
+// tells the writer to flush its buffers to the output stream
 static sz_response_t sz_writer_flush(sz_context_t *ctx);
-static uint32_t sz_store_compound(sz_context_t *ctx, void *p, sz_compound_writer_t writer, void *writer_ctx);
 
 // inline statics
 static inline uint32_t sz_to_endianness(uint32_t u, int src, int dst);
@@ -408,7 +423,7 @@ sz_write_primitive_array(sz_context_t *ctx,
 }
 
 
-sz_response_t
+static sz_response_t
 sz_read_primitive_array(sz_context_t *ctx,
                         uint8_t chunktype, uint32_t name,
                         void **out, size_t *length,
