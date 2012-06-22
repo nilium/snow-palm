@@ -100,6 +100,10 @@
 #endif
 
 
+// PhysicsFS convenience macro for getting the error string
+#define pfs_get_error() PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())
+
+
 // Types
 
 // Handle type
