@@ -111,8 +111,17 @@
 // Types
 
 // Handle type
-typedef int32_t s_handle_t;
+typedef int32_t handle_t;
 
+// Signed integer types
+typedef int8_t sint8_t;
+typedef int16_t sint16_t;
+typedef int32_t sint32_t;
+typedef int64_t sint64_t;
+
+// Pointer types
+typedef void *voidptr_t;
+typedef char *charptr_t;
 
 #if S_USE_PTHREADS
 # include <pthread.h>
