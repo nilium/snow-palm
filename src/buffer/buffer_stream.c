@@ -35,15 +35,29 @@ stream_t *buffer_stream(buffer_t *buffer, stream_mode_t mode, bool destroy_on_cl
   stream_t *stream = stream_alloc(mode, buffer->alloc);
 
   if (stream) {
+    char *offset = buffer->ptr;
+
     stream->mode = mode;
     stream->read = buffer_read;
     stream->write = buffer_write;
     stream->seek = buffer_seek;
     stream->eof = buffer_eof;
     stream->close = buffer_close;
+
+    switch (mode) {
+      case STREAM_WRITE:
+        buffer_resize(buffer, 0);
+      case STREAM_READ:
+        offset = buffer->ptr;
+        break;
+      case STREAM_APPEND:
+        offset += buffer->size;
+        break;
+    }
+
     stream->context.unknown[BUFFER_INDEX] = buffer;
+    stream->context.unknown[OFFSET_INDEX] = offset;
     stream->context.unknown[START_INDEX] = buffer->ptr;
-    stream->context.unknown[OFFSET_INDEX] = buffer->ptr;
     stream->context.unknown[DESTROY_INDEX] = (void *)destroy_on_close;
   }
 
@@ -92,10 +106,11 @@ static size_t buffer_write(const void * const p, size_t len, stream_t *stream)
     return 0;
 
   buffer = (buffer_t *)stream->context.unknown[BUFFER_INDEX];
-  offset = (char *)stream->context.unknown[OFFSET_INDEX];
 
-  if (len == 0)
-    return 0;
+  if (stream->mode == STREAM_APPEND)
+    offset = buffer->ptr + buffer->size;
+  else
+    offset = (char *)stream->context.unknown[OFFSET_INDEX];
 
   abs_size = (size_t)((offset - buffer->ptr) + len);
   if (abs_size > buffer->size) {
@@ -155,6 +170,9 @@ static off_t buffer_seek(stream_t *stream, off_t pos, int whence)
   buffer = (buffer_t *)stream->context.unknown[BUFFER_INDEX];
   offset = (char *)stream->context.unknown[OFFSET_INDEX];
 
+  if (stream->mode == STREAM_APPEND)
+    return (off_t)buffer->size;
+
   switch (whence) {
     case SEEK_SET:
       new_offset = buffer->ptr + pos;
@@ -191,7 +209,9 @@ static int buffer_eof(stream_t *stream)
   buffer_t *buffer;
   char *offset;
 
-  if (buffer_check_for_resize(stream))
+  if (stream->mode != STREAM_READ)
+    return 0;
+  else if (buffer_check_for_resize(stream))
     return -1;
 
   buffer = (buffer_t *)stream->context.unknown[BUFFER_INDEX];
