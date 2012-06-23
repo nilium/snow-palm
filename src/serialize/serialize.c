@@ -9,6 +9,10 @@ extern "C" {
 
 // There shouldn't be object trees deeper than this
 #define SZ_MAX_STACK_SIZE (384)
+// The size of a chunk header
+#define SZ_HEADER_SIZE (9)
+// The size of an array chunk
+#define SZ_ARRAY_SIZE (SZ_HEADER_SIZE + 5)
 
 
 typedef struct {
@@ -28,44 +32,74 @@ static const char *sz_errstr_null_context = "Null serializer context.";
 static const char *sz_errstr_invalid_root = "Invalid magic number for root.";
 static const char *sz_errstr_wrong_kind = "Invalid chunk header: wrong chunk kind.";
 static const char *sz_errstr_bad_name = "Invalid chunk header: wrong chunk name.";
-static const char *sz_errstr_cannot_read = "Unable to read from file.";
-static const char *sz_errstr_eof = "Unexpected end of file reached.";
+static const char *sz_errstr_cannot_read = "Unable to read from stream.";
+static const char *sz_errstr_cannot_write = "Unable to write to stream.";
+static const char *sz_errstr_eof = "Unexpected end of stream reached.";
 static const char *sz_errstr_write_on_read = "Cannot perform write operation on read-serializer.";
 static const char *sz_errstr_read_on_write = "Cannot perform read operation on write-serializer.";
 static const char *sz_errstr_compound_reader_null = "Failed to deserialize compound object with reader: reader returned NULL.";
 static const char *sz_errstr_already_closed = "Cannot close serializer that isn't open.";
-static const char *sz_errstr_already_open = "Cannot set file for open serializer.";
+static const char *sz_errstr_already_open = "Cannot set stream for open serializer.";
 static const char *sz_errstr_null_stream = "Stream is NULL.";
 static const char *sz_errstr_empty_array = "Array is empty.";
-static const char *sz_errstr_endian_open = "Cannot set endianness of open serializer.";
+static const char *sz_errstr_nomem = "Allocation failed.";
 
 
 // static prototypes
+// returns an error for the stream (never returns SZ_SUCCESS -- only call when you know an error has occurred)
 static sz_response_t sz_file_error(sz_context_t *ctx);
+// writes the file root
+static sz_response_t sz_write_root(sz_context_t *ctx, sz_root_t root);
+// reads the file root
 static sz_response_t sz_read_root(sz_context_t *ctx, sz_root_t *root);
+// reads a simple chunk header
 static sz_response_t sz_read_header(sz_context_t *ctx, sz_header_t *header, uint32_t name, uint8_t kind, bool null_allowed);
+// reads an array header
 static sz_response_t sz_read_array_header(sz_context_t *ctx, sz_array_t *chunk, uint32_t name, uint8_t type);
+// reads the body of a primitive array
 static sz_response_t sz_read_array_body(sz_context_t *ctx, const sz_array_t *chunk, void **buf_out, size_t *length, allocator_t *alloc);
+// allocates storage for a new compound
 static uint32_t sz_new_compound(sz_context_t *ctx, void *p);
+// stores a compound for writing later
+static uint32_t sz_store_compound(sz_context_t *ctx, void *p, sz_compound_writer_t writer, void *writer_ctx);
+// push/pop stack for reader/writer
 static void sz_push_stack(sz_context_t *ctx);
 static void sz_pop_stack(sz_context_t *ctx);
+// writes a null pointer chunk
 static sz_response_t sz_write_null_pointer(sz_context_t *ctx, uint32_t name);
+// reads a single primitive
 static sz_response_t sz_read_primitive(sz_context_t *ctx, uint8_t chunktype, uint32_t name, void *out, size_t typesize);
+// writes a single primitive
 static sz_response_t sz_write_primitive(sz_context_t *ctx, uint8_t chunktype, uint32_t name, const void *input, size_t typesize);
+// writes an array of primitives
 static sz_response_t sz_write_primitive_array(sz_context_t *ctx, uint8_t type, uint32_t name, const void *values, size_t length, size_t element_size);
+// tells the reader to prepare itself
 static sz_response_t sz_reader_begin(sz_context_t *ctx);
+// tells the writer to prepare itself
 static sz_response_t sz_writer_begin(sz_context_t *ctx);
+// tells the writer to flush its buffers to the output stream
 static sz_response_t sz_writer_flush(sz_context_t *ctx);
-static uint32_t sz_store_compound(sz_context_t *ctx, void *p, sz_compound_writer_t writer, void *writer_ctx);
+// releases memory for read/write contexts
+static sz_response_t sz_destroy_reader(sz_context_t *ctx);
+static sz_response_t sz_destroy_writer(sz_context_t *ctx);
 
 // inline statics
-static inline uint32_t sz_to_endianness(uint32_t u, int src, int dst);
+static inline sz_response_t sz_write_header(sz_context_t *ctx, sz_header_t header);
 static inline sz_response_t sz_check_context(sz_context_t *ctx, sz_mode_t mode);
 
 
-#define sz_read_with_bail(P, SIZE, STREAM, CTX) \
-  if (stream_read((P), (SIZE), (STREAM)) != (SIZE))\
-    return sz_file_error((CTX));
+static inline sz_response_t
+sz_write_header(sz_context_t *ctx, sz_header_t header)
+{
+  stream_t *stream = ctx->active;
+
+  if (   stream_write_uint8(stream, header.kind)
+      || stream_write_uint32(stream, header.name)
+      || stream_write_uint32(stream, header.size))
+    return sz_file_error(ctx);
+
+  return SZ_SUCCESS;
+}
 
 
 static sz_response_t
@@ -75,9 +109,30 @@ sz_file_error(sz_context_t *ctx)
     ctx->error = sz_errstr_eof;
     return SZ_ERROR_EOF;
   } else {
-    ctx->error = sz_errstr_cannot_read;
-    return SZ_ERROR_CANNOT_READ;
+    if (ctx->mode == SZ_READER) {
+      ctx->error = sz_errstr_cannot_read;
+      return SZ_ERROR_CANNOT_READ;
+    } else { // writer
+      ctx->error = sz_errstr_cannot_write;
+      return SZ_ERROR_CANNOT_WRITE;
+    }
   }
+}
+
+
+static sz_response_t
+sz_write_root(sz_context_t *ctx, sz_root_t root)
+{
+  stream_t *stream = ctx->stream;
+  if (   stream_write_uint32(stream, root.magic)
+      || stream_write_uint32(stream, root.size)
+      || stream_write_uint32(stream, root.num_compounds)
+      || stream_write_uint32(stream, root.mappings_offset)
+      || stream_write_uint32(stream, root.compounds_offset)
+      || stream_write_uint32(stream, root.data_offset))
+    return sz_file_error(ctx);
+
+  return SZ_SUCCESS;
 }
 
 
@@ -85,9 +140,17 @@ static sz_response_t
 sz_read_root(sz_context_t *ctx, sz_root_t *root)
 {
   sz_root_t res;
+  stream_t *stream = ctx->stream;
 
-  sz_read_with_bail(&res, sizeof(sz_root_t), ctx->stream, ctx);
+  if (   stream_read_uint32(stream, &res.magic)
+      || stream_read_uint32(stream, &res.size)
+      || stream_read_uint32(stream, &res.num_compounds)
+      || stream_read_uint32(stream, &res.mappings_offset)
+      || stream_read_uint32(stream, &res.compounds_offset)
+      || stream_read_uint32(stream, &res.data_offset))
+    return sz_file_error(ctx);
 
+  // TODO: if the serializer gets new versions, make sure to test for compat
   if (res.magic != SZ_MAGIC) {
     ctx->error = sz_errstr_invalid_root;
     return SZ_INVALID_ROOT;
@@ -102,26 +165,33 @@ sz_read_root(sz_context_t *ctx, sz_root_t *root)
 static sz_response_t
 sz_read_header(sz_context_t *ctx, sz_header_t *header, uint32_t name, uint8_t kind, bool null_allowed)
 {
-  uint32_t seq[2];
   sz_header_t res;
+  stream_t *stream = ctx->stream;
 
-  sz_read_with_bail(&res.kind, sizeof(res.kind), ctx->stream, ctx);
+  if (   stream_read_uint8(stream, &res.kind)
+      || stream_read_uint32(stream, &res.name)
+      || stream_read_uint32(stream, &res.size)) {
 
-  sz_read_with_bail(seq, sizeof(uint32_t) * 2, ctx->stream, ctx);
+    return sz_file_error(ctx);
 
-  res.name = seq[0];
-  res.size = seq[1];
+  }
 
   if (header)
     *header = res;
 
-  if ((header->kind == SZ_NULL_POINTER_CHUNK && !null_allowed) || header->kind != kind) {
+  if (  (res.kind == SZ_NULL_POINTER_CHUNK && !null_allowed)
+      || res.kind != kind) {
+
     ctx->error = sz_errstr_wrong_kind;
     return SZ_ERROR_WRONG_KIND;
-  } else if (header->name != name) {
+
+  } else if (res.name != name) {
+
     ctx->error = sz_errstr_bad_name;
     return SZ_ERROR_BAD_NAME;
+
   }
+
 
   return SZ_SUCCESS;
 }
@@ -131,15 +201,15 @@ static sz_response_t
 sz_read_array_header(sz_context_t *ctx, sz_array_t *chunk, uint32_t name, uint8_t type)
 {
   sz_array_t res;
-
   sz_response_t response = sz_read_header(ctx, &res.header, name, SZ_ARRAY_CHUNK, true);
+  stream_t *stream = ctx->stream;
 
   if (response != SZ_SUCCESS)
     return response;
 
-  sz_read_with_bail(&res.length, sizeof(uint32_t), ctx->stream, ctx);
-
-  sz_read_with_bail(&res.type, sizeof(uint8_t), ctx->stream, ctx);
+  if (   stream_read_uint32(stream, &res.length)
+      || stream_read_uint8(stream, &res.type))
+    return sz_file_error(ctx);
 
   if (chunk)
     *chunk = res;
@@ -150,8 +220,11 @@ sz_read_array_header(sz_context_t *ctx, sz_array_t *chunk, uint32_t name, uint8_
 
 static sz_response_t
 sz_read_array_body(sz_context_t *ctx, const sz_array_t *chunk, void **buf_out, size_t *length, allocator_t *alloc) {
+  off_t end_of_block;
   size_t block_remainder;
   size_t element_size;
+  size_t arr_length;
+  stream_t *stream;
   void *buffer;
 
   if (chunk->header.kind == SZ_NULL_POINTER_CHUNK) {
@@ -160,7 +233,9 @@ sz_read_array_body(sz_context_t *ctx, const sz_array_t *chunk, void **buf_out, s
     return SZ_SUCCESS;
   }
 
-  if (chunk->length == 0) {
+  arr_length = (size_t)chunk->length;
+
+  if (arr_length == 0) {
     ctx->error = sz_errstr_empty_array;
     return SZ_ERROR_EMPTY_ARRAY;
   }
@@ -168,38 +243,57 @@ sz_read_array_body(sz_context_t *ctx, const sz_array_t *chunk, void **buf_out, s
   if (alloc == NULL)
     alloc = g_default_allocator;
 
-  block_remainder = (size_t)chunk->header.size - sizeof(*chunk);
-  element_size = block_remainder / (size_t)chunk->length;
+  stream = ctx->stream;
+  block_remainder = (size_t)chunk->header.size - SZ_ARRAY_SIZE;
+  element_size = block_remainder / arr_length;
+
+  end_of_block = stream_tell(stream);
+  if (end_of_block == -1)
+    return sz_file_error(ctx);
+
+  end_of_block += block_remainder;
 
   if (buf_out) {
-    size_t read_size = element_size * chunk->length;
-    buffer = com_malloc(alloc, block_remainder);
+    char *read_into;
+    size_t index = 0;
 
-    if (stream_read(buffer, read_size, ctx->stream) != read_size) {
-      com_free(alloc, buffer);
-      return sz_file_error(ctx);
+    read_into = buffer = com_malloc(alloc, block_remainder);
+
+    switch (element_size) {
+      case 2:
+        for (; index < arr_length; ++index, read_into += element_size)
+          if (stream_read_uint16(stream, (uint16_t *)read_into))
+            goto array_body_read_error;
+      case 4:
+        for (; index < arr_length; ++index, read_into += element_size)
+          if (stream_read_uint32(stream, (uint32_t *)read_into))
+            goto array_body_read_error;
+      case 8:
+        for (; index < arr_length; ++index, read_into += element_size)
+          if (stream_read_uint64(stream, (uint64_t *)read_into))
+            goto array_body_read_error;
+      default:
+        if (stream_read(buffer, block_remainder, ctx->stream) != block_remainder)
+          goto array_body_read_error;
     }
 
     if (buf_out)
       *buf_out = buffer;
   } else {
     stream_seek(ctx->stream, (off_t)block_remainder, SEEK_CUR);
+    ctx->error = sz_errstr_cannot_read;
+    return SZ_ERROR_CANNOT_READ;
   }
 
   if (length)
     *length = (size_t)chunk->length;
 
   return SZ_SUCCESS;
-}
 
-
-static inline uint32_t
-sz_to_endianness(uint32_t u, int src, int dst)
-{
-  if (src == dst)
-    return u;
-
-  return ((u << 24) | (u & 0x0000FF00U << 8) | (u & 0x00FF0000U >> 8) | (u >> 24));
+array_body_read_error:
+  stream_seek(ctx->stream, end_of_block, SEEK_SET);
+  com_free(alloc, buffer);
+  return sz_file_error(ctx);
 }
 
 
@@ -279,14 +373,10 @@ sz_write_null_pointer(sz_context_t *ctx, uint32_t name)
   sz_header_t chunk = {
     .kind = SZ_NULL_POINTER_CHUNK,
     .name = name,
-    .size = (uint32_t)(sizeof(chunk.kind) + sizeof(chunk.name) + sizeof(chunk.size))
+    .size = (uint32_t)(SZ_HEADER_SIZE)
   };
 
-  stream_write(&chunk.kind, sizeof(chunk.kind), ctx->active);
-  stream_write(&chunk.name, sizeof(chunk.name), ctx->active);
-  stream_write(&chunk.size, sizeof(chunk.size), ctx->active);
-
-  return SZ_SUCCESS;
+  return sz_write_header(ctx, chunk);
 }
 
 
@@ -309,14 +399,28 @@ sz_read_primitive(sz_context_t *ctx,
   if (response != SZ_SUCCESS)
     goto sz_read_primitive_error;
 
-  if (stream_read(out, typesize, ctx->stream) != typesize) {
-    response = sz_file_error(ctx);
-    goto sz_read_primitive_error;
+  switch(typesize) {
+    case 2:
+      if (stream_read_uint16(ctx->stream, out))
+        goto sz_read_primitive_error;
+      break;
+    case 4:
+      if (stream_read_uint32(ctx->stream, out))
+        goto sz_read_primitive_error;
+      break;
+    case 8:
+      if (stream_read_uint64(ctx->stream, out))
+        goto sz_read_primitive_error;
+      break;
+    default:
+      if (stream_read(out, typesize, ctx->stream) != typesize)
+        goto sz_read_primitive_error;
   }
 
   return SZ_SUCCESS;
 
 sz_read_primitive_error:
+  response = sz_file_error(ctx);
   stream_seek(ctx->stream, pos, SEEK_SET);
   return response;
 }
@@ -328,8 +432,8 @@ sz_check_context(sz_context_t *ctx, sz_mode_t mode)
   if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
 
   if (mode != ctx->mode) {
-    ctx->error = (mode == SZ_READER) ? sz_errstr_read_on_write :
-                                       sz_errstr_write_on_read;
+    ctx->error = (mode == SZ_READER) ? sz_errstr_read_on_write
+                                     : sz_errstr_write_on_read;
     return SZ_ERROR_INVALID_OPERATION;
   }
 
@@ -347,7 +451,7 @@ sz_write_primitive(sz_context_t *ctx,
   sz_header_t chunk = {
     .kind = chunktype,
     .name = name,
-    .size = (uint32_t)(sizeof(chunk.kind) + sizeof(chunk.name) + sizeof(chunk.size) + typesize)
+    .size = (uint32_t)(SZ_HEADER_SIZE + typesize)
   };
 
   response = sz_check_context(ctx, SZ_WRITER);
@@ -356,10 +460,27 @@ sz_write_primitive(sz_context_t *ctx,
 
   stream = ctx->active;
 
-  stream_write(&chunk.kind, sizeof(chunk.kind), stream);
-  stream_write(&chunk.name, sizeof(chunk.name), stream);
-  stream_write(&chunk.size, sizeof(chunk.size), stream);
-  stream_write(input, typesize, stream);
+  response = sz_write_header(ctx, chunk);
+  if (response != SZ_SUCCESS)
+    return response;
+
+  switch (typesize) {
+    case 2:
+      if (stream_write_uint16(stream, *(const uint16_t *)input))
+        return sz_file_error(ctx);
+      break;
+    case 4:
+      if (stream_write_uint32(stream, *(const uint32_t *)input))
+        return sz_file_error(ctx);
+      break;
+    case 8:
+      if (stream_write_uint64(stream, *(const uint64_t *)input))
+        return sz_file_error(ctx);
+      break;
+    default:
+      if (stream_write(input, typesize, stream) != typesize)
+        return sz_file_error(ctx);
+  }
 
   return SZ_SUCCESS;
 }
@@ -377,7 +498,7 @@ sz_write_primitive_array(sz_context_t *ctx,
     .header = {
       .kind = SZ_ARRAY_CHUNK,
       .name = name,
-      .size = (uint32_t)(sizeof(chunk) + data_size)
+      .size = (uint32_t)(SZ_ARRAY_SIZE + data_size)
     },
     .length = (uint32_t)length,
     .type = type
@@ -393,18 +514,40 @@ sz_write_primitive_array(sz_context_t *ctx,
   stream = ctx->active;
 
   // write each to deal with possible alignment/packing issues
-  stream_write(&chunk.header.kind, sizeof(chunk.header.kind), stream);
-  stream_write(&chunk.header.name, sizeof(chunk.header.name), stream);
-  stream_write(&chunk.header.size, sizeof(chunk.header.size), stream);
-  stream_write(&chunk.length, sizeof(chunk.length), stream);
-  stream_write(&chunk.type, sizeof(chunk.type), stream);
-  stream_write(values, data_size, stream);
+  response = sz_write_header(ctx, chunk.header);
+  if (response != SZ_SUCCESS)
+    return response;
+
+  stream_write_uint32(stream, chunk.length);
+  stream_write_uint8(stream, chunk.type);
+
+  size_t idx = 0;
+  switch (element_size) {
+      case 2:
+        for (; idx < length; ++idx)
+          if (stream_write_uint16(stream, ((const uint16_t *)values)[idx]))
+            return sz_file_error(ctx);
+        break;
+      case 4:
+        for (; idx < length; ++idx)
+          if (stream_write_uint32(stream, ((const uint32_t *)values)[idx]))
+            return sz_file_error(ctx);
+        break;
+      case 8:
+        for (; idx < length; ++idx)
+          if (stream_write_uint64(stream, ((const uint64_t *)values)[idx]))
+            return sz_file_error(ctx);
+        break;
+    default:
+      if (stream_write(values, data_size, stream) != data_size)
+        return sz_file_error(ctx);
+  }
 
   return SZ_SUCCESS;
 }
 
 
-sz_response_t
+static sz_response_t
 sz_read_primitive_array(sz_context_t *ctx,
                         uint8_t chunktype, uint32_t name,
                         void **out, size_t *length,
@@ -445,7 +588,6 @@ sz_init_context(sz_context_t *ctx, sz_mode_t mode, allocator_t *alloc)
     memset(ctx, 0, sizeof(*ctx));
 
     ctx->alloc = alloc;
-    ctx->endianness = SZ_LITTLE_ENDIAN;
     ctx->error = "";
     ctx->mode = mode;
     ctx->open = 0;
@@ -458,9 +600,49 @@ sz_init_context(sz_context_t *ctx, sz_mode_t mode, allocator_t *alloc)
 sz_response_t
 sz_destroy_context(sz_context_t *ctx)
 {
+  sz_response_t res = SZ_SUCCESS;
+
   if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
 
+  if (ctx->open) {
+    switch (ctx->mode) {
+      case SZ_READER: res = sz_destroy_reader(ctx); break;
+      case SZ_WRITER: res = sz_destroy_writer(ctx); break;
+    }
+  }
+
   memset(ctx, 0, sizeof(*ctx));
+
+  return res;
+}
+
+
+static sz_response_t sz_destroy_reader(sz_context_t *ctx)
+{
+  array_destroy(&ctx->compounds);
+  array_destroy(&ctx->stack);
+
+  return SZ_SUCCESS;
+}
+
+
+static sz_response_t sz_destroy_writer(sz_context_t *ctx)
+{
+  size_t index, len;
+  allocator_t *alloc = ctx->alloc;
+  sz_buffer_stream_t *buffers = array_buffer(&ctx->compounds, NULL);
+
+  map_destroy(&ctx->compound_ptrs);
+  array_destroy(&ctx->compounds);
+  array_destroy(&ctx->stack);
+  stream_close(ctx->buffer_stream);
+
+  len = array_size(&ctx->compounds);
+
+  for (index = 0; index < len; ++index) {
+    stream_close(buffers[index].stream);
+    com_free(alloc, buffers[index].buffer);
+  }
 
   return SZ_SUCCESS;
 }
@@ -477,6 +659,7 @@ sz_reader_begin(sz_context_t *ctx)
   sz_unpacked_compound_t *packs;
   uint32_t *offsets;
   size_t offsets_size;
+  stream_t *stream = ctx->stream;
 
   array_init(&ctx->stack, sizeof(off_t), 32, ctx->alloc);
   array_init(&ctx->compounds, sizeof(sz_unpacked_compound_t), 32, ctx->alloc);
@@ -489,19 +672,24 @@ sz_reader_begin(sz_context_t *ctx)
 
   array_resize(&ctx->compounds, (size_t)root.num_compounds + 8);
 
-  index = 0;
   len = root.num_compounds;
   packs = array_buffer(&ctx->compounds, NULL);
 
   if (packs == NULL && len != 0) {
     s_fatal_error(1, "Failed to create unpacked compounds array");
+    ctx->error = sz_errstr_nomem;
     return SZ_ERROR_NULL_POINTER;
   }
 
   offsets_size = sizeof(uint32_t) * len;
   offsets = com_malloc(ctx->alloc, offsets_size);
 
-  sz_read_with_bail(offsets, offsets_size, ctx->stream, ctx);
+  for (index = 0; index < len; ++index) {
+    if (stream_read_uint32(stream, offsets + index)) {
+      sz_pop_stack(ctx);
+      return sz_file_error(ctx);
+    }
+  }
 
   sz_pop_stack(ctx);
 
@@ -528,7 +716,7 @@ static sz_response_t
 sz_writer_begin(sz_context_t *ctx)
 {
   buffer_init(&ctx->buffer, 32, ctx->alloc);
-  ctx->buffer_stream = buffer_stream(&ctx->buffer, STREAM_WRITE, ctx->alloc);
+  ctx->buffer_stream = buffer_stream(&ctx->buffer, STREAM_WRITE, true);
   array_init(&ctx->stack, sizeof(stream_t *), 32, ctx->alloc);
   array_init(&ctx->compounds, sizeof(sz_buffer_stream_t), 32, ctx->alloc);
   map_init(&ctx->compound_ptrs, g_mapops_default, ctx->alloc);
@@ -542,6 +730,7 @@ sz_writer_begin(sz_context_t *ctx)
 static sz_response_t
 sz_writer_flush(sz_context_t *ctx)
 {
+  sz_response_t response;
   size_t index, len;
 
   stream_t *stream = ctx->stream;
@@ -572,26 +761,28 @@ sz_writer_flush(sz_context_t *ctx)
   root.data_offset = root.compounds_offset + compounds_size;
   root.size = root.data_offset + (uint32_t)buffer_size(&ctx->buffer);
 
-  stream_write(&root, sizeof(root), stream);
+  response = sz_write_root(ctx, root);
+  if (response != SZ_SUCCESS)
+    return response;
 
   // write mappings
   relative_off = (uint32_t)(sizeof(root) + mappings_size);
   for (index = 0; index < len; ++index) {
     comp_buf = comp_buffers[index].buffer;
-    stream_write(&relative_off, sizeof(uint32_t), stream);
+    if (stream_write_uint32(stream, relative_off))
+      return sz_file_error(ctx);
     relative_off += buffer_size(comp_buf);
   }
 
   for (index = 0; index < len; ++index) {
+    size_t buffer_sz = buffer_size(comp_buf);
     comp_buf = comp_buffers[index].buffer;
-    stream_write(buffer_pointer(comp_buf), buffer_size(comp_buf), stream);
-    stream_close(comp_buffers[index].stream);
+    if (stream_write(buffer_pointer(comp_buf), buffer_sz, stream) != buffer_sz)
+      return sz_file_error(ctx);
   }
 
-  if (data_ptr)
-    stream_write(data_ptr, data_sz, stream);
-
-  map_destroy(&ctx->compound_ptrs);
+  if (data_ptr && stream_write(data_ptr, data_sz, stream) != data_sz)
+    return sz_file_error(ctx);
 
   return SZ_SUCCESS;
 }
@@ -625,14 +816,17 @@ sz_close(sz_context_t *ctx)
 
   res = SZ_SUCCESS;
 
-  if (ctx->mode == SZ_WRITER)
+  if (ctx->mode == SZ_WRITER) {
     res = sz_writer_flush(ctx);
 
-  if (ctx->mode == SZ_WRITER)
-    stream_close(ctx->buffer_stream);
+    if (res != SZ_SUCCESS)
+      return res;
+  }
 
-  array_destroy(&ctx->compounds);
-  array_destroy(&ctx->stack);
+  switch (ctx->mode) {
+    case SZ_READER: res = sz_destroy_reader(ctx); break;
+    case SZ_WRITER: res = sz_destroy_writer(ctx); break;
+  }
 
   ctx->open = 0;
 
@@ -657,21 +851,6 @@ sz_set_stream(sz_context_t *ctx, stream_t *stream)
 
   ctx->stream = stream;
   ctx->stream_pos = stream_tell(stream);
-
-  return SZ_SUCCESS;
-}
-
-
-sz_response_t
-sz_set_endianness(sz_context_t *ctx, sz_endianness_t endianness)
-{
-  if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
-
-  if (ctx->open) {
-    ctx->error = sz_errstr_endian_open;
-    return SZ_ERROR_INVALID_OPERATION;
-  }
-  ctx->endianness = endianness;
 
   return SZ_SUCCESS;
 }
@@ -776,7 +955,7 @@ sz_read_compound(sz_context_t *ctx, uint32_t name, void **p,
     goto sz_read_compound_error;
 
   if (chunk.kind == SZ_COMPOUND_REF_CHUNK) {
-    if (stream_read(&index, sizeof(uint32_t), ctx->stream) != sizeof(uint32_t)) {
+    if (stream_read_uint32(ctx->stream, &index)) {
       response = sz_file_error(ctx);
       goto sz_read_compound_error;
     }
@@ -808,40 +987,39 @@ sz_response_t
 sz_write_compounds(sz_context_t *ctx, uint32_t name, void **p, size_t length,
                        sz_compound_writer_t writer, void *writer_ctx)
 {
+  sz_response_t response;
   uint32_t index, ref;
   stream_t *stream;
   sz_array_t chunk = {
     .header = {
       .kind = SZ_ARRAY_CHUNK,
       .name = name,
-      .size = (uint32_t)(sizeof(chunk) + sizeof(uint32_t) * length)
+      .size = (uint32_t)(SZ_ARRAY_SIZE + sizeof(uint32_t) * length)
     },
     .length = length,
     .type = SZ_COMPOUND_REF_CHUNK
   };
 
-  if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
+  response = sz_check_context(ctx, SZ_READER);
+  if (response != SZ_SUCCESS)
+    return response;
 
-  if (ctx->mode == SZ_READER) {
-    ctx->error = sz_errstr_write_on_read;
-    return SZ_ERROR_INVALID_OPERATION;
-  }
-
-  if (p == NULL) {
-    sz_write_null_pointer(ctx, name);
-    return SZ_SUCCESS;
-  }
+  if (p == NULL)
+    return sz_write_null_pointer(ctx, name);
 
   stream = ctx->active;
-  stream_write(&chunk.header.kind, sizeof(chunk.header.kind), stream);
-  stream_write(&chunk.header.name, sizeof(chunk.header.name), stream);
-  stream_write(&chunk.header.size, sizeof(chunk.header.size), stream);
-  stream_write(&chunk.length, sizeof(chunk.length), stream);
-  stream_write(&chunk.type, sizeof(chunk.type), stream);
+
+  response = sz_write_header(ctx, chunk.header);
+  if (response != SZ_SUCCESS)
+    return response;
+
+  if (   stream_write_uint32(stream, chunk.length)
+      || stream_write_uint8(stream, chunk.type))
+    return sz_file_error(ctx);
 
   for (index = 0; index < length; ++index) {
     ref = sz_store_compound(ctx, p[index], writer, writer_ctx);
-    stream_write(&ref, sizeof(uint32_t), ctx->active);
+    stream_write_uint32(ctx->active, ref);
   }
 
   return SZ_SUCCESS;
@@ -853,20 +1031,19 @@ sz_read_compounds(sz_context_t *ctx, uint32_t name, void ***out, size_t *length,
                       sz_compound_reader_t reader, void *reader_ctx,
                       allocator_t *buf_alloc)
 {
-  if (NULL == ctx) return SZ_ERROR_NULL_CONTEXT;
+  sz_response_t response;
+  sz_array_t chunk;
+  off_t pos;
 
-  if (ctx->mode == SZ_WRITER) {
-    ctx->error = sz_errstr_read_on_write;
-    return SZ_ERROR_INVALID_OPERATION;
-  }
+  response = sz_check_context(ctx, SZ_READER);
+  if (response != SZ_SUCCESS)
+    return response;
 
   if (buf_alloc == NULL)
     buf_alloc = g_default_allocator;
 
-  sz_response_t response;
-  sz_array_t chunk;
-  off_t pos;
   pos = stream_tell(ctx->stream);
+
 
   response = sz_read_array_header(ctx, &chunk, name, SZ_COMPOUND_REF_CHUNK);
   if (response != SZ_SUCCESS) {
@@ -886,7 +1063,7 @@ sz_read_compounds(sz_context_t *ctx, uint32_t name, void ***out, size_t *length,
       buf = (void **)com_malloc(buf_alloc, sizeof(void *) * chunk.length);
 
       for (index = 0; index < chunk.length; ++index) {
-        if (stream_read(&ref, sizeof(uint32_t), ctx->stream) != sizeof(uint32_t)) {
+        if (stream_read_uint32(ctx->stream, &ref)) {
           com_free(buf_alloc, buf);
           stream_seek(ctx->stream, pos, SEEK_SET);
           return sz_file_error(ctx);
@@ -908,20 +1085,20 @@ sz_read_compounds(sz_context_t *ctx, uint32_t name, void ***out, size_t *length,
 
 
 sz_response_t
-sz_write_bytes(sz_context_t *ctx, uint32_t name, const uint8_t *values, size_t length)
+sz_write_bytes(sz_context_t *ctx, uint32_t name, const void *values, size_t length)
 {
-  return sz_write_primitive(ctx, SZ_BYTES_CHUNK, name, values, length * sizeof(uint8_t));
+  return sz_write_primitive(ctx, SZ_BYTES_CHUNK, name, values, length);
 }
 
 
 sz_response_t
-sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, size_t *length, allocator_t *buf_alloc)
+sz_read_bytes(sz_context_t *ctx, uint32_t name, void **out, size_t *length, allocator_t *buf_alloc)
 {
   sz_response_t response;
   sz_header_t chunk;
   off_t pos;
   size_t size;
-  uint8_t *bytes;
+  void *bytes;
 
   response = sz_check_context(ctx, SZ_READER);
   if (response != SZ_SUCCESS)
@@ -940,10 +1117,10 @@ sz_read_bytes(sz_context_t *ctx, uint32_t name, uint8_t **out, size_t *length, a
     if (out) *out = NULL;
     if (length) *length = 0;
   } else {
-    size = (size_t)chunk.size - sizeof(chunk);
+    size = (size_t)chunk.size - SZ_HEADER_SIZE;
 
     if (out) {
-      bytes = (uint8_t *)com_malloc(buf_alloc, size);
+      bytes = com_malloc(buf_alloc, size);
 
       if (stream_read(bytes, size, ctx->stream) != size) {
         response = sz_file_error(ctx);

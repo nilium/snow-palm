@@ -29,7 +29,7 @@ extern "C" {
 typedef enum {
   SZ_SUCCESS = 0,
   SZ_ERROR_NONE = SZ_SUCCESS,
-  // Root is invalid, typically meaning it's not actually a serializable file.
+  // Root is invalid, typically meaning it's not actually a serializable stream.
   SZ_INVALID_ROOT,
   // Error when attempting to write an empty array (length == 0).
   SZ_ERROR_EMPTY_ARRAY,
@@ -49,19 +49,15 @@ typedef enum {
   SZ_ERROR_OUT_OF_MEMORY,
   // Attempted to read the wrong kind of data from the serializer.
   SZ_ERROR_WRONG_KIND,
-  // File is incorrect
+  // Stream is somehow invalid
   SZ_ERROR_INVALID_STREAM,
-  // Could not or cannot read from the file.
+  // Could not or cannot read from/write to the stream.
   SZ_ERROR_CANNOT_READ,
+  SZ_ERROR_CANNOT_WRITE,
+  // Could not or cannot write to a stream.
   // Reached EOF prematurely
   SZ_ERROR_EOF
 } sz_response_t;
-
-// Endianness
-typedef enum {
-  SZ_BIG_ENDIAN = 1,
-  SZ_LITTLE_ENDIAN  = 2
-} sz_endianness_t;
 
 typedef enum {
   SZ_READER,
@@ -100,7 +96,6 @@ struct s_sz_context {
   const char *error;
 
   int mode;
-  int endianness;
   int open;
   int compound_level;
 
@@ -113,7 +108,7 @@ struct s_sz_context {
   map_t compound_ptrs;
   // stack that operates differently when reading and writing
   // writing: stack of active buffers
-  // reading: stack of fpos_t locations in the file being read
+  // reading: stack of off_t locations in the stream
   array_t stack;
   // compound pointers
   // writing: pointers to buffers of compounds
@@ -180,9 +175,6 @@ sz_close(sz_context_t *ctx);
 sz_response_t
 sz_set_stream(sz_context_t *ctx, stream_t *stream);
 
-sz_response_t
-sz_set_endianness(sz_context_t *ctx, sz_endianness_t endianness);
-
 // Returns a NULL-terminated error string.
 const char *
 sz_get_error(sz_context_t *ctx);
@@ -213,12 +205,12 @@ sz_read_compounds(sz_context_t *ctx, uint32_t name,
 // Writes an array of bytes with the given length.
 sz_response_t
 sz_write_bytes(sz_context_t *ctx, uint32_t name,
-               const uint8_t *values, size_t length);
+               const void *values, size_t length);
 // Reads an array of bytes and returns it via `out`.
 // The memory must be freed by the caller.
 sz_response_t
 sz_read_bytes(sz_context_t *ctx, uint32_t name,
-              uint8_t **out, size_t *length,
+              void **out, size_t *length,
               allocator_t *buf_alloc);
 
 sz_response_t

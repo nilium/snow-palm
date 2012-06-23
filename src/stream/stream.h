@@ -23,8 +23,8 @@ typedef enum {
   STREAM_READ = 1,
   // Opens the stream for writing only, starts at the beginning.
   STREAM_WRITE = 2,
-  // Opens the stream for both reading and writing, starts at the beginning.
-  STREAM_READWRITE = STREAM_READ | STREAM_WRITE
+  // Opens the stream for writing, starts at the end of the file.
+  STREAM_APPEND = 3
 } stream_mode_t;
 
 typedef enum {
@@ -103,9 +103,9 @@ struct s_stream {
 
   union {
     struct {
-      FILE *file;
+      PHYSFS_File *file;
       char *file_path;
-    } stdio;
+    } pfs;
     void *unknown[STREAM_UNKNOWN_CONTEXT_COUNT];
   } context;
 };
@@ -119,8 +119,28 @@ stream_t *stream_file_open(const char *filepath, stream_mode_t);
 // Reads length bytes from stream into out
 size_t stream_read(void * const out, size_t length, stream_t *stream);
 
+int stream_read_uint8(stream_t *stream, uint8_t *out);
+int stream_read_uint16(stream_t *stream, uint16_t *out);
+int stream_read_uint32(stream_t *stream, uint32_t *out);
+int stream_read_uint64(stream_t *stream, uint64_t *out);
+
+int stream_read_sint8(stream_t *stream, int8_t *out);
+int stream_read_sint16(stream_t *stream, int16_t *out);
+int stream_read_sint32(stream_t *stream, int32_t *out);
+int stream_read_sint64(stream_t *stream, int64_t *out);
+
 // Writes length bytes to stream from in.
 size_t stream_write(const void * const in, size_t length, stream_t *stream);
+
+int stream_write_uint8(stream_t *stream, uint8_t in);
+int stream_write_uint16(stream_t *stream, uint16_t in);
+int stream_write_uint32(stream_t *stream, uint32_t in);
+int stream_write_uint64(stream_t *stream, uint64_t in);
+
+int stream_write_sint8(stream_t *stream, int8_t in);
+int stream_write_sint16(stream_t *stream, int16_t in);
+int stream_write_sint32(stream_t *stream, int32_t in);
+int stream_write_sint64(stream_t *stream, int64_t in);
 
 // Operates the same as fseeko.
 // Changes stream position from the current position to an offset from the
@@ -141,7 +161,7 @@ STREAM_INLINE off_t stream_rewind(stream_t *stream)
 }
 
 // Operates the same as ftello.
-// If no tell operation is provided, it returns seek(stream, 0, SEEK_CUR).
+// Returns seek(stream, 0, SEEK_CUR).
 STREAM_INLINE off_t stream_tell(stream_t *stream)
 {
   return stream_seek(stream, 0, SEEK_CUR);
