@@ -281,6 +281,8 @@ void sys_create_window(
   CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(g_display_link, cglContext, cglFormat);
   CVDisplayLinkStart(g_display_link);
 
+  atexit(reset_display_atexit);
+
   s_log_note("Window created");
 }
 
