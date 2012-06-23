@@ -1,6 +1,5 @@
 #import "../system.h"
 
-#import "../sgl.h"
 #import "app_delegate.h"
 #import "NSOpenGLPixelFormat+SnowPF.h"
 #import "window.h"
