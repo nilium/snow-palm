@@ -1,4 +1,4 @@
-#define SNOW_SOURCE 1
+#define __SNOW_SCENE_C__
 
 #include "scene.h"
 #include <entity.h>
