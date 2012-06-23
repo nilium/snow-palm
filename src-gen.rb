@@ -4,40 +4,50 @@ ARGV.each { |mod_name|
   base = File.basename mod_name
   c_filename = "#{mod_name}.c"
   h_filename = "#{mod_name}.h"
-  guard_name = base.upcase.gsub(/[_ \.!@#\$\%\^&*()\-=+]+/, '_')
-  h_guard = "__#{guard_name}_H__"
+  guard_name = base.upcase.gsub(/[^a-zA-Z0-9]+/, '_')
+  h_guard = "__SNOW__#{guard_name}_H__"
+  c_guard = "__SNOW__#{guard_name}_C__"
 
 C_TEMPLATE = <<-EOS
-#define SNOW_SOURCE
+#define #{c_guard}
 
 #include "#{base}.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif /* __cplusplus */
 
 
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif /* __cplusplus */
 EOS
 
 H_TEMPLATE = <<-EOS
 #ifndef #{h_guard}
 #define #{h_guard} 1
 
+#ifdef #{c_guard}
+# define SNOW_SOURCE
+#endif /* #{c_guard} */
+
+/* Includes */
 #include <snow-config.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif /* __cplusplus */
 
 
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif /* __cplusplus */
+
+#ifdef SNOW_SOURCE
+# undef SNOW_SOURCE
+#endif /* SNOW_SOURCE */
 
 #endif /* end #{h_guard} include guard */
 EOS
