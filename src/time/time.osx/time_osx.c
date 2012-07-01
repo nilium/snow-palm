@@ -1,4 +1,7 @@
-#include "../time.h"
+#define __SNOW__TIME_OSX_C__
+
+#include <time/time.h>
+
 #import <QuartzCore/QuartzCore.h>
 
 static s_time_t g_root_time = 0;
