@@ -5,12 +5,18 @@
   See LICENSE.md for license information
 */
 
-#ifndef DYNARRAY_H
+#ifndef __SNOW__DYNARRAY_H__
 
-#define DYNARRAY_H
+#define __SNOW__DYNARRAY_H__
 
 #include <snow-config.h>
 #include <memory/allocator.h>
+
+#ifdef __SNOW__DYNARRAY_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #if defined(__cplusplus)
 extern "C"
@@ -96,4 +102,6 @@ void *array_last(array_t *self);
 }
 #endif /* __cplusplus */
 
-#endif /* end of include guard: DYNARRAY_H */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__DYNARRAY_H__ */

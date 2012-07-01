@@ -5,7 +5,7 @@
   See LICENSE.md for license information
 */
 
-#define SNOW_SOURCE 1
+#define __SNOW__DYNARRAY_C__
 
 #include "dynarray.h"
 
