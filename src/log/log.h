@@ -5,8 +5,8 @@
   See LICENSE.md for license information
 */
 
-#ifndef LOG_H_B31TON6M
-#define LOG_H_B31TON6M
+#ifndef __SNOW__LOG_H__
+#define __SNOW__LOG_H__
 
 #include <stdio.h>
 
@@ -110,4 +110,4 @@ void s_fatal_error_impl(const char *format, int error, ...);
 }
 #endif
 
-#endif /* end of include guard: LOG_H_B31TON6M */
+#endif /* end of include guard: __SNOW__LOG_H__ */
