@@ -5,10 +5,16 @@
   See LICENSE.md for license information
 */
 
-#ifndef MATHS_H_G3RBNYON
-#define MATHS_H_G3RBNYON
+#ifndef __SNOW__MATHS_H__
+#define __SNOW__MATHS_H__
 
 #include <math.h>
+
+#ifdef __SNOW__MATHS_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #if defined(__cplusplus)
 extern "C" {
@@ -86,27 +92,21 @@ typedef s_float_t quat_t[4];
 #define S_DEG2RAD (0.01745329)
 #define S_RAD2DEG (57.2957795)
 
-#if !defined(NO_INLINE_FLOAT_OPS)
-
-inline int float_is_zero(const s_float_t x) {
+S_INLINE int float_is_zero(const s_float_t x)
+{
   return (fabs(x) < S_FLOAT_EPSILON);
 }
 
-inline int float_equals(const s_float_t x, const s_float_t y) {
+S_INLINE int float_equals(const s_float_t x, const s_float_t y)
+{
   return (fabs(x - y) < S_FLOAT_EPSILON);
 }
-
-#else
-
-int float_is_zero(const s_float_t x);
-int float_equals(const s_float_t x, const s_float_t y);
-
-#endif
-
 
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
 
-#endif /* end of include guard: MATHS_H_G3RBNYON */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__MATHS_H__ */
 
