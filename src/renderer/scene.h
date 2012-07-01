@@ -1,14 +1,17 @@
 #ifndef __SNOW_SCENE_H__
 #define __SNOW_SCENE_H__ 1
 
-#ifdef __SNOW_SCENE_C__
-#define SNOW_SOURCE
-#endif
 
 #include <snow-config.h>
 #include <memory/allocator.h>
 #include <structs/list.h>
 #include <threads/mutex.h>
+
+#ifdef __SNOW__SCENE_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,8 +64,6 @@ struct s_camera *scene_new_camera(scene_t *scene, const char *name, struct s_ent
 }
 #endif // __cplusplus
 
-#ifdef SNOW_SOURCE
-#undef SNOW_SOURCE
-#endif
+#include <inline.end>
 
 #endif /* end __SNOW_SCENE_H__ include guard */
