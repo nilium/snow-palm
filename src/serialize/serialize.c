@@ -1,3 +1,5 @@
+#define __SNOW__SERIALIZE_C__
+
 #include "serialize.h"
 
 #include <buffer/buffer_stream.h>

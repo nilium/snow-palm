@@ -1,11 +1,17 @@
-#ifndef __SERIALIZE_H__
-#define __SERIALIZE_H__ 1
+#ifndef __SNOW__SERIALIZE_H__
+#define __SNOW__SERIALIZE_H__ 1
 
 #include <snow-config.h>
 #include <buffer/buffer.h>
 #include <structs/dynarray.h>
 #include <structs/map.h>
 #include <stream/stream.h>
+
+#ifdef __SNOW__SERIALIZE_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -265,4 +271,6 @@ sz_read_unsigned_ints(sz_context_t *ctx, uint32_t name,
 }
 #endif // __cplusplus
 
-#endif /* end __sz_H__ include guard */
+#include <inline.end>
+
+#endif /* end __SNOW__SERIALIZE_H__ include guard */
