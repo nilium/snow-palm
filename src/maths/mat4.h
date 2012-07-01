@@ -5,10 +5,16 @@
   See LICENSE.md for license information
 */
 
-#ifndef MATRIX_H_3CZ1OZK7
-#define MATRIX_H_3CZ1OZK7
+#ifndef __SNOW__MAT4_H__
+#define __SNOW__MAT4_H__
 
 #include "maths.h"
+
+#ifdef __SNOW__MAT4_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #if defined(__cplusplus)
 extern "C"
@@ -72,5 +78,7 @@ void mat4_scale(const mat4_t in, s_float_t x, s_float_t y, s_float_t z, mat4_t o
 }
 #endif /* __cplusplus */
 
-#endif /* end of include guard: MATRIX_H_3CZ1OZK7 */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__MAT4_H__ */
 
