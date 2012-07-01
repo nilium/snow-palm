@@ -5,6 +5,8 @@
   See LICENSE.md for license information
 */
 
+#define __SNOW__QUAT_C__
+
 #include "quat.h"
 #include "vec4.h"
 #include "vec3.h"

@@ -5,11 +5,16 @@
   See LICENSE.md for license information
 */
 
-#ifndef QUAT_H
-
-#define QUAT_H
+#ifndef __SNOW__QUAT_H__
+#define __SNOW__QUAT_H__
 
 #include "maths.h"
+
+#ifdef __SNOW__QUAT_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #if defined(__cplusplus)
 extern "C"
@@ -41,5 +46,7 @@ int quat_equals(const quat_t left, const quat_t right);
 }
 #endif /* __cplusplus */
 
-#endif /* end of include guard: QUAT_H */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__QUAT_H__ */
 
