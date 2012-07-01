@@ -1,5 +1,5 @@
-#ifndef __SNOW_SYSTEM_H__
-#define __SNOW_SYSTEM_H__ 1
+#ifndef __SNOW__SYSTEM_H__
+#define __SNOW__SYSTEM_H__ 1
 
 #include <snow-config.h>
 #include <time/time.h>
@@ -33,4 +33,4 @@ int sys_lock(unsigned int lock);
 int sys_unlock(unsigned int lock);
 int sys_trylock(unsigned int lock);
 
-#endif /* end __SNOW_SYSTEM_H__ include guard */
+#endif /* end __SNOW__SYSTEM_H__ include guard */

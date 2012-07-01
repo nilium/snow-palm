@@ -1,3 +1,5 @@
+#define __SNOW__SYSTEM_C__
+
 #include "system.h"
 #include "sgl.h"
 #include <events/events.h>
