@@ -5,11 +5,17 @@
   See LICENSE.md for license information
 */
 
-#ifndef MUTEX_H
+#ifndef __SNOW__MUTEX_H__
 
-#define MUTEX_H
+#define __SNOW__MUTEX_H__
 
 #include <snow-config.h>
+
+#ifdef __SNOW__MUTEX_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #if defined(__cplusplus)
 extern "C"
@@ -41,5 +47,7 @@ int mutex_unlock(mutex_t *lock);
 }
 #endif
 
-#endif /* end of include guard: MUTEX_H */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__MUTEX_H__ */
 

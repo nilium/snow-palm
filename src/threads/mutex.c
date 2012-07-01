@@ -5,6 +5,8 @@
   See LICENSE.md for license information
 */
 
+#define __SNOW__MUTEX_C__
+
 #include "mutex.h"
 
 #if S_USE_PTHREADS
