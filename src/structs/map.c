@@ -5,6 +5,8 @@
   See LICENSE.md for license information
 */
 
+#define __SNOW__MAP_C__
+
 #include "map.h"
 
 #if defined(__cplusplus)

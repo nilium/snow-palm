@@ -5,12 +5,18 @@
   See LICENSE.md for license information
 */
 
-#ifndef MAP_H
+#ifndef __SNOW__MAP_H__
 
-#define MAP_H
+#define __SNOW__MAP_H__
 
 #include <snow-config.h>
 #include <memory/allocator.h>
+
+#ifdef __SNOW__MAP_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #if defined(__cplusplus)
 extern "C"
@@ -74,4 +80,6 @@ int map_get_values(const map_t *map, mapkey_t *keys, void **values, size_t capac
 }
 #endif /* __cplusplus */
 
-#endif /* end of include guard: MAP_H */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__MAP_H__ */
