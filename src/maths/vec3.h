@@ -5,11 +5,17 @@
   See LICENSE.md for license information
 */
 
-#ifndef VEC3_H
+#ifndef __SNOW__VEC3_H__
 
-#define VEC3_H
+#define __SNOW__VEC3_H__
 
 #include "maths.h"
+
+#ifdef __SNOW__VEC3_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,5 +57,7 @@ int vec3_divide(s_float_t divisor, vec3_t v);
 }
 #endif /* __cplusplus */
 
-#endif /* end of include guard: VEC3_H */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__VEC3_H__ */
 
