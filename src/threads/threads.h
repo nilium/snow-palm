@@ -1,8 +1,8 @@
-#ifndef THREADS_H_704WSCD2
-#define THREADS_H_704WSCD2
+#ifndef __SNOW__THREADS_H__
+#define __SNOW__THREADS_H__
 
 #include "thread.h"
 #include "mutex.h"
-#include "threadstroage.h"
+#include "threadstorage.h"
 
-#endif /* end of include guard: THREADS_H_704WSCD2 */
+#endif /* end of include guard: __SNOW__THREADS_H__ */
