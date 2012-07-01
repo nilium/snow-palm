@@ -5,9 +5,8 @@
   See LICENSE.md for license information
 */
 
-#ifndef VERTEX_H
-
-#define VERTEX_H
+#ifndef __SNOW__VERTEX_H__
+#define __SNOW__VERTEX_H__
 
 #include <system/sgl.h>
 
@@ -47,5 +46,5 @@ struct s_anim_vertex
 }
 #endif /* __cplusplus */
 
-#endif /* end of include guard: VERTEX_H */
+#endif /* end of include guard: __SNOW__VERTEX_H__ */
 
