@@ -1,10 +1,16 @@
-#ifndef __SNOW_MESH_H__
-#define __SNOW_MESH_H__ 1
+#ifndef __SNOW__MESH_H__
+#define __SNOW__MESH_H__ 1
 
 #include <snow-config.h>
 #include <system/sgl.h>
 #include <serialize/serialize.h>
 #include <renderer/vertex.h>
+
+#ifdef __SNOW__MESH_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,4 +55,6 @@ rmesh_t *sz_read_mesh(sz_context_t *ctx, allocator_t *alloc);
 }
 #endif // __cplusplus
 
-#endif /* end __SNOW_MESH_H__ include guard */
+#include <inline.end>
+
+#endif /* end __SNOW__MESH_H__ include guard */

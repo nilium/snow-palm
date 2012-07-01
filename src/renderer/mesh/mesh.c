@@ -1,3 +1,5 @@
+#define __SNOW__MESH_C__
+
 #include "mesh.h"
 
 #include <system/sgl.h>
