@@ -5,8 +5,8 @@
   See LICENSE.md for license information
 */
 
-#ifndef MEMORY_H_SA7RAUP3
-#define MEMORY_H_SA7RAUP3
+#ifndef __SNOW__MEMORY_POOL_H__
+#define __SNOW__MEMORY_POOL_H__
 
 #include <snow-config.h>
 #include <threads/mutex.h>
@@ -29,6 +29,12 @@
   the pool_t::lock member is there, but it's advised that you don't try
   to ever fiddle with pool internals.
 */
+
+#ifdef __SNOW__MEMORY_POOL_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #if defined(__cplusplus)
 extern "C"
@@ -195,4 +201,6 @@ allocator_t pool_allocator(pool_t *pool);
 }
 #endif
 
-#endif /* end of include guard: MEMORY_H_SA7RAUP3 */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__MEMORY_POOL_H__ */

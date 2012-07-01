@@ -5,6 +5,8 @@
   See LICENSE.md for license information
 */
 
+#define __SNOW__MEMORY_POOL_C__
+
 #include "memory_pool.h"
 #include <stdlib.h>
 #include <stdio.h>
