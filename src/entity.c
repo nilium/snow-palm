@@ -5,6 +5,8 @@
   See LICENSE.md for license information
 */
 
+#define __SNOW__ENTITY_C__
+
 #include "entity.h"
 #include <renderer/scene.h>
 

@@ -5,14 +5,19 @@
   See LICENSE.md for license information
 */
 
-#ifndef ENTITY_H
-
-#define ENTITY_H
+#ifndef __SNOW__ENTITY_H__
+#define __SNOW__ENTITY_H__
 
 #include <snow-config.h>
 #include <maths/maths.h>
 #include <structs/list.h>
 #include <memory/allocator.h>
+
+#ifdef __SNOW__ENTITY_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #if defined(__cplusplus)
 extern "C"
@@ -107,5 +112,7 @@ void entity_get_position(const entity_t *self, s_float_t *x, s_float_t *y, s_flo
 }
 #endif /* __cplusplus */
 
-#endif /* end of include guard: ENTITY_H */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__ENTITY_H__ */
 
