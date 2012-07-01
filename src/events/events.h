@@ -1,5 +1,5 @@
-#ifndef __SNOW_EVENT_H__
-#define __SNOW_EVENT_H__ 1
+#ifndef __SNOW__EVENTS_H__
+#define __SNOW__EVENTS_H__ 1
 
 #include <snow-config.h>
 #include <maths/maths.h>
@@ -14,6 +14,12 @@
   #else
     #error "Undefined Apple operating system"
   #endif
+#endif
+
+#ifdef __SNOW__EVENTS_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
 #endif
 
 #ifdef __cplusplus
@@ -163,5 +169,7 @@ void com_clear_event_handlers(void);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
+
+#include <inline.end>
 
 #endif /* end __SNOW_EVENT_H__ include guard */

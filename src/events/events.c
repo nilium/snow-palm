@@ -1,3 +1,5 @@
+#define __SNOW__EVENTS_C__
+
 #include "events.h"
 #include <structs/dynarray.h>
 #include <structs/list.h>
