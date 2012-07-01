@@ -1,3 +1,5 @@
+#define __SNOW__BUFFER_STREAM_C__
+
 #include "buffer_stream.h"
 
 #ifdef __cplusplus

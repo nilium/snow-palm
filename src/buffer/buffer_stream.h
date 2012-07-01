@@ -1,11 +1,17 @@
-#ifndef __SNOW_BUFFER_STREAM_H__
-#define __SNOW_BUFFER_STREAM_H__ 1
+#ifndef __SNOW__BUFFER_STREAM_H__
+#define __SNOW__BUFFER_STREAM_H__ 1
 
 #include <snow-config.h>
 #include <memory/allocator.h>
 #include <stream/stream.h>
 
 #include "buffer.h"
+
+#ifdef __SNOW__BUFFER_STREAM_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,4 +23,6 @@ stream_t *buffer_stream(buffer_t *buffer, stream_mode_t mode, bool destroy_on_cl
 }
 #endif // __cplusplus
 
-#endif /* end __SNOW_BUFFER_STREAM_H__ include guard */
+#include <inline.end>
+
+#endif /* end __SNOW__BUFFER_STREAM_H__ include guard */

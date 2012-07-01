@@ -1,8 +1,14 @@
-#ifndef __SNOW_BUFFER_H__
-#define __SNOW_BUFFER_H__ 1
+#ifndef __SNOW__BUFFER_H__
+#define __SNOW__BUFFER_H__ 1
 
 #include <snow-config.h>
 #include <memory/allocator.h>
+
+#ifdef __SNOW__BUFFER_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,4 +41,6 @@ void *buffer_pointer(buffer_t *buf);
 }
 #endif // __cplusplus
 
-#endif /* end __SNOW_BUFFER_H__ include guard */
+#include <inline.end>
+
+#endif /* end __SNOW__BUFFER_H__ include guard */

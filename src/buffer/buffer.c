@@ -1,3 +1,5 @@
+#define __SNOW__BUFFER_C__
+
 #include "buffer.h"
 #include <errno.h>
 
