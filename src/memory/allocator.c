@@ -1,4 +1,10 @@
+#define __SNOW__ALLOCATOR_C__
+
 #include "allocator.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
 static void *sn_malloc(size_t min_size, void *ctx) {
   (void)ctx;
@@ -49,3 +55,7 @@ void com_free(allocator_t *alloc, void *p) {
   }
   return alloc->free(p, alloc->context);
 }
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
