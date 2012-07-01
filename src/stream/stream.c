@@ -1,4 +1,5 @@
-#define S__NO_INLINE_STREAM_OPS
+#define __SNOW__STREAM_C__
+
 #include "stream.h"
 
 #ifdef __cplusplus

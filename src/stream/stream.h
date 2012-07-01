@@ -1,20 +1,18 @@
-#ifndef __SNOW_STREAM_H__
-#define __SNOW_STREAM_H__ 1
+#ifndef __SNOW__STREAM_H__
+#define __SNOW__STREAM_H__ 1
 
 #include <snow-config.h>
 #include <memory/allocator.h>
 
+#ifdef __SNOW__STREAM_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-
-// Only defined by stream.c -- shouldn't be set anywhere else unless you want
-// errors.
-#ifdef S__NO_INLINE_STREAM_OPS
-# define STREAM_INLINE
-#else
-# define STREAM_INLINE inline
-#endif
 
 #define STREAM_UNKNOWN_CONTEXT_COUNT (4)
 
@@ -155,22 +153,22 @@ stream_error_t stream_close(stream_t *stream);
 
 // Resets the stream's position/offset to 0.  Returns 0 on success (not because
 // zero means anything, that just happens to be the new position).
-STREAM_INLINE off_t stream_rewind(stream_t *stream)
+S_INLINE off_t stream_rewind(stream_t *stream)
 {
   return stream_seek(stream, 0, SEEK_SET);
 }
 
 // Operates the same as ftello.
 // Returns seek(stream, 0, SEEK_CUR).
-STREAM_INLINE off_t stream_tell(stream_t *stream)
+S_INLINE off_t stream_tell(stream_t *stream)
 {
   return stream_seek(stream, 0, SEEK_CUR);
 }
-
-#undef STREAM_INLINE
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif /* end __SNOW_STREAM_H__ include guard */
+#include <inline.end>
+
+#endif /* end __SNOW__STREAM_H__ include guard */
