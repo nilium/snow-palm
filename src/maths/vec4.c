@@ -5,6 +5,8 @@
   See LICENSE.md for license information
 */
 
+#define __SNOW__VEC4_C__
+
 #include "vec4.h"
 
 #if defined(__cplusplus)
