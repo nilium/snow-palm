@@ -5,12 +5,17 @@
   See LICENSE.md for license information
 */
 
-#ifndef LIST_H
-
-#define LIST_H
+#ifndef __SNOW__LIST_H__
+#define __SNOW__LIST_H__
 
 #include <snow-config.h>
 #include <memory/allocator.h>
+
+#ifdef __SNOW__LIST_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #if defined(__cplusplus)
 extern "C"
@@ -100,4 +105,6 @@ void list_each(list_t *list, list_iter_fn_t iter, void *context);
 }
 #endif
 
-#endif /* end of include guard: LIST_H */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__LIST_H__ */

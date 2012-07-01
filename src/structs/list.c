@@ -5,6 +5,8 @@
   See LICENSE.md for license information
 */
 
+#define __SNOW__LIST_C__
+
 #include "list.h"
 
 #if defined(__cplusplus)
