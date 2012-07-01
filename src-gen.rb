@@ -11,7 +11,7 @@ ARGV.each { |mod_name|
 C_TEMPLATE = <<-EOS
 #define #{c_guard}
 
-#include "#{base}.h"
+#include "#{h_filename}"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,12 +28,16 @@ H_TEMPLATE = <<-EOS
 #ifndef #{h_guard}
 #define #{h_guard} 1
 
-#ifdef #{c_guard}
-# define SNOW_SOURCE
-#endif /* #{c_guard} */
-
 /* Includes */
 #include <snow-config.h>
+
+/* Inline boilerplate */
+#ifdef #{c_guard}
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif /* #{c_guard} */
+/* End inline boilerplate */
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,9 +49,8 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-#ifdef SNOW_SOURCE
-# undef SNOW_SOURCE
-#endif /* SNOW_SOURCE */
+/* Undefine S_INLINE */
+#include <inline.end>
 
 #endif /* end #{h_guard} include guard */
 EOS
