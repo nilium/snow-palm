@@ -5,13 +5,19 @@
   See LICENSE.md for license information
 */
 
-#ifndef THREADSTORAGE_H
+#ifndef __SNOW__THREADSTORAGE_H__
 
-#define THREADSTORAGE_H
+#define __SNOW__THREADSTORAGE_H__
 
 #include <snow-config.h>
 #include <structs/map.h>
 #include <memory/allocator.h>
+
+#ifdef __SNOW__THREADSTORAGE_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #if defined(__cplusplus)
 extern "C"
@@ -50,4 +56,6 @@ void *tls_get(tlskey_t key);
 }
 #endif /* __cplusplus */
 
-#endif /* end of include guard: THREADSTORAGE_H */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__THREADSTORAGE_H__ */

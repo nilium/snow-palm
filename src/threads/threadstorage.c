@@ -5,6 +5,8 @@
   See LICENSE.md for license information
 */
 
+#define __SNOW__THREADSTORAGE_C__
+
 #include "threadstorage.h"
 
 #if defined(__cplusplus)
