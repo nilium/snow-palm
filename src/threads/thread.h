@@ -5,11 +5,17 @@
   See LICENSE.md for license information
 */
 
-#ifndef THREAD_H
+#ifndef __SNOW__THREAD_H__
 
-#define THREAD_H
+#define __SNOW__THREAD_H__
 
 #include <snow-config.h>
+
+#ifdef __SNOW__THREAD_C__
+#define S_INLINE
+#else
+#define S_INLINE inline
+#endif
 
 #if defined(__cplusplus)
 extern "C"
@@ -22,37 +28,37 @@ typedef void *(*thread_fn_t)(void *context);
 typedef pthread_t thread_t;
 
 /*! Initializes a thread. */
-inline void thread_create(thread_t *thread, thread_fn_t fn, void *context)
+S_INLINE void thread_create(thread_t *thread, thread_fn_t fn, void *context)
 {
   pthread_create(thread, NULL, fn, context);
 }
 
-inline void thread_kill(thread_t thread)
+S_INLINE void thread_kill(thread_t thread)
 {
   pthread_cancel(thread);
 }
 
-inline int thread_equals(thread_t left, thread_t right)
+S_INLINE int thread_equals(thread_t left, thread_t right)
 {
   return pthread_equal(left, right);
 }
 
-inline void thread_detach(thread_t thread)
+S_INLINE void thread_detach(thread_t thread)
 {
   pthread_detach(thread);
 }
 
-inline void thread_join(thread_t thread, void **return_value)
+S_INLINE void thread_join(thread_t thread, void **return_value)
 {
   pthread_join(thread, return_value);
 }
 
-inline void thread_exit(void *return_value)
+S_INLINE void thread_exit(void *return_value)
 {
   pthread_exit(return_value);
 }
 
-inline thread_t thread_current_thread(void)
+S_INLINE thread_t thread_current_thread(void)
 {
   return pthread_self();
 }
@@ -75,4 +81,6 @@ thread_t thread_current_thread(void);
 }
 #endif /* __cplusplus */
 
-#endif /* end of include guard: THREAD_H */
+#include <inline.end>
+
+#endif /* end of include guard: __SNOW__THREAD_H__ */
