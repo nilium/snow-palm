@@ -1,0 +1,3 @@
+#ifdef S_INLINE
+#undef S_INLINE
+#endif
