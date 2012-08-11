@@ -1,0 +1,4 @@
+include_rules
+
+: foreach *.c *.m *.mm *.cpp *.cc *.cxx |> !cc_object |> {objects}
+: {objects} mesh/*.o |> !ar_submodule |> libsnow-tup.a

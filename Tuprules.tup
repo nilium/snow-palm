@@ -1,0 +1,42 @@
+root_dir := $(TUP_CWD)
+bin_dir := $(root_dir)/bin
+lib_dir := $(root_dir)/lib
+source_dir := $(root_dir)/src
+
+snow_bin := snow
+snow_bin_path := $(bin_dir)/$(snow_bin)
+
+ifndef CC
+  CC := clang
+endif
+
+# C flags
+CFLAGS += -Wall -g -m64
+CFLAGS += -DTARGET_OS_MAC -x objective-c -fobjc-arc
+
+# frameworks (osx)
+FRAMEWORKS += -framework Cocoa -framework OpenGL -framework QuartzCore
+
+# linker flags
+LDFLAGS += -lpthread -lphysfs -lz
+LDFLAGS += -lc++
+LDFLAGS += $(FRAMEWORKS)
+
+!cc_object = |> $(CC) $(CFLAGS) -c -o %o %f |> %B.o
+!ar_submodule = |> ar crs %o %f |>
+
+submodules=\
+  $(source_dir)/maths/*.a \
+  $(source_dir)/buffer/*.a \
+  $(source_dir)/events/*.a \
+  $(source_dir)/log/*.a \
+  $(source_dir)/lua/*.a \
+  $(source_dir)/memory/*.a \
+  $(source_dir)/renderer/*.a \
+  $(source_dir)/serialize/*.a \
+  $(source_dir)/stream/*.a \
+  $(source_dir)/structs/*.a \
+  $(source_dir)/system/*.a \
+  $(source_dir)/threads/*.a \
+  $(source_dir)/time/*.a \
+  $(source_dir)/*.a

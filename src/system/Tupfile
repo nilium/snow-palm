@@ -1,0 +1,4 @@
+include_rules
+
+: foreach *.c *.m *.mm *.cpp *.cc *.cxx |> !cc_object |> {objects}
+: system.osx/*.o {objects} |> !ar_submodule |> libsnow-system.a

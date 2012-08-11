@@ -8,3 +8,6 @@ A.out
 *.ipk
 *.sublime-workspace
 base/
+.tup
+*.a
+EXCLUDE
